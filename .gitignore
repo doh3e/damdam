@@ -57,9 +57,6 @@ tmp/
 .history
 .ionide
 
-### STS ###
-.springBeans
-
 # Secrets and API Keys
 application-API-KEY.properties
 
@@ -139,7 +136,4 @@ bower_components/
 /backend/damdam/.gradle/
 /backend/damdam/.idea/
 /backend/damdam/help.md
-<<<<<<< HEAD
 /backend/damdam/src/main/resources/application-API-KEY.properties
-=======
->>>>>>> 851ea3ecba917c8915471991f499b610d41d499b
