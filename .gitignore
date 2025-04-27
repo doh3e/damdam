@@ -1,0 +1,142 @@
+# Build outputs and directories
+.gradle
+build/
+bin/
+out/
+dist/
+nbbuild/
+nbdist/
+tmp/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+# IDE and Editor files
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+.idea_modules/
+
+### Eclipse ###
+.metadata
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+.target
+.cache-main
+.scala_dependencies
+.worksheet
+.loadpath
+.recommenders
+.externalToolBuilders/
+*.launch
+.cproject
+.autotools
+.buildpath
+.tern-project
+.texlipse
+
+### VS Code ###
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+.history/
+.history
+.ionide
+
+### STS ###
+.springBeans
+
+# Secrets and API Keys
+application-API-KEY.properties
+
+# Java specific
+*.class
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+.mtj.tmp/
+hs_err_pid*
+replay_pid*
+
+# OS specific files
+### macOS ###
+.DS_Store
+.DS_*
+.AppleDouble
+.LSOverride
+Icon\r\r
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+*.icloud
+
+### Windows ###
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+
+# Other misc files
+logs/
+*.log
+*.bak
+*.swp
+*~.nib
+local.properties
+*.tmp
+**/*.backup.*
+**/*.back.*
+*.sublime*
+psd
+thumb
+sketch
+node_modules/
+bower_components/
+
+/backend/.idea/*
+/backend/.gitignore
+/backend/damdam/.gitignore
+/backend/damdam/gradle/wrapper/gradle-wrapper.jar
+/backend/damdam/build
+/backend/damdam/.gradle/
+/backend/damdam/.idea/
+/backend/damdam/help.md
+/backend/damdam/src/main/resources/application-API-KEY.properties
