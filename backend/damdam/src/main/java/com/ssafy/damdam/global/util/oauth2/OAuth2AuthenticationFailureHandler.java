@@ -32,13 +32,13 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
 		log.info("errorCode {}", errorCode);
 
 		if ("USER_BANNED".equals(errorCode)) {
-			redirectUrl = "https://i12s202.p.ssafy.io/error?status=403&message=" + URLEncoder.encode("계정이 정지되었습니다.",
+			redirectUrl = "https://k12s202.p.ssafy.io/error?status=403&message=" + URLEncoder.encode("계정이 정지되었습니다.",
 				StandardCharsets.UTF_8);
 		} else if ("USER_WITHDRAW".equals(errorCode)) {
-			redirectUrl = "https://i12s202.p.ssafy.io/error?status=410&message=" + URLEncoder.encode("탈퇴한 계정입니다.",
+			redirectUrl = "https://k12s202.p.ssafy.io/error?status=410&message=" + URLEncoder.encode("탈퇴한 계정입니다.",
 				StandardCharsets.UTF_8);
 		} else {
-			redirectUrl = "https://i12s202.p.ssafy.io/";
+			redirectUrl = "https://k12s202.p.ssafy.io/";
 		}
 
 		getRedirectStrategy().sendRedirect(request, response, redirectUrl);
