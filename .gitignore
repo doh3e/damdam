@@ -130,10 +130,12 @@ bower_components/
 
 /backend/.idea/*
 /backend/.gitignore
+
 /backend/damdam/.gitignore
 /backend/damdam/gradle/wrapper/gradle-wrapper.jar
 /backend/damdam/build
 /backend/damdam/.gradle/
 /backend/damdam/.idea/
 /backend/damdam/help.md
+backend/damdam/src/main/generated/
 /backend/damdam/src/main/resources/application-API-KEY.properties
