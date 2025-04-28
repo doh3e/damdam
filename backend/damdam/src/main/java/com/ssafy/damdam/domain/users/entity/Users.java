@@ -37,7 +37,7 @@ public class Users extends BaseTimeEntityWithUpdatedAt {
 	private String nickname;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "role", nullable = false, columnDefinition = "ENUM('ROLE_USER', 'ROLE_ADMIN') DEFAULT 'ROLE_USER'")
+	@Column(name = "role", nullable = false, length = 20)
 	private Role role;
 
 	@Enumerated(EnumType.STRING)
