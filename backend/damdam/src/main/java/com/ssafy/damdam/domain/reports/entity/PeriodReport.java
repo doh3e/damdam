@@ -20,7 +20,7 @@ public class PeriodReport extends BaseTimeEntity {
     @Column(name = "p_report_id")
     private Long pReportId;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private Users users;
 

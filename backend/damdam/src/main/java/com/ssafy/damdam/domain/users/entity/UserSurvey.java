@@ -15,7 +15,7 @@ public class UserSurvey extends BaseTimeEntity {
     @Column(name = "survey_id")
     private Long surveyId;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private Users users;
 

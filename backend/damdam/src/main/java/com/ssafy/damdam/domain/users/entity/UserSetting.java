@@ -16,7 +16,7 @@ public class UserSetting extends BaseTimeEntityWithUpdatedAt {
     @Column(name = "setting_id")
     private Long settingId;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private Users users;
 

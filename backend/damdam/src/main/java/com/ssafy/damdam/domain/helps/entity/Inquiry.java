@@ -17,7 +17,7 @@ public class Inquiry extends BaseTimeEntity {
     @Column(name = "inquiry_id")
     private Long inquiryId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private Users users;
 
