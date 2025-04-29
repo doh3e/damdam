@@ -12,7 +12,7 @@ import lombok.Getter;
 @Getter
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
-public class BaseTimeEntityWithUpdatedAt {
+public class BaseTimeEntityWithUpdatedAt extends BaseTimeEntity {
 	@LastModifiedDate
 	private LocalDateTime updatedAt;
 }

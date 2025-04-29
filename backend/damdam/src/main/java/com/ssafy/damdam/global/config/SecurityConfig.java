@@ -47,36 +47,36 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http, UsersRepository usersRepository) throws Exception {
 		http
-				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-				.csrf(csrf -> csrf.disable())
-				.formLogin(form -> form.disable())
-				.httpBasic(basic -> basic.disable())
-				.addFilterBefore(new JwtFilter(jwtUtil, usersRepository), UsernamePasswordAuthenticationFilter.class)
-				.oauth2Login(oauth2 -> oauth2
-						.authorizationEndpoint(endpoint -> endpoint
-								.baseUri("/oauth2/authorization")
-								.authorizationRequestRepository(new HttpSessionOAuth2AuthorizationRequestRepository())
-						)
-						.tokenEndpoint(token -> token
-								.accessTokenResponseClient(oAuth2AccessTokenResponseClient()) // ✅ 추가! 중요!
-						)
-						.userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-						.successHandler(customSuccessHandler)
-						.failureHandler(oAuth2AuthenticationFailureHandler)
+			.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+			.csrf(csrf -> csrf.disable())
+			.formLogin(form -> form.disable())
+			.httpBasic(basic -> basic.disable())
+			.addFilterBefore(new JwtFilter(jwtUtil, usersRepository), UsernamePasswordAuthenticationFilter.class)
+			.oauth2Login(oauth2 -> oauth2
+				.authorizationEndpoint(endpoint -> endpoint
+					.baseUri("/oauth2/authorization")
+					.authorizationRequestRepository(new HttpSessionOAuth2AuthorizationRequestRepository())
 				)
-				.authorizeHttpRequests(auth -> auth
-						.requestMatchers(
-								"/", "/error", "/favicon.ico",
-								"/oauth2/**", "/login/oauth2/**",
-								"/ws-connect", "/ws-connect/**",
-								"/css/**", "/js/**", "/images/**", "/assets/**",
-								"/dist/**", "/plugins/**", "/resources/**"
-						).permitAll()
-						.anyRequest().authenticated()
+				.tokenEndpoint(token -> token
+					.accessTokenResponseClient(oAuth2AccessTokenResponseClient())
 				)
-				.sessionManagement(session -> session
-						.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-				.exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint));
+				.userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+				.successHandler(customSuccessHandler)
+				.failureHandler(oAuth2AuthenticationFailureHandler)
+			)
+			.authorizeHttpRequests(auth -> auth
+				.requestMatchers(
+					"/", "/error", "/favicon.ico",
+					"/oauth2/**", "/login/oauth2/**",
+					"/ws-connect", "/ws-connect/**",
+					"/css/**", "/js/**", "/images/**", "/assets/**",
+					"/dist/**", "/plugins/**", "/resources/**"
+				).permitAll()
+				.anyRequest().authenticated()
+			)
+			.sessionManagement(session -> session
+				.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+			.exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint));
 
 		return http.build();
 	}
@@ -85,12 +85,12 @@ public class SecurityConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowedOrigins(Arrays.asList(
-				"http://localhost:8080",
-				"https://localhost:8080",
-				"http://localhost:5173",
-				"https://localhost:5173",
-				"http://k12s202.p.ssafy.io",
-				"https://k12s202.p.ssafy.io"
+			"http://localhost:8080",
+			"https://localhost:8080",
+			"http://localhost:5173",
+			"https://localhost:5173",
+			"http://k12s202.p.ssafy.io",
+			"https://k12s202.p.ssafy.io"
 		));
 		configuration.setAllowedMethods(Collections.singletonList("*"));
 		configuration.setAllowedHeaders(Collections.singletonList("*"));
@@ -111,7 +111,8 @@ public class SecurityConfig {
 			private final DefaultAuthorizationCodeTokenResponseClient naverClient = defaultClient; // 기본
 
 			@Override
-			public OAuth2AccessTokenResponse getTokenResponse(OAuth2AuthorizationCodeGrantRequest authorizationGrantRequest) {
+			public OAuth2AccessTokenResponse getTokenResponse(
+				OAuth2AuthorizationCodeGrantRequest authorizationGrantRequest) {
 				String registrationId = authorizationGrantRequest.getClientRegistration().getRegistrationId();
 
 				if ("kakao".equalsIgnoreCase(registrationId)) {
@@ -129,12 +130,18 @@ public class SecurityConfig {
 				DefaultAuthorizationCodeTokenResponseClient client = new DefaultAuthorizationCodeTokenResponseClient();
 
 				RestTemplate restTemplate = new RestTemplate(
-						Arrays.asList(
-								new FormHttpMessageConverter(), // form-urlencoded
-								new OAuth2AccessTokenResponseHttpMessageConverter() // token 변환기
-						)
+					Arrays.asList(
+						new FormHttpMessageConverter(), // form-urlencoded
+						new OAuth2AccessTokenResponseHttpMessageConverter() // token 변환기
+					)
 				);
 				restTemplate.setErrorHandler(new OAuth2ErrorResponseErrorHandler());
+
+				restTemplate.getInterceptors().add((request, body, execution) -> {
+					request.getHeaders()
+						.setAccept(Collections.singletonList(org.springframework.http.MediaType.APPLICATION_JSON));
+					return execution.execute(request, body);
+				});
 
 				client.setRestOperations(restTemplate);
 				return client;
