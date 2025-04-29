@@ -30,16 +30,18 @@ public class JwtFilter extends OncePerRequestFilter {
 	private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
 	private static final List<String> NO_CHECK_URLS = Arrays.asList(
-		"/ws", "/ws/", "/wss", "/wss/", "/ws-connect", "/ws-connect/"
+			"/", "/ws/**", "/wss/**",
+			"/login", "/login/**",
+			"/oauth2/**", "/oauth2/authorization/**",
+			"/login/oauth2/**", "/error"
 	);
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-		FilterChain filterChain) throws ServletException, IOException {
+									FilterChain filterChain) throws ServletException, IOException {
 
 		String path = request.getRequestURI();
 
-		// 체크할 필요 없는 URL이면 다음 필터로 이동
 		if (NO_CHECK_URLS.stream().anyMatch(pattern -> pathMatcher.match(pattern, path))) {
 			filterChain.doFilter(request, response);
 			return;
@@ -48,17 +50,17 @@ public class JwtFilter extends OncePerRequestFilter {
 		String authorizationHeader = request.getHeader("Authorization");
 		log.info("Authorization Header: " + authorizationHeader);
 
-		if (jwtUtil.isValidAuthorization(authorizationHeader)) {
+		if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
 			filterChain.doFilter(request, response);
 			return;
 		}
 
 		String token = authorizationHeader.substring(7);
+
 		if (jwtUtil.isExpired(token)) {
 			log.info("Token expired");
 			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-			response.sendRedirect("localhost:5173/");
-			filterChain.doFilter(request, response);
+			response.sendRedirect("http:localhost:5173/");
 			return;
 		}
 
@@ -70,13 +72,14 @@ public class JwtFilter extends OncePerRequestFilter {
 		CustomOAuth2User customOAuth2User = new CustomOAuth2User(userDto);
 
 		Authentication authToken = new UsernamePasswordAuthenticationToken(
-			customOAuth2User, null, customOAuth2User.getAuthorities()
+				customOAuth2User, null, customOAuth2User.getAuthorities()
 		);
 
 		SecurityContextHolder.getContext().setAuthentication(authToken);
 		filterChain.doFilter(request, response);
-
 	}
+
+
 
 }
 

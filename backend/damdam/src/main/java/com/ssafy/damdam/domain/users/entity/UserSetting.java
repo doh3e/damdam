@@ -32,4 +32,14 @@ public class UserSetting extends BaseTimeEntityWithUpdatedAt {
     @Column(name = "is_alarm", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     private boolean isAlarm;
 
+    public static UserSetting createDefaultSetting(Users savedUser) {
+        UserSetting setting = new UserSetting();
+        setting.users = savedUser;
+        setting.isDarkmode = false; // 다크모드 꺼짐
+        setting.botImage = "";      // 기본 봇 이미지 없음
+        setting.botCustom = "";     // 기본 봇 커스텀 없음
+        setting.isAlarm = true;     // 알람은 기본적으로 켜짐
+        return setting;
+    }
+
 }

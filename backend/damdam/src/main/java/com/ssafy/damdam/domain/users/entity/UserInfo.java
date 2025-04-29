@@ -33,4 +33,13 @@ public class UserInfo extends BaseTimeEntityWithUpdatedAt {
 	@Column(name = "mbti", length = 4)
 	private String mbti;
 
+	public static UserInfo createDefaultInfo(Users user) {
+		UserInfo userInfo = new UserInfo();
+		userInfo.users = user;
+		userInfo.gender = Gender.UNKNOWN;
+		userInfo.age = Age.TWENTIES;
+		userInfo.career = "";
+		userInfo.mbti = "";
+		return userInfo;
+	}
 }

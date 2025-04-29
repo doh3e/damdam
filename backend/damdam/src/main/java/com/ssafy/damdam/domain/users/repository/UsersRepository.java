@@ -20,4 +20,6 @@ public interface UsersRepository extends JpaRepository<Users, Long>, UsersReposi
 
 	@Query("SELECT u.userId FROM Users u WHERE u.personalId = :personalId")
 	Optional<Long> findUserIdByPersonalId(String personalId);
+
+	Optional<Users> findByEmail(String kakaoAccountEmail);
 }

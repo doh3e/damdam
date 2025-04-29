@@ -5,17 +5,26 @@ import java.util.Collections;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.client.endpoint.DefaultAuthorizationCodeTokenResponseClient;
+import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
+import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
+import org.springframework.security.oauth2.client.http.OAuth2ErrorResponseErrorHandler;
+import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizationRequestRepository;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
+import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.ssafy.damdam.domain.users.repository.UsersRepository;
-import com.ssafy.damdam.domain.users.service.UserAuthServiceImpl;
+import com.ssafy.damdam.domain.users.service.CustomOAuth2UserService;
 import com.ssafy.damdam.global.util.jwt.JwtAuthenticationEntryPoint;
 import com.ssafy.damdam.global.util.jwt.JwtFilter;
 import com.ssafy.damdam.global.util.jwt.JwtUtil;
@@ -32,40 +41,42 @@ public class SecurityConfig {
 	private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
 	private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 	private final CustomSuccessHandler customSuccessHandler;
-	private final UserAuthServiceImpl userAuthServiceImpl;
+	private final CustomOAuth2UserService customOAuth2UserService;
 	private final JwtUtil jwtUtil;
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http, UsersRepository usersRepository) throws Exception {
 		http
-			.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-			.csrf(csrf -> csrf.disable())
-			.formLogin(form -> form.disable())  // 기본 로그인 폼 비활성화
-			.httpBasic(basic -> basic.disable())
-			.addFilterBefore(new JwtFilter(jwtUtil, usersRepository), UsernamePasswordAuthenticationFilter.class)
-			// .oauth2Login(oauth2 -> oauth2
-			// 	.authorizationEndpoint(endpoint -> endpoint
-			// 		.baseUri("/oauth2/authorization")
-			// 		.authorizationRequestRepository(new HttpSessionOAuth2AuthorizationRequestRepository()) // 추가
-			// 	)
-			// 	.userInfoEndpoint(userInfo -> userInfo.userService(userAuthServiceImpl))
-			// 	.successHandler(customSuccessHandler)
-			// 	.failureHandler(oAuth2AuthenticationFailureHandler)
-			// ) // Oauth2 로그인 관련 설정 주석 처리
-			.authorizeHttpRequests(auth -> auth
-				.requestMatchers("/login")
-				.denyAll()  // 기본 로그인 경로 차단
-				.requestMatchers("/oauth2/**", "/login/oauth2/**", "/ws-connect", "/ws-connect/**")
-				.permitAll() // OAuth2 로그인만 허용
-				.requestMatchers(
-					"/api/v1/damdam/"
+				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+				.csrf(csrf -> csrf.disable())
+				.formLogin(form -> form.disable())
+				.httpBasic(basic -> basic.disable())
+				.addFilterBefore(new JwtFilter(jwtUtil, usersRepository), UsernamePasswordAuthenticationFilter.class)
+				.oauth2Login(oauth2 -> oauth2
+						.authorizationEndpoint(endpoint -> endpoint
+								.baseUri("/oauth2/authorization")
+								.authorizationRequestRepository(new HttpSessionOAuth2AuthorizationRequestRepository())
+						)
+						.tokenEndpoint(token -> token
+								.accessTokenResponseClient(oAuth2AccessTokenResponseClient()) // ✅ 추가! 중요!
+						)
+						.userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+						.successHandler(customSuccessHandler)
+						.failureHandler(oAuth2AuthenticationFailureHandler)
 				)
-				.permitAll()
-				.anyRequest()
-				.authenticated())
-			.sessionManagement(session -> session
-				.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-			.exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint));
+				.authorizeHttpRequests(auth -> auth
+						.requestMatchers(
+								"/", "/error", "/favicon.ico",
+								"/oauth2/**", "/login/oauth2/**",
+								"/ws-connect", "/ws-connect/**",
+								"/css/**", "/js/**", "/images/**", "/assets/**",
+								"/dist/**", "/plugins/**", "/resources/**"
+						).permitAll()
+						.anyRequest().authenticated()
+				)
+				.sessionManagement(session -> session
+						.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+				.exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint));
 
 		return http.build();
 	}
@@ -74,10 +85,12 @@ public class SecurityConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowedOrigins(Arrays.asList(
-			"http://localhost:5173",
-			"https://localhost:5173",
-			"http://k12s202.p.ssafy.io",
-			"https://k12s202.p.ssafy.io"
+				"http://localhost:8080",
+				"https://localhost:8080",
+				"http://localhost:5173",
+				"https://localhost:5173",
+				"http://k12s202.p.ssafy.io",
+				"https://k12s202.p.ssafy.io"
 		));
 		configuration.setAllowedMethods(Collections.singletonList("*"));
 		configuration.setAllowedHeaders(Collections.singletonList("*"));
@@ -86,6 +99,47 @@ public class SecurityConfig {
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", configuration);
 		return source;
+	}
+
+	@Bean
+	public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> oAuth2AccessTokenResponseClient() {
+		return new OAuth2AccessTokenResponseClient<>() {
+
+			private final DefaultAuthorizationCodeTokenResponseClient defaultClient = new DefaultAuthorizationCodeTokenResponseClient();
+			private final DefaultAuthorizationCodeTokenResponseClient kakaoClient = createKakaoClient();
+			private final DefaultAuthorizationCodeTokenResponseClient googleClient = defaultClient; // 기본
+			private final DefaultAuthorizationCodeTokenResponseClient naverClient = defaultClient; // 기본
+
+			@Override
+			public OAuth2AccessTokenResponse getTokenResponse(OAuth2AuthorizationCodeGrantRequest authorizationGrantRequest) {
+				String registrationId = authorizationGrantRequest.getClientRegistration().getRegistrationId();
+
+				if ("kakao".equalsIgnoreCase(registrationId)) {
+					return kakaoClient.getTokenResponse(authorizationGrantRequest);
+				} else if ("google".equalsIgnoreCase(registrationId)) {
+					return googleClient.getTokenResponse(authorizationGrantRequest);
+				} else if ("naver".equalsIgnoreCase(registrationId)) {
+					return naverClient.getTokenResponse(authorizationGrantRequest);
+				} else {
+					throw new IllegalArgumentException("Unsupported OAuth2 Provider: " + registrationId);
+				}
+			}
+
+			private DefaultAuthorizationCodeTokenResponseClient createKakaoClient() {
+				DefaultAuthorizationCodeTokenResponseClient client = new DefaultAuthorizationCodeTokenResponseClient();
+
+				RestTemplate restTemplate = new RestTemplate(
+						Arrays.asList(
+								new FormHttpMessageConverter(), // form-urlencoded
+								new OAuth2AccessTokenResponseHttpMessageConverter() // token 변환기
+						)
+				);
+				restTemplate.setErrorHandler(new OAuth2ErrorResponseErrorHandler());
+
+				client.setRestOperations(restTemplate);
+				return client;
+			}
+		};
 	}
 
 }

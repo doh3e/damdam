@@ -2,6 +2,7 @@ package com.ssafy.damdam.domain.users.dto.auth;
 
 import com.ssafy.damdam.domain.users.entity.Provider;
 
+import com.ssafy.damdam.domain.users.entity.Users;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -37,4 +38,9 @@ public class UserDto {
 		this.personalId = personalId;
 		this.role = role;
 	}
+
+	public Users toEntity() {
+		return Users.createUser(this);
+	}
+
 }

@@ -41,8 +41,11 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 		String token = jwtUtil.createJwt(userId, personalId, role, TOKEN_EXPIRATION);
 		log.info("Token: " + token);
 
+		// 로컬에 임시로 토큰 전달
+		String redirectUrl = "http://localhost:8080/?token=" + token;
+
 		//프론트엔드 URL로 리디렉트하면서 토큰을 전달
-		String redirectUrl = "https://k12s202.p.ssafy.io/?token=" + token;
+		// String redirectUrl = "https://k12s202.p.ssafy.io/?token=" + token;
 		response.sendRedirect(redirectUrl);
 	}
 
