@@ -2,6 +2,7 @@ pipeline {
     agent any
 
     environment {
+        PROJECT_DIR = 'demo/demo'  // Spring Boot 프로젝트 폴더
         JAR_NAME = 'demo-0.0.1-SNAPSHOT.jar'
         IMAGE_NAME = 'springboot-app'
         CONTAINER_NAME = 'springboot-app'
@@ -9,23 +10,15 @@ pipeline {
     }
 
     stages {
-        stage('Clone Repository') {
-            steps {
-                git branch: 'dev',
-                    url: 'https://lab.ssafy.com/s12-final/S12P31S202.git',
-                    credentialsId: 'k12s202'
-            }
-        }
-
         stage('Build Jar') {
             steps {
-                sh 'cd demo/demo && ./gradlew clean build'
+                sh "cd ${PROJECT_DIR} && ./gradlew clean build"
             }
         }
 
         stage('Copy Jar') {
             steps {
-                sh "cp build/libs/${JAR_NAME} ${DOCKER_DIR}/"
+                sh "cp ${PROJECT_DIR}/build/libs/${JAR_NAME} ${DOCKER_DIR}/"
             }
         }
 
