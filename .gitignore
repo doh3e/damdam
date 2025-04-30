@@ -1,6 +1,4 @@
-# === Java / Gradle ===
-/build/
-/.gradle/
+
 /out/
 /target/
 /bin/
