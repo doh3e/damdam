@@ -21,7 +21,7 @@ pipeline {
                     docker stop springboot-app || true
                     docker rm springboot-app || true
                     docker build -t springboot-app .
-                    docker run -d --name springboot-app -p 8082:8080 springboot-app
+                    docker run -d --name springboot-app -p 8080:8080 springboot-app
                     '''
                 }
             }
