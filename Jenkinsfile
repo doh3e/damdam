@@ -13,7 +13,7 @@ pipeline {
             steps {
                 git branch: 'dev',
                     url: 'https://lab.ssafy.com/s12-final/S12P31S202.git',
-                    credentialsId: 'your-gitlab-token'
+                    credentialsId: 'k12s202'
             }
         }
 
