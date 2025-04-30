@@ -19,14 +19,10 @@ public class UserAuthController {
     private final UserAuthServiceImpl userAuthServiceImpl;
     private final CustomOAuth2UserService customOAuth2UserService;
 
-    @GetMapping("")
-    public ResponseEntity<String> index() {
-        return ResponseEntity.ok().body("index");
-    }
-
     @DeleteMapping("/leaving")
     public ResponseEntity<String> leaving() {
         userAuthServiceImpl.deleteUser();
         return ResponseEntity.ok().body("탈퇴 요청이 완료되었습니다.");
     }
+
 }
