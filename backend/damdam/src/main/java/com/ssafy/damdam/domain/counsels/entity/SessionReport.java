@@ -16,7 +16,7 @@ public class SessionReport extends BaseTimeEntity {
     @Column(name = "s_report_id")
     private Long sReportId;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "couns_id", nullable = false)
     private Counseling counseling;
 

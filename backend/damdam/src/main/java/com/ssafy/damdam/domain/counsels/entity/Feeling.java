@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum Feeling {
     HAPPINESS("행복"),
-    ANGRY("화남"),
+    ANGRY("분노"),
     DISGUST("혐오"),
     FEAR("공포"),
     NEUTRAL("중립"),

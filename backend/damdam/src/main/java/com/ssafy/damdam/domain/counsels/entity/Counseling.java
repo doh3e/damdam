@@ -17,7 +17,7 @@ public class Counseling extends BaseTimeEntityWithUpdatedAt {
     @Column(name = "couns_id")
     private Long counsId;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private Users users;
 

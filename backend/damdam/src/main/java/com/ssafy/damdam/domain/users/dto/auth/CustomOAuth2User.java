@@ -1,45 +1,66 @@
 package com.ssafy.damdam.domain.users.dto.auth;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.List;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
-import lombok.RequiredArgsConstructor;
-
-@RequiredArgsConstructor
+/**
+ * OAuth2 인증 후 사용자 정보를 담는 Custom OAuth2User
+ */
 public class CustomOAuth2User implements OAuth2User {
 	private final UserDto userDto;
+	private final Map<String, Object> attributes;
+	private final String nameAttributeKey;
+
+	/**
+	 * @param userDto         사용자 DTO
+	 * @param attributes      OAuth2 공급자가 반환한 유저 속성
+	 * @param nameAttributeKey principalName 으로 사용할 속성 키
+	 */
+	public CustomOAuth2User(
+			UserDto userDto,
+			Map<String, Object> attributes,
+			String nameAttributeKey
+	) {
+		this.userDto = userDto;
+		this.attributes = attributes;
+		this.nameAttributeKey = nameAttributeKey;
+	}
 
 	@Override
 	public Map<String, Object> getAttributes() {
-		return Map.of();
+		return attributes;
 	}
 
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-		Collection<GrantedAuthority> collection = new ArrayList<>();
-		collection.add((GrantedAuthority)userDto::getRole);
-
-		return collection;
+		// 단일 ROLE_USER 권한만 부여
+		return List.of((GrantedAuthority) () -> userDto.getRole());
 	}
 
 	@Override
 	public String getName() {
-		return userDto.getEmail();
+		// personalId를 principalName으로 사용
+		return userDto.getPersonalId();
 	}
 
+	// 추가 정보 접근용 메서드
 	public Long getUserId() {
 		return userDto.getUserId();
+	}
+
+	public String getEmail() {
+		return userDto.getEmail();
 	}
 
 	public String getRole() {
 		return userDto.getRole();
 	}
 
-	public String getUsername() {
+	public String getNickname() {
 		return userDto.getNickname();
 	}
 

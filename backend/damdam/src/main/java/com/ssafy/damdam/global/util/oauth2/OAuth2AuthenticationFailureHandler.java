@@ -30,16 +30,7 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
 		String redirectUrl;
 		log.info("exception {}", exception.toString());
 		log.info("errorCode {}", errorCode);
-
-		if ("USER_BANNED".equals(errorCode)) {
-			redirectUrl = "https://k12s202.p.ssafy.io/error?status=403&message=" + URLEncoder.encode("계정이 정지되었습니다.",
-				StandardCharsets.UTF_8);
-		} else if ("USER_WITHDRAW".equals(errorCode)) {
-			redirectUrl = "https://k12s202.p.ssafy.io/error?status=410&message=" + URLEncoder.encode("탈퇴한 계정입니다.",
-				StandardCharsets.UTF_8);
-		} else {
-			redirectUrl = "https://k12s202.p.ssafy.io/";
-		}
+		redirectUrl = "http://localhost:8080/error?status=500&message=" + URLEncoder.encode("알 수 없는 오류가 발생했습니다.", StandardCharsets.UTF_8);
 
 		getRedirectStrategy().sendRedirect(request, response, redirectUrl);
 	}

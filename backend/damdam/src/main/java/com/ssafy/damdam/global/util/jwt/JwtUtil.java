@@ -76,13 +76,9 @@ public class JwtUtil {
 			.compact();
 	}
 
-	public boolean isValidAuthorization(String authorizationHeader) {
+	public boolean isNotValidAuthorization(String authorizationHeader) {
 		log.info("Authorization Header: " + authorizationHeader);
-		if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-			log.info("Token is missing or invalid");
-			return true;
-		}
-
-		return false;
+		return authorizationHeader == null || !authorizationHeader.startsWith("Bearer ");
 	}
+
 }
