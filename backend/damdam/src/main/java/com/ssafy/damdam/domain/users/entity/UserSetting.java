@@ -1,5 +1,6 @@
 package com.ssafy.damdam.domain.users.entity;
 
+import com.ssafy.damdam.domain.users.dto.user.UserSettingDto;
 import com.ssafy.damdam.global.audit.BaseTimeEntityWithUpdatedAt;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -42,4 +43,13 @@ public class UserSetting extends BaseTimeEntityWithUpdatedAt {
         return setting;
     }
 
+    public static UserSetting createUserSetting(UserSettingDto dto) {
+        UserSetting setting = new UserSetting();
+        setting.users      = dto.getUser();
+        setting.isDarkmode = dto.isDarkmode();
+        setting.botImage   = dto.getBotImage();
+        setting.botCustom  = dto.getBotCustom();
+        setting.isAlarm    = dto.isAlarm();
+        return setting;
+    }
 }
