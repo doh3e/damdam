@@ -42,7 +42,7 @@ public class UserUtil {
 		Users users = (Users)usersRepository.findByPersonalId(personalId)
 			.orElseGet(null);
 
-		log.info("email: {}", users.getEmail());
+		log.info("personlId: {}", users.getPersonalId());
 
 		return users;
 	}
