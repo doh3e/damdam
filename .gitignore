@@ -1,0 +1,61 @@
+# === Java / Gradle ===
+/build/
+/.gradle/
+/out/
+/target/
+/bin/
+*.class
+*.log
+
+# === IDE ===
+.vscode/
+.idea/
+*.iml
+
+# === OS 파일 ===
+.DS_Store
+Thumbs.db
+
+# === Jenkins ===
+/jenkins-data/
+/secrets/
+/workspace/
+
+# === Docker ===
+*.jar
+*.war
+*.ear
+
+# === SSH / 보안 키 ===
+*.pem
+*.key
+*.crt
+*.pub
+*.enc
+*.jks
+
+# === 환경 설정 ===
+.env
+*.env.local
+application-*.yml
+application-*.properties
+secret.*
+
+# === Node.js (for frontend) ===
+/node_modules/
+/dist/
+/build/
+/npm-debug.log
+.yarn/
+
+# === Python (FastAPI etc) ===
+__pycache__/
+/*.py[cod]
+*.egg-info/
+
+# === 기타 ===
+*.swp
+*.swo
+*.bak
+*.tmp
+
