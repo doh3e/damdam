@@ -7,7 +7,6 @@ import com.ssafy.damdam.domain.users.entity.UserSetting;
 import com.ssafy.damdam.domain.users.repository.UsersRepository;
 import com.ssafy.damdam.domain.users.repository.UserInfoRepository;
 import com.ssafy.damdam.domain.users.repository.UserSettingRepository;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -30,57 +29,54 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) {
-        OAuth2User oAuth2User = super.loadUser(userRequest);
+        // 1. 기본 유저 정보 로드
+        OAuth2User defaultUser = super.loadUser(userRequest);
         String provider = userRequest.getClientRegistration().getRegistrationId();
-
         log.info("[OAuth2UserService] provider: {}", provider);
-        log.info("[OAuth2UserService] attributes: {}", oAuth2User.getAttributes());
+        log.info("[OAuth2UserService] attributes: {}", defaultUser.getAttributes());
 
-        OAuth2Response oAuth2Response = getOAuth2Response(provider, oAuth2User);
+        // 2. OAuth2Response 추출
+        OAuth2Response oAuth2Response = getOAuth2Response(provider, defaultUser);
 
-        String providerId = oAuth2Response.getProviderId();
+        // 3. 신규 사용자 DTO 생성
+        UserDto newUserDto = UserDto.createUserDto(oAuth2Response);
 
-        // providerId가 6자 미만이면 전체 사용, 이상이면 앞 6자만 사용
-        String shortId = providerId.length() >= 6
-                ? providerId.substring(0, 6)
-                : providerId;
-
-        String randomPart = UUID.randomUUID().toString().substring(0, 6);
-        String generatedNickname = provider + "_" + shortId + "_" + randomPart;
-        String personalId = provider + "_" + providerId;
-
-        UserDto userDto = UserDto.builder()
-                .provider(oAuth2Response.getProvider())
-                .personalId(personalId)
-                .email(oAuth2Response.getEmail())
-                .nickname(generatedNickname)
-                .role("ROLE_USER")
-                .build();
-
-        Users user = usersRepository.findByEmail(userDto.getEmail())
+        // 4. Users 엔티티 조회 또는 생성
+        Users user = usersRepository.findByEmail(newUserDto.getEmail())
                 .orElseGet(() -> {
-                    Users savedUser = usersRepository.save(userDto.toEntity());
-                    userInfoRepository.save(UserInfo.createDefaultInfo(savedUser));   // ⭐ 유저정보 기본값 저장
-                    userSettingRepository.save(UserSetting.createDefaultSetting(savedUser)); // ⭐ 유저설정 기본값 저장
-                    return savedUser;
+                    Users saved = usersRepository.save(newUserDto.toEntity());
+                    userInfoRepository.save(UserInfo.createDefaultInfo(saved));
+                    userSettingRepository.save(UserSetting.createDefaultSetting(saved));
+                    return saved;
                 });
 
-        UserDto loadedUserDto = new UserDto(user.getUserId(), user.getPersonalId(), user.getRole().name());
-        return new CustomOAuth2User(loadedUserDto);
+        // 5. nameAttributeKey 가져오기
+        String nameAttributeKey = userRequest.getClientRegistration()
+                .getProviderDetails()
+                .getUserInfoEndpoint()
+                .getUserNameAttributeName();
+
+        // 6. 로그인 사용자 DTO 생성 via entity factory
+        // UserDto에 아래 정적 메서드 추가 필요:
+        // public static UserDto fromEntity(Users user) { ... }
+        UserDto loadedDto = UserDto.fromEntity(user);
+
+        // 7. CustomOAuth2User 생성 CustomOAuth2User 생성
+        return new CustomOAuth2User(
+                loadedDto,
+                defaultUser.getAttributes(),
+                nameAttributeKey
+        );
     }
 
     private static OAuth2Response getOAuth2Response(String provider, OAuth2User oAuth2User) {
-        OAuth2Response oAuth2Response;
-
         if ("kakao".equals(provider)) {
-            oAuth2Response = new KakaoResponse(oAuth2User.getAttributes());
+            return new KakaoResponse(oAuth2User.getAttributes());
         } else if ("google".equals(provider)) {
-            oAuth2Response = new GoogleResponse(oAuth2User.getAttributes());
+            return new GoogleResponse(oAuth2User.getAttributes());
         } else if ("naver".equals(provider)) {
-            oAuth2Response = new NaverResponse(oAuth2User.getAttributes());
-        } else {
-            throw new IllegalArgumentException("지원하지 않는 로그인 제공자입니다: " + provider);
+            return new NaverResponse(oAuth2User.getAttributes());
         }
-        return oAuth2Response;
+        throw new IllegalArgumentException("지원하지 않는 로그인 제공자입니다: " + provider);
     }
 }
