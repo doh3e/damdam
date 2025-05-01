@@ -1,12 +1,16 @@
 package com.ssafy.damdam.domain.users.service;
 
+import com.ssafy.damdam.domain.users.dto.user.ProfileInputDto;
+import com.ssafy.damdam.domain.users.dto.user.ProfileOutputDto;
+import com.ssafy.damdam.domain.users.dto.user.UserSettingDto;
+
 public interface UserService {
 
-    void getUserProfile();
+	ProfileOutputDto getUserProfile();
 
-    void editUserProfile();
+	void editUserProfile(ProfileInputDto profileInputDto);
 
-    void getUserSetting();
+	UserSettingDto getUserSetting();
 
-    void editUserSetting();
+	void editUserSetting(UserSettingDto userSettingDto);
 }
