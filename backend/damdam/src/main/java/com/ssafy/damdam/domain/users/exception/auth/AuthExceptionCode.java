@@ -33,6 +33,7 @@ public enum AuthExceptionCode implements ExceptionCode {
 	NOT_AUTHORIZATION_USER(UNAUTHORIZED, "AT-C-103", "인가된 사용자가 아닙니다."),
 	INVALID_REDIRECT_URI(UNAUTHORIZED, "AT-C-104", "허용되지 않은 리다이렉션 URI 입니다."),
 	AUTH_MEMBER_NOT_FOUND(NOT_FOUND, "AT-C-105", "존재하지 않는 회원입니다."),
+	AUTH_EMAIL_ALREADY_EXISTS(BAD_REQUEST, "AT-C-106", "이미 존재하는 이메일의 사용자입니다."),
 
 	/**
 	 * Common Exception
