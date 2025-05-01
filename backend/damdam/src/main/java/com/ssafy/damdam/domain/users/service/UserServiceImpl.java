@@ -1,10 +1,21 @@
 package com.ssafy.damdam.domain.users.service;
 
+import static com.ssafy.damdam.domain.users.exception.auth.AuthExceptionCode.*;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.ssafy.damdam.domain.users.dto.user.ProfileInputDto;
+import com.ssafy.damdam.domain.users.dto.user.ProfileOutputDto;
+import com.ssafy.damdam.domain.users.dto.user.UserSettingDto;
+import com.ssafy.damdam.domain.users.entity.UserInfo;
+import com.ssafy.damdam.domain.users.entity.UserSetting;
+import com.ssafy.damdam.domain.users.entity.Users;
+import com.ssafy.damdam.domain.users.exception.auth.AuthException;
 import com.ssafy.damdam.domain.users.repository.UserInfoRepository;
 import com.ssafy.damdam.domain.users.repository.UserSettingRepository;
 import com.ssafy.damdam.domain.users.repository.UsersRepository;
 import com.ssafy.damdam.global.util.user.UserUtil;
-import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,11 +23,95 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
 
-    private final UsersRepository usersRepository;
-    private final UserInfoRepository userInfoRepository;
-    private final UserSettingRepository userSettingRepository;
-    private final UserUtil userUtil;
+	private final UsersRepository usersRepository;
+	private final UserInfoRepository userInfoRepository;
+	private final UserSettingRepository userSettingRepository;
+	private final UserUtil userUtil;
 
+	// 유저 검증 메서드
+	private Users validateUser() {
+		Users user = userUtil.getUser();
+		if (user == null) {
+			throw new AuthException(AUTH_MEMBER_NOT_FOUND);
+		}
+		return user;
+	}
+
+	@Override
+	public ProfileOutputDto getUserProfile() {
+		Users user = validateUser();
+
+		Users userOrigin = usersRepository.findById(user.getUserId())
+			.orElseThrow(() -> new AuthException(AUTH_MEMBER_NOT_FOUND));
+
+		UserInfo userInfo = userInfoRepository
+			.findByUsers_UserId(user.getUserId())
+			.orElseThrow(() -> new AuthException(AUTH_MEMBER_NOT_FOUND));
+
+		return new ProfileOutputDto(
+			userOrigin.getProvider(),
+			userOrigin.getNickname(),
+			userOrigin.getEmail(),
+			userOrigin.getProfileImage(),
+			userInfo.getGender(),
+			userInfo.getAge(),
+			userInfo.getCareer(),
+			userInfo.getMbti()
+		);
+	}
+
+	@Override
+	@Transactional
+	public void editUserProfile(ProfileInputDto dto) {
+		Users user = validateUser();
+
+		Users userOrigin = usersRepository.findById(user.getUserId())
+			.orElseThrow(() -> new AuthException(AUTH_MEMBER_NOT_FOUND));
+
+		UserInfo userInfo = userInfoRepository
+			.findByUsers_UserId(user.getUserId())
+			.orElseThrow(() -> new AuthException(AUTH_MEMBER_NOT_FOUND));
+
+		if (dto.getNickname() != null)
+			userOrigin.modifyNickname(dto.getNickname());
+		if (dto.getProfileImage() != null)
+			userOrigin.modifyProfileUrl(dto.getProfileImage());
+		if (dto.getGender() != null)
+			userInfo.modifyGender(dto.getGender());
+		if (dto.getAge() != null)
+			userInfo.modifyAge(dto.getAge());
+		if (dto.getCareer() != null)
+			userInfo.modifyCareer(dto.getCareer());
+		if (dto.getMbti() != null)
+			userInfo.modifyMbti(dto.getMbti());
+
+	}
+
+	@Override
+	public UserSettingDto getUserSetting() {
+		Users user = validateUser();
+		UserSetting setting = userSettingRepository
+			.findByUsers_UserId(user.getUserId())
+			.orElseThrow(() -> new AuthException(AUTH_MEMBER_NOT_FOUND));
+
+		return UserSettingDto.fromEntity(setting);
+	}
+
+	@Override
+	@Transactional
+	public void editUserSetting(UserSettingDto dto) {
+		Users user = validateUser();
+		UserSetting setting = userSettingRepository
+			.findByUsers_UserId(user.getUserId())
+			.orElseThrow(() -> new AuthException(AUTH_MEMBER_NOT_FOUND));
+		setting.modifyDarkmode(dto.isDarkmode());
+		if (dto.getBotImage() != null)
+			setting.modifyBotImage(dto.getBotImage());
+		if (dto.getBotCustom() != null)
+			setting.modifyBotCustom(dto.getBotCustom());
+		setting.modifyAlarm(dto.isAlarm());
+	}
 }

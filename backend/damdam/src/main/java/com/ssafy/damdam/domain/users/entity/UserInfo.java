@@ -2,7 +2,17 @@ package com.ssafy.damdam.domain.users.entity;
 
 import com.ssafy.damdam.global.audit.BaseTimeEntityWithUpdatedAt;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import lombok.Getter;
 
 @Getter
@@ -41,5 +51,21 @@ public class UserInfo extends BaseTimeEntityWithUpdatedAt {
 		userInfo.career = "";
 		userInfo.mbti = "";
 		return userInfo;
+	}
+
+	public void modifyGender(Gender gender) {
+		this.gender = gender;
+	}
+
+	public void modifyAge(Age age) {
+		this.age = age;
+	}
+
+	public void modifyCareer(String career) {
+		this.career = career;
+	}
+
+	public void modifyMbti(String mbti) {
+		this.mbti = mbti;
 	}
 }
