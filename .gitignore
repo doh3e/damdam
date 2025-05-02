@@ -132,6 +132,7 @@ local.properties
 # Project specific
 /backend/.idea/
 /backend/.gitignore
+
 /backend/damdam/.gitignore
 /backend/damdam/gradle/wrapper/gradle-wrapper.jar
 /backend/damdam/build/
@@ -176,6 +177,7 @@ __pycache__/
 psd
 thumb
 sketch
+
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/react,nextjs,node
