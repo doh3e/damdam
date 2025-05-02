@@ -132,6 +132,7 @@ local.properties
 # Project specific
 /backend/.idea/
 /backend/.gitignore
+
 /backend/damdam/.gitignore
 /backend/damdam/gradle/wrapper/gradle-wrapper.jar
 /backend/damdam/build/
