@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         DOCKER_COMPOSE_DIR = '/home/ubuntu/springboot-postgres'
+        DOCKER_CMD = '/usr/bin/docker'   // docker 경로 명시
     }
 
     stages {
@@ -10,10 +11,10 @@ pipeline {
             steps {
                 dir("${DOCKER_COMPOSE_DIR}") {
                     echo '[INFO] 기존 컨테이너 종료'
-                    sh 'docker compose down'
+                    sh "${DOCKER_CMD} compose down"
 
                     echo '[INFO] 새로 빌드 및 실행'
-                    sh 'docker compose up -d --build'
+                    sh "${DOCKER_CMD} compose up -d --build"
                 }
             }
         }
