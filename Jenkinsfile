@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_COMPOSE_DIR = '/home/ubuntu/springboot-postgres'
+        DOCKER_COMPOSE_DIR = '/var/jenkins_home/springboot-postgres'
         DOCKER_CMD = '/usr/bin/docker'   // docker 경로 명시
     }
 
