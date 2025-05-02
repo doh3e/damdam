@@ -2,25 +2,30 @@ pipeline {
     agent any
 
     stages {
-        stage('Clone') {
+        stage('Build Jar') {
             steps {
-                echo '✅ 소스코드 가져오는 중...'
-                checkout scm
+                sh 'cd demo/demo && ./gradlew clean build'
             }
         }
 
-        stage('Build') {
+        stage('Copy Jar') {
             steps {
-                echo '🔨 빌드 중...'
-                // 여기에 빌드 명령어 입력 (예: sh 'npm install', ./gradlew build 등)
+                sh 'cp demo/demo/build/libs/demo-0.0.1-SNAPSHOT.jar springboot-postgres/'
             }
         }
 
-        stage('Deploy') {
+        stage('Docker Build & Run') {
             steps {
-                echo '🚀 배포 단계'
-                // 예시: SSH 연결해서 서버에 배포
+                dir('springboot-postgres') {
+                    sh '''
+                    docker stop springboot-app || true
+                    docker rm springboot-app || true
+                    docker build -t springboot-app .
+                    docker run -d --name springboot-app -p 8080:8080 springboot-app
+                    '''
+                }
             }
         }
     }
 }
+

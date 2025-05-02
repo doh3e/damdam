@@ -1,12 +1,13 @@
 # Build outputs and directories
-.gradle
+.gradle/
 build/
 bin/
 out/
 dist/
+tmp/
+target/
 nbbuild/
 nbdist/
-tmp/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
@@ -24,15 +25,15 @@ tmp/
 .idea_modules/
 
 ### Eclipse ###
-.metadata
-.apt_generated
+.metadata/
+.apt_generated/
 .classpath
 .factorypath
 .project
-.settings
+.settings/
 .springBeans
 .sts4-cache
-.target
+.target/
 .cache-main
 .scala_dependencies
 .worksheet
@@ -55,13 +56,15 @@ tmp/
 !.vscode/*.code-snippets
 .history/
 .history
-.ionide
-
-### STS ###
-.springBeans
+.ionide/
 
 # Secrets and API Keys
 application-API-KEY.properties
+.env
+*.env.local
+application-*.yml
+application-*.properties
+secret.*
 
 # Java specific
 *.class
@@ -113,8 +116,7 @@ $RECYCLE.BIN/
 *.msp
 *.lnk
 
-
-# Other misc files
+# Logs and temporary files
 logs/
 *.log
 *.bak
@@ -125,18 +127,52 @@ local.properties
 **/*.backup.*
 **/*.back.*
 *.sublime*
-psd
-thumb
-sketch
-node_modules/
-bower_components/
+*.swo
 
-/backend/.idea/*
+# Project specific
+/backend/.idea/
 /backend/.gitignore
 /backend/damdam/.gitignore
 /backend/damdam/gradle/wrapper/gradle-wrapper.jar
-/backend/damdam/build
+/backend/damdam/build/
 /backend/damdam/.gradle/
 /backend/damdam/.idea/
 /backend/damdam/help.md
+/backend/damdam/src/main/generated/
 /backend/damdam/src/main/resources/application-API-KEY.properties
+venv/
+/venv
+
+# Node.js (for frontend)
+node_modules/
+bower_components/
+npm-debug.log
+.yarn/
+
+# Python related
+__pycache__/
+/*.py[cod]
+*.egg-info/
+
+# Jenkins
+/jenkins-data/
+/secrets/
+/workspace/
+
+# Docker
+*.jar
+*.war
+*.ear
+
+# SSH / Security Keys
+*.pem
+*.key
+*.crt
+*.pub
+*.enc
+*.jks
+
+# Misc
+psd
+thumb
+sketch
