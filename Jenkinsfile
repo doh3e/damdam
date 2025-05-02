@@ -1,30 +1,38 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_COMPOSE_DIR = '/home/ubuntu/springboot-postgres'
+    }
+
     stages {
-        stage('Build Jar') {
+        stage('Clone Repository') {
             steps {
-                sh 'cd demo/demo && ./gradlew clean build'
+                echo '[INFO] 최신 코드 가져오기 (이미 Jenkins가 알아서 Git Pull 했으면 이 스테이지 생략 가능)'
+                // Git SCM 자동 연동되어 있으면 이 스테이지는 Jenkins가 기본으로 처리하니까 없어도 됨
             }
         }
 
-        stage('Copy Jar') {
+        stage('Build and Deploy') {
             steps {
-                sh 'cp demo/demo/build/libs/demo-0.0.1-SNAPSHOT.jar springboot-postgres/'
-            }
-        }
+                echo '[INFO] springboot-postgres 디렉토리로 이동'
+                dir("${DOCKER_COMPOSE_DIR}") {
+                    echo '[INFO] 기존 컨테이너 down'
+                    sh 'sudo docker compose down'
 
-        stage('Docker Build & Run') {
-            steps {
-                dir('springboot-postgres') {
-                    sh '''
-                    docker stop springboot-app || true
-                    docker rm springboot-app || true
-                    docker build -t springboot-app .
-                    docker run -d --name springboot-app -p 8080:8080 springboot-app
-                    '''
+                    echo '[INFO] docker-compose 새로 build 및 up'
+                    sh 'sudo docker compose up -d --build'
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            echo '[INFO] 🎉 배포 성공!'
+        }
+        failure {
+            echo '[ERROR] ❌ 배포 실패!'
         }
     }
 }
