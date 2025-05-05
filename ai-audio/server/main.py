@@ -46,9 +46,9 @@ async def analyze(file: UploadFile=File(...)):
 
 @app.exception_handler(InvalidAudioFormatError)
 async def invalid_audio_format_handler(request: Request, exc: InvalidAudioFormatError):
-    return JSONResponse(
-        status_code=400,
-        content={"message": "input file format error", "detail": exc.detail}
-    )
+    return JSONResponse(content={
+            "message": "input file format error",
+            "detail": exc.detail
+        }, status_code=400)
 
 
