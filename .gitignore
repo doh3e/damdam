@@ -178,8 +178,6 @@ psd
 thumb
 sketch
 
-
-
 # Created by https://www.toptal.com/developers/gitignore/api/react,nextjs,node
 # Edit at https://www.toptal.com/developers/gitignore?templates=react,nextjs,node
 
@@ -368,3 +366,11 @@ thumb
 sketch
 
 # End of https://www.toptal.com/developers/gitignore/api/react,nextjs,node
+# SpecStory explanation file
+.specstory/.what-is-this.md
+
+# Cursor specific
+/.cursor/
+
+# SpecStory files
+/.specstory/
