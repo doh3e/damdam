@@ -1,7 +1,5 @@
 package com.ssafy.damdam.domain.users.dto.user;
 
-import java.time.LocalDateTime;
-
 import com.ssafy.damdam.domain.users.entity.UserSetting;
 import com.ssafy.damdam.domain.users.entity.Users;
 
@@ -26,7 +24,6 @@ public class UserSettingDto {
 	private boolean isAlarm;
 	private String botImage;
 	private String botCustom;
-	private LocalDateTime UpdatedAt;
 
 	public static UserSettingDto fromEntity(UserSetting setting) {
 		return UserSettingDto.builder()
