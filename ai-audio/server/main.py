@@ -19,10 +19,10 @@ async def analyze(file: UploadFile=File(...)):
     content_type = file.content_type
 
     if content_type not in ALLOWED_AUDIO_TYPES:
-        raise InvalidAudioFormatError(f"now allowed file format: {content_type}")
+        raise InvalidAudioFormatError(detail=f"now allowed file format: {content_type}")
 
     # content = await file.read()
-    
+
     #---------- 음성 파일 임시 저장 후 피처 추출
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
         tmp.write(await file.read())
@@ -34,12 +34,14 @@ async def analyze(file: UploadFile=File(...)):
     finally:
         os.remove(tmp_path)
 
+    #---------- 모델 예측
+    result = model.predict(features)
     
     return JSONResponse(content={
         "filename": filename,
         "content_type": content_type,
-        "features": features.shape,
-        "message": "file upload complete"
+        "result": result,
+        "message": "success"
     }, status_code=200)
 
 @app.exception_handler(InvalidAudioFormatError)
