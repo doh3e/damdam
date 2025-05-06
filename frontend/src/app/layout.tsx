@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Noto_Sans_KR } from 'next/font/google';
 // 전역 스타일시트를 가져옵니다. Tailwind CSS 설정이 여기에 포함됩니다.
 import '@/app/styles/globals.css';
 // FSD 구조에 따라 shared/lib에서 유틸리티 함수를 가져옵니다.
@@ -9,7 +9,7 @@ import { BottomNavigation } from '@/widgets/BottomNavigation'; // BottomNavigati
 
 // Google Fonts에서 Inter 폰트를 사용합니다. (선택 사항, 다른 폰트로 변경 가능)
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
-
+const nonoSans = Noto_Sans_KR({subsets: ['latin'],variable: '--font-sans'  })
 /**
  * 애플리케이션의 메타데이터를 정의합니다. 검색 엔진 최적화(SEO) 및 탭 제목 등에 사용됩니다.
  * @see https://nextjs.org/docs/app/building-your-application/optimizing/metadata
@@ -33,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" suppressHydrationWarning>
-      <body className={cn('min-h-screen bg-muted font-sans antialiased', inter.variable)}>
+      <body className={cn('min-h-screen bg-muted font-sans antialiased', nonoSans.variable)}>
         {/* === 앱 전체 뷰 컨테이너 === */}
         <div className="mx-auto flex min-h-screen max-w-screen-sm flex-col bg-background shadow-md">
           {/* === 헤더 영역 === */}
