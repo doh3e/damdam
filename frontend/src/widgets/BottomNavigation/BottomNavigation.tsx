@@ -55,8 +55,8 @@ const BottomNavigation = () => {
               // text-xs: 작은 글씨 크기
               // cn 함수로 조건부 스타일링: 활성(isActive) 상태일 때 글자색 변경 (예: text-primary)
               className={cn(
-                'flex flex-col items-center justify-center text-xs text-muted-foreground hover:text-primary transition-colors',
-                isActive && 'text-primary' // 활성 상태일 때 적용될 클래스
+                'flex flex-col items-center justify-center text-xs transition-colors',
+                isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
               )}
             >
               {/* 아이콘 컴포넌트 렌더링 */}
