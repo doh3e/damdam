@@ -40,7 +40,7 @@ public class UserInfo extends BaseTimeEntityWithUpdatedAt {
 	@Column(name = "career", length = 100)
 	private String career;
 
-	@Column(name = "mbti", length = 4)
+	@Column(name = "mbti", length = 8)
 	private Mbti mbti;
 
 	public static UserInfo createDefaultInfo(Users user) {

@@ -16,7 +16,6 @@ import com.ssafy.damdam.domain.users.dto.auth.CustomOAuth2User;
 import com.ssafy.damdam.domain.users.dto.auth.UserDto;
 import com.ssafy.damdam.domain.users.entity.Users;
 import com.ssafy.damdam.domain.users.repository.UsersRepository;
-import com.ssafy.damdam.global.util.jwt.JwtUtil;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -37,16 +36,21 @@ public class JwtFilter extends OncePerRequestFilter {
 	private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
 	private static final List<String> NO_CHECK_URLS = Arrays.asList(
-			"/", "/ws/**", "/wss/**",
-			"/login", "/login/**",
-			"/oauth2/**", "/oauth2/authorization/**",
-			"/login/oauth2/**", "/error"
+		"/", "/ws/**", "/wss/**",
+		"/login", "/login/**",
+		"/oauth2/**", "/oauth2/authorization/**",
+		"/login/oauth2/**", "/error",
+		// Swagger UI & API Docs
+		"/swagger-ui/**",
+		"/v3/api-docs/**",
+		"/swagger-resources/**",
+		"/webjars/**"
 	);
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request,
-									HttpServletResponse response,
-									FilterChain filterChain) throws ServletException, IOException {
+		HttpServletResponse response,
+		FilterChain filterChain) throws ServletException, IOException {
 
 		String path = request.getRequestURI();
 
@@ -79,20 +83,20 @@ public class JwtFilter extends OncePerRequestFilter {
 
 		// DB에서 사용자 조회
 		Users userEntity = usersRepository.findById(userId)
-				.orElseThrow(() -> new UsernameNotFoundException("User not found: " + userId));
+			.orElseThrow(() -> new UsernameNotFoundException("User not found: " + userId));
 
 		// DTO로 변환
 		UserDto userDto = UserDto.fromEntity(userEntity);
 
 		// CustomOAuth2User 생성
 		CustomOAuth2User principal = new CustomOAuth2User(
-				userDto,
-				Collections.emptyMap(),
-				"personalId"
+			userDto,
+			Collections.emptyMap(),
+			"personalId"
 		);
 
 		Authentication authToken = new UsernamePasswordAuthenticationToken(
-				principal, null, principal.getAuthorities()
+			principal, null, principal.getAuthorities()
 		);
 		SecurityContextHolder.getContext().setAuthentication(authToken);
 

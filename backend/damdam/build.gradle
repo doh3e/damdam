@@ -69,7 +69,7 @@ dependencies {
     implementation 'org.apache.httpcomponents.client5:httpclient5'
 
     /* Swagger-ui */
-    implementation group: 'io.swagger.core.v3', name: 'swagger-annotations', version: '2.2.27'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 
 }
 
