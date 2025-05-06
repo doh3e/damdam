@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  springboot-app:
+    image: demo:latest   # 네가 빌드한 스프링부트 어플리케이션 이미지
+    container_name: springboot-app
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/mydb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_REDIS_HOST=redis
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - backend
+
+  postgres:
+    image: postgres:17
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=mydb
+    ports:
+      - "5432:5432"
+    networks:
+      - backend
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+
