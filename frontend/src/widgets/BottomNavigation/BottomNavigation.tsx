@@ -27,6 +27,7 @@ const navItems: NavItem[] = [
 
 /**
  * BottomNavigation 위젯 컴포넌트: 애플리케이션 하단에 고정되어 주요 페이지로 이동하는 네비게이션 바입니다.
+ * 이 컴포넌트는 부모 요소에 의해 너비가 제어됩니다. (RootLayout의 앱 뷰 컨테이너)
  * @returns {JSX.Element} BottomNavigation 컴포넌트 엘리먼트
  */
 const BottomNavigation = () => {
@@ -34,9 +35,11 @@ const BottomNavigation = () => {
   const pathname = usePathname();
 
   return (
-    <nav className="sticky bottom-0 z-50 w-full border-t bg-background">
-      {/* 네비게이션 아이템들을 담는 컨테이너 (flexbox 사용) */}
-      <div className="container mx-auto flex h-16 max-w-screen-sm items-center justify-around">
+    <nav className="sticky bottom-0 z-50 border-t bg-background">
+      {/* 네비게이션 아이템들을 담는 내부 컨테이너 (높이, flex 정렬 유지) */}
+      <div className="flex h-16 items-center justify-around px-4">
+        {' '}
+        {/* 양 옆 패딩(px-4) 추가 */}
         {/* navItems 배열을 순회하며 각 네비게이션 링크 생성 */}
         {navItems.map((item) => {
           // 현재 경로(pathname)가 해당 아이템의 경로(href)로 시작하는지 확인 (하위 경로도 활성 처리 위함)

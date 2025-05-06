@@ -2,11 +2,12 @@ import React from 'react';
 
 /**
  * MyPage 컴포넌트: '/mypage' 경로에 해당하는 마이페이지입니다.
+ * 페이지 너비는 RootLayout에 의해 제어됩니다.
  * @returns {JSX.Element} 마이페이지 엘리먼트
  */
 export default function MyPage() {
   return (
-    <div className="container mx-auto p-4">
+    <div className="p-4">
       {/* 페이지 제목 */}
       <h1 className="text-2xl font-bold mb-4">마이페이지</h1>
       {/* 페이지 내용 Placeholder */}
