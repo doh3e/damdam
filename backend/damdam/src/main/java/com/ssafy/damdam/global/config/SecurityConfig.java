@@ -70,7 +70,14 @@ public class SecurityConfig {
 					"/oauth2/**", "/login/oauth2/**",
 					"/ws-connect", "/ws-connect/**",
 					"/css/**", "/js/**", "/images/**", "/assets/**",
-					"/dist/**", "/plugins/**", "/resources/**"
+					"/dist/**", "/plugins/**", "/resources/**",
+					// Swagger UI 및 API Docs
+					"/swagger-ui.html",
+					"/swagger-ui/**",
+					"/v3/api-docs/**",
+					"/v3/api-docs",
+					"/swagger-resources/**",
+					"/webjars/**"
 				).permitAll()
 				.anyRequest().authenticated()
 			)

@@ -2,6 +2,7 @@ package com.ssafy.damdam.domain.users.dto.user;
 
 import com.ssafy.damdam.domain.users.entity.Age;
 import com.ssafy.damdam.domain.users.entity.Gender;
+import com.ssafy.damdam.domain.users.entity.Mbti;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,5 +22,5 @@ public class ProfileInputDto {
 	private Gender gender;
 	private Age age;
 	private String career;
-	private String mbti;
+	private Mbti mbti;
 }
