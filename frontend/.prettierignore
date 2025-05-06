@@ -1,0 +1,10 @@
+# Prettier 포맷팅에서 제외할 경로 및 파일 작성
+
+# 빌드 결과물, 테스트 커버리지 등
+build
+coverage
+node_modules
+
+# IDE/OS 특정 파일
+.DS_Store
+.vscode
