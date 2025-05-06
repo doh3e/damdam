@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_COMPOSE_DIR = '/var/jenkins_home/springboot-postgres'
-        DOCKER_CMD = '/usr/bin/docker'   // docker 경로 명시
+        DOCKER_CMD = 'docker'   // docker 경로 명시
     }
 
     stages {
