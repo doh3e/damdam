@@ -30,14 +30,15 @@ public class Counseling extends BaseTimeEntityWithUpdatedAt {
 	@JoinColumn(name = "user_id", nullable = false)
 	private Users users;
 
-	@Column(name = "is_closed", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
-	private Boolean isClosed;
+	@Column(name = "is_closed", nullable = false)
+	private Boolean isClosed = false;
 
 	protected Counseling() {
 	}
 
 	public Counseling(Users user) {
 		this.users = user;
+		this.isClosed = false;
 	}
 
 }

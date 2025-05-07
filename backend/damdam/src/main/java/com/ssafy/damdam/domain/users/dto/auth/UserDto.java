@@ -7,8 +7,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
 /**
  * OAuth2 인증과 사용자 정보를 담는 DTO
  */
@@ -31,19 +29,13 @@ public class UserDto {
 	public static UserDto createUserDto(OAuth2Response oAuth2Response) {
 		String providerId = oAuth2Response.getProviderId();
 		Provider provider = oAuth2Response.getProvider();
-
-		String shortId = providerId.length() >= 6
-				? providerId.substring(0, 6)
-				: providerId;
-		String randomPart = UUID.randomUUID().toString().substring(0, 6);
-		String generatedNickname = provider + "_" + shortId + "_" + randomPart;
 		String personalId = provider + "_" + providerId;
 
 		return UserDto.builder()
 				.provider(provider)
 				.personalId(personalId)
 				.email(oAuth2Response.getEmail())
-				.nickname(generatedNickname)
+				.nickname("내담이")
 				.role("ROLE_USER")
 				.build();
 	}
