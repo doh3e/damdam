@@ -14,7 +14,7 @@ pipeline {
       }
     }
 
-  stages {
+
     stage('Build with DIND') {
       // 이 스테이지만 DIND 에이전트에서 실행
       agent {
@@ -34,7 +34,7 @@ pipeline {
         sh 'docker-compose up --build -d'         // docker-compose 사용 예시
       }
     }
-  }
+  
 
     stage('Docker Compose Down') {
       steps {
