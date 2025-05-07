@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    options {
+        skipDefaultCheckout()
+    }
+
     environment {
         COMPOSE_PROJECT_NAME = "k12s202-develop"
     }
