@@ -33,9 +33,8 @@ const Header = () => {
         {/* 오른쪽: 버튼 영역 (flex-1로 밀어서 오른쪽 정렬) */}
         <div className="flex flex-1 items-center justify-end space-x-2">
           {/* 로그인 버튼 */}
-          {/* TODO: 로그인 기능 구현 시 Link 경로 또는 onClick 핸들러 추가 */}
-          <Button variant="default" size="sm">
-            로그인
+          <Button variant="secondary" size="sm" asChild className='rounded-full'>
+            <Link href="/login">로그인</Link>
           </Button>
           {/* 다크 모드 토글 버튼 */}
           {/* TODO: 다크 모드 기능 구현 및 토글 로직 추가 */}
