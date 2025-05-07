@@ -1,28 +1,21 @@
 pipeline {
     agent any
 
+    environment {
+        PROJECT_DIR = "/home/ubuntu/S12P31S202"
+    }
+
     stages {
-        stage('Build Jar') {
+        stage('Checkout') {
             steps {
-                sh 'cd demo/demo && ./gradlew clean build'
+                git branch: 'develop', url: 'https://lab.ssafy.com/your-repo.git', credentialsId: 'your-credential-id'
             }
         }
 
-        stage('Copy Jar') {
+        stage('Docker Compose Build and Up') {
             steps {
-                sh 'cp demo/demo/build/libs/demo-0.0.1-SNAPSHOT.jar springboot-postgres/'
-            }
-        }
-
-        stage('Docker Build & Run') {
-            steps {
-                dir('springboot-postgres') {
-                    sh '''
-                    docker stop springboot-app || true
-                    docker rm springboot-app || true
-                    docker build -t springboot-app .
-                    docker run -d --name springboot-app -p 8080:8080 springboot-app
-                    '''
+                dir("${PROJECT_DIR}") {
+                    sh 'docker-compose up -d --build'
                 }
             }
         }

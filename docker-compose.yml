@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  backend:
+    image: backend:latest
+    build:
+      context: ./backend
+    ports:
+      - "8080:8080"
+    restart: always
+
+  frontend:
+    image: frontend:latest
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    restart: always
+
+  ai-audio:
+    image: ai-audio:latest
+    build:
+      context: ./ai-audio
+    ports:
+      - "8001:8001"
+    restart: always
+
+  ai-data:
+    image: ai-data:latest
+    build:
+      context: ./ai-data
+    ports:
+      - "8002:8002"
+    restart: always
+
