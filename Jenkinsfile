@@ -2,22 +2,37 @@ pipeline {
     agent any
 
     environment {
-        PROJECT_DIR = "/home/ubuntu/S12P31S202"
+        DOCKER_COMPOSE_DIR = "/var/jenkins_home/S12P31S202"  // docker-compose.yml 있는 경로
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'develop', url: 'https://lab.ssafy.com/s12-final/S12P31S202.git', credentialsId: 'gitlab-token'
+                checkout scm
             }
         }
 
         stage('Docker Compose Build and Up') {
             steps {
-                dir("${PROJECT_DIR}") {
-                    sh 'docker-compose up -d --build'
+                dir("${DOCKER_COMPOSE_DIR}") {
+                    sh '''
+                    echo "Building docker images..."
+                    docker-compose build
+
+                    echo "Bringing up containers..."
+                    docker-compose up -d
+                    '''
                 }
             }
+        }
+    }
+
+    post {
+        failure {
+            echo "Build Failed!"
+        }
+        success {
+            echo "Build Succeeded!"
         }
     }
 }
