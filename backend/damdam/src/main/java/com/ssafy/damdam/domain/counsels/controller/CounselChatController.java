@@ -1,20 +1,15 @@
 package com.ssafy.damdam.domain.counsels.controller;
 
-import com.ssafy.damdam.domain.users.dto.auth.CustomOAuth2User;
+import java.security.Principal;
+
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 
 import com.ssafy.damdam.domain.counsels.dto.ChatInputDto;
 import com.ssafy.damdam.domain.counsels.service.ChatService;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.security.Principal;
 
 @Controller
 @RequiredArgsConstructor

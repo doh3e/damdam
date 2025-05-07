@@ -1,18 +1,19 @@
 package com.ssafy.damdam.domain.counsels.service;
 
-import com.ssafy.damdam.domain.counsels.dto.ChatInputDto;
-import com.ssafy.damdam.domain.counsels.dto.ChatOutputDto;
-import com.ssafy.damdam.global.redis.CounselSession;
-import com.ssafy.damdam.global.redis.CounselSessionRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
+import com.ssafy.damdam.domain.counsels.dto.ChatInputDto;
+import com.ssafy.damdam.domain.counsels.dto.ChatOutputDto;
+import com.ssafy.damdam.global.redis.CounselSession;
+import com.ssafy.damdam.global.redis.CounselSessionRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -34,12 +35,12 @@ public class ChatServiceImpl implements ChatService {
 	public void handleChat(Long roomId, Long userId, ChatInputDto input) {
 		// Redis 세션 로드 또는 초기화
 		CounselSession session = counselSessionRepository.findById(roomId)
-				.orElseGet(() -> {
-					CounselSession s = new CounselSession();
-					s.setCounsId(roomId);
-					s.setTokenCount(20);
-					return s;
-				});
+			.orElseGet(() -> {
+				CounselSession s = new CounselSession();
+				s.setCounsId(roomId);
+				s.setTokenCount(20);
+				return s;
+			});
 
 		// 토큰 차감 및 세션 저장
 		session.decrementToken();
@@ -53,33 +54,33 @@ public class ChatServiceImpl implements ChatService {
 
 		// 2) 테스트용 AI 응답 생성
 		ChatOutputDto output = ChatOutputDto.builder()
-				.sender("AI")
-				.isVoice(false)
-				.message("이것은 테스트용 응답입니다. 유저가 보낸 메시지: '" + input.getMessage() + "'")
-				.timestamp(LocalDateTime.now().toString())
-				.tokenCount(session.getTokenCount())
-				.happiness(50)
-				.angry(10)
-				.disgust(5)
-				.fear(5)
-				.neutral(30)
-				.sadness(0)
-				.surprise(0)
-				.build();
+			.sender("AI")
+			.isVoice(false)
+			.message("이것은 테스트용 응답입니다. 유저가 보낸 메시지: '" + input.getMessage() + "'")
+			.timestamp(LocalDateTime.now())
+			.tokenCount(session.getTokenCount())
+			.happiness(50)
+			.angry(10)
+			.disgust(5)
+			.fear(5)
+			.neutral(30)
+			.sadness(0)
+			.surprise(0)
+			.build();
 
 		// AI 응답 기록
 		redisTemplate.opsForList().rightPush(listKey, output);
 
 		// WebSocket 브로드캐스트: 사용자 메시지
 		messagingTemplate.convertAndSend(
-				"/sub/counsels/" + roomId + "/chat",
-				input
+			"/sub/counsels/" + roomId + "/chat",
+			input
 		);
 
 		// WebSocket 브로드캐스트: AI 응답
 		messagingTemplate.convertAndSend(
-				"/sub/counsels/" + roomId + "/chat",
-				output
+			"/sub/counsels/" + roomId + "/chat",
+			output
 		);
 
 		log.info("[Room {}] Input and Test Output saved to Redis and broadcast", roomId);
