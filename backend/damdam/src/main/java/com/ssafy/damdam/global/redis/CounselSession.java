@@ -1,13 +1,15 @@
 package com.ssafy.damdam.global.redis;
 
+import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
 
 @NoArgsConstructor
-@Getter
+@AllArgsConstructor
+@Builder
+@Data
 @RedisHash(value = "counsel:session")
 public class CounselSession {
 	@Id
@@ -20,13 +22,13 @@ public class CounselSession {
 	private int tokenCount;
 
 	// 발화자
-	private String talker;
+	private String sender;
 
 	// 타임스탬프
-	private String timestamp;
+	private LocalDateTime timestamp;
 
 	// 음성대화 여부
-	private boolean isVoice;
+	private Boolean isVoice;
 
 	// 상담 내용
 	private String content;
@@ -47,9 +49,7 @@ public class CounselSession {
 	private String surprise;
 
 	public void decrementToken() {
-		if (this.tokenCount > 0) {
-			this.tokenCount--;
-		}
+		if (tokenCount > 0) tokenCount--;
 	}
 
 }

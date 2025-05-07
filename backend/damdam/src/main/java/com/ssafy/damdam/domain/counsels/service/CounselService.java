@@ -14,4 +14,6 @@ public interface CounselService {
 	CounsOutputDto getCounsel(Long id);
 
 	void deleteCounsel(Long counsId);
+
+	void closeCounsel(Long counsId);
 }

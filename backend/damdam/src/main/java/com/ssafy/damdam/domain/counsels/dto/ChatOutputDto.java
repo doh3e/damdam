@@ -1,6 +1,8 @@
 package com.ssafy.damdam.domain.counsels.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -8,11 +10,11 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class ChatOutputDto {
-	private Long counsId;
-	private String talker;
-	private boolean isVoice;
-	private String content;
+	private String sender;
+	private Boolean isVoice;
+	private String message;
 
 	/** ISO 형식 타임스탬프 (서버에서 추가) */
 	private String timestamp;
@@ -28,4 +30,7 @@ public class ChatOutputDto {
 	private int neutral;
 	private int sadness;
 	private int surprise;
+
+	public ChatOutputDto(Long roomId, String sender, boolean voice, String message, String string, int tokenCount, int i, int i1, int i2, int i3, int i4, int i5) {
+	}
 }

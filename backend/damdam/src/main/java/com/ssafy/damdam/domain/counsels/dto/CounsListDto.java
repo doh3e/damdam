@@ -17,5 +17,6 @@ public class CounsListDto {
 	private Long counsId;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
+	private Boolean isClosed;
 
 }

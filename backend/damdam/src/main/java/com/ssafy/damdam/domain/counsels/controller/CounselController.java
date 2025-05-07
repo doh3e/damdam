@@ -3,13 +3,9 @@ package com.ssafy.damdam.domain.counsels.controller;
 import java.net.URI;
 import java.util.List;
 
+import com.ssafy.damdam.domain.counsels.service.ChatService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.ssafy.damdam.domain.counsels.dto.CounsListDto;
 import com.ssafy.damdam.domain.counsels.dto.CounsOutputDto;
@@ -26,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CounselController {
 
 	private final CounselService counselService;
+	private final ChatService chatService;
 
 	@GetMapping("")
 	public ResponseEntity<List<CounsListDto>> showCounselList() {
@@ -52,4 +49,16 @@ public class CounselController {
 		counselService.deleteCounsel(counsId);
 		return ResponseEntity.ok("상담이 삭제되었습니다.");
 	}
+
+	@PatchMapping("/{counsId}")
+	public ResponseEntity<Void> closeCounsel(@PathVariable Long counsId) {
+		// 1) RDB에서 isClosed 플래그 업데이트
+		counselService.closeCounsel(counsId);
+
+		// 2) Redis에 쌓인 대화 이력 삭제
+		chatService.endCounsel(counsId);
+
+		return ResponseEntity.noContent().build();
+	}
+
 }

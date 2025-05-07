@@ -81,4 +81,9 @@ public class CounselServiceImpl implements CounselService {
 
 		counselingRepository.delete(counseling);
 	}
+
+	@Override
+	public void closeCounsel(Long counsId) {
+
+	}
 }
