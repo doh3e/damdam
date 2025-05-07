@@ -10,7 +10,7 @@ pipeline {
             steps {
                 sh '''
                 echo "[INFO] Stopping and removing existing containers..."
-                cd ~/S12P31S202
+                cd /home/ubuntu/S12P31S202
                 docker-compose down --volumes --remove-orphans
                 '''
             }
@@ -20,7 +20,7 @@ pipeline {
             steps {
                 sh '''
                 echo "[INFO] Building Docker images..."
-                cd ~/S12P31S202
+                cd /home/ubuntu/S12P31S202
                 docker-compose build
 
                 echo "[INFO] Starting containers..."
