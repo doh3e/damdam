@@ -2,54 +2,42 @@ version: '3.8'
 
 services:
   backend:
-    container_name: backend
-    image: backend:latest
     build:
       context: ./backend
+    container_name: backend
     ports:
-      - "8080:8080"
-    restart: always
+      - "8082:8082"
+    networks:
+      - app-network
 
   frontend:
-    container_name: frontend
-    image: frontend:latest
     build:
       context: ./frontend
+    container_name: frontend
     ports:
       - "3000:3000"
-    restart: always
-
-  ai-audio:
-    container_name: ai-audio
-    image: ai-audio:latest
-    build:
-      context: ./ai-audio
-    ports:
-      - "8001:8001"
-    restart: always
+    networks:
+      - app-network
 
   ai-data:
-    container_name: ai-data
-    image: ai-data:latest
     build:
       context: ./ai-data
+    container_name: ai-data
     ports:
-      - "8002:8002"
-    restart: always
+      - "8000:8000"
+    networks:
+      - app-network
 
-  jenkins:
-    container_name: jenkins
+  ai-audio:
     build:
-      context: ./jenkins
-    user: root
+      context: ./ai-audio
+    container_name: ai-audio
     ports:
-      - "9090:8080"
-      - "50000:50000"
-    volumes:
-      - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
-    restart: always
+      - "8001:8001"
+    networks:
+      - app-network
 
-volumes:
-  jenkins_home:
+networks:
+  app-network:
+    driver: bridge
 

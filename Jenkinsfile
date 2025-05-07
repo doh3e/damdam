@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    options {
-        skipDefaultCheckout()
-    }
-
     environment {
         COMPOSE_PROJECT_NAME = "k12s202-develop"
     }
@@ -14,6 +10,7 @@ pipeline {
             steps {
                 sh '''
                 echo "[INFO] Stopping and removing existing containers..."
+                cd ~/S12P31S202
                 docker-compose down --volumes --remove-orphans
                 '''
             }
@@ -23,6 +20,7 @@ pipeline {
             steps {
                 sh '''
                 echo "[INFO] Building Docker images..."
+                cd ~/S12P31S202
                 docker-compose build
 
                 echo "[INFO] Starting containers..."
