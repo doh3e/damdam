@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        COMPOSE_PROJECT_NAME = "k12s202-develop"
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -8,27 +12,34 @@ pipeline {
             }
         }
 
+        stage('Docker Compose Down') {
+            steps {
+                sh '''
+                echo "[INFO] Stopping and removing existing containers..."
+                docker-compose down --volumes --remove-orphans
+                '''
+            }
+        }
+
         stage('Docker Compose Build and Up') {
             steps {
-                dir("${WORKSPACE}") {
-                    sh '''
-                    echo "Building docker images..."
-                    docker-compose build
+                sh '''
+                echo "[INFO] Building Docker images..."
+                docker-compose build
 
-                    echo "Bringing up containers..."
-                    docker-compose up -d
-                    '''
-                }
+                echo "[INFO] Starting containers..."
+                docker-compose up -d
+                '''
             }
         }
     }
 
     post {
-        failure {
-            echo "Build Failed!"
+        always {
+            echo 'Pipeline finished.'
         }
-        success {
-            echo "Build Succeeded!"
+        failure {
+            echo 'Pipeline failed!'
         }
     }
 }

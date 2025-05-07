@@ -39,7 +39,9 @@ services:
 
   jenkins:
     container_name: jenkins
-    image: jenkins/jenkins:latest
+    build:
+      context: ./jenkins
+    user: root
     ports:
       - "9090:8080"
       - "50000:50000"
