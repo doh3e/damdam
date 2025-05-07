@@ -107,11 +107,11 @@ public class UserServiceImpl implements UserService {
 		UserSetting setting = userSettingRepository
 			.findByUsers_UserId(user.getUserId())
 			.orElseThrow(() -> new AuthException(AUTH_MEMBER_NOT_FOUND));
-		setting.modifyDarkmode(dto.isDarkmode());
+		setting.modifyDarkmode(dto.getIsDarkmode());
 		if (dto.getBotImage() != null)
 			setting.modifyBotImage(dto.getBotImage());
 		if (dto.getBotCustom() != null)
 			setting.modifyBotCustom(dto.getBotCustom());
-		setting.modifyAlarm(dto.isAlarm());
+		setting.modifyAlarm(dto.getIsAlarm());
 	}
 }

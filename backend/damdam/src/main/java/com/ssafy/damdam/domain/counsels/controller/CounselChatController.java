@@ -1,5 +1,7 @@
 package com.ssafy.damdam.domain.counsels.controller;
 
+import java.security.Principal;
+
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.stereotype.Controller;
@@ -18,9 +20,10 @@ public class CounselChatController {
 	@MessageMapping("/counsels/{roomId}/chat")
 	public void handleChat(
 		@DestinationVariable Long roomId,
+		Principal principal,
 		ChatInputDto input
 	) {
-		chatService.handleChat(roomId, input);
+		Long userId = Long.valueOf(principal.getName());
+		chatService.handleChat(roomId, userId, input);
 	}
-
 }

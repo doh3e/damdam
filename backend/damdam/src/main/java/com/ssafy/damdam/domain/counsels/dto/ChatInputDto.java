@@ -1,5 +1,9 @@
 package com.ssafy.damdam.domain.counsels.dto;
 
+import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,15 +13,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatInputDto {
-	/** 상담방 ID (Redis key 로도 사용) */
-	private Long counsId;
-
-	/** 발화자 (유저 or AI) */
-	private String talker;
-
-	/** 음성 상담 여부 */
-	private boolean isVoice;
-
-	/** 실제 대화 내용 */
-	private String content;
+	private String sender;
+	private Boolean isVoice;
+	private String audioUrl;
+	private String message;
+	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+	private LocalDateTime timestamp;
 }
