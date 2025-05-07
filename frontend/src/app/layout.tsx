@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, Noto_Sans_KR } from 'next/font/google';
 // 전역 스타일시트를 가져옵니다. Tailwind CSS 설정이 여기에 포함됩니다.
 import '@/app/styles/globals.css';
@@ -6,10 +6,12 @@ import '@/app/styles/globals.css';
 import { cn } from '@/shared/lib/utils';
 import { Header } from '@/widgets/Header'; // Header 위젯 가져오기
 import { BottomNavigation } from '@/widgets/BottomNavigation'; // BottomNavigation 위젯 가져오기
+import QueryClientProviders from './providers/QueryClientProviders';
+import { ThemeProvider } from './providers/ThemeProvider';
 
 // Google Fonts에서 Inter 폰트를 사용합니다. (선택 사항, 다른 폰트로 변경 가능)
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
-const nonoSans = Noto_Sans_KR({subsets: ['latin'],variable: '--font-sans'  })
+const nonoSans = Noto_Sans_KR({ subsets: ['latin'], variable: '--font-sans' });
 /**
  * 애플리케이션의 메타데이터를 정의합니다. 검색 엔진 최적화(SEO) 및 탭 제목 등에 사용됩니다.
  * @see https://nextjs.org/docs/app/building-your-application/optimizing/metadata
@@ -17,6 +19,44 @@ const nonoSans = Noto_Sans_KR({subsets: ['latin'],variable: '--font-sans'  })
 export const metadata: Metadata = {
   title: '담담 (DAMDAM) - AI 심리상담 챗봇 서비스',
   description: '언제 어디서나 편안하게 대화하며 마음의 짐을 덜어낼 수 있는 AI 심리상담 서비스',
+  manifest: '/manifest.json', // manifest.json 경로 추가
+  icons: {
+    // 선호하는 아이콘 추가 (예: apple-touch-icon)
+    apple: '/icons/icon-192x192.png', // 예시 경로, 실제 아이콘 경로로 수정해주세요.
+  },
+  // PWA 관련 추가 메타 태그 (필요시)
+  applicationName: '담담',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: '담담이',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  openGraph: {
+    // 소셜 공유 시 정보
+    type: 'website',
+    siteName: '담담이',
+    title: { template: '%s | 담담이', default: '담담이 - AI 심리상담 챗봇' },
+    description: '언제 어디서나 편안하게 대화하며 마음의 짐을 덜어낼 수 있는 AI 심리상담 챗봇',
+    images: [{ url: '/icons/icon-512x512.png' }], // 대표 이미지, 실제 경로로 수정해주세요.
+  },
+  twitter: {
+    // 트위터 카드
+    card: 'summary_large_image', // 큰 이미지 카드 사용 권장
+    title: { template: '%s | 담담이', default: '담담이 - AI 마음상담 챗봇' },
+    description: '언제 어디서나 편안하게 대화하며 마음의 짐을 덜어낼 수 있는 AI 심리상담 챗봇',
+    images: ['/icons/icon-512x512.png'], // 대표 이미지, 실제 경로로 수정해주세요.
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#fae9de', // manifest.json의 theme_color와 일치 권장
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1, // 확대 방지
+  userScalable: false, // 확대 방지
 };
 
 /**
@@ -33,6 +73,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" suppressHydrationWarning>
+      <head /> {/* Next.js가 자동으로 head 태그 내용을 관리 (metadata, viewport 객체 활용) */}
       <body className={cn('min-h-screen bg-muted font-sans antialiased', nonoSans.variable)}>
         {/* === 앱 전체 뷰 컨테이너 === */}
         <div className="mx-auto flex min-h-screen max-w-screen-sm flex-col bg-background shadow-md">
@@ -40,7 +81,11 @@ export default function RootLayout({
           <Header />
 
           {/* === 메인 콘텐츠 영역 === */}
-          <main className="flex-1">{children}</main>
+          <main className="flex-1">
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+              <QueryClientProviders>{children}</QueryClientProviders>
+            </ThemeProvider>
+          </main>
 
           {/* === 하단 네비게이션 바 영역 === */}
           <BottomNavigation />

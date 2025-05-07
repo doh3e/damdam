@@ -1,6 +1,6 @@
 import axios, { AxiosError, type AxiosInstance, type InternalAxiosRequestConfig, type AxiosResponse } from 'axios';
 
-const API_BASE_URL = process.env.DAMDAM_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1/damdam'; // 환경 변수 또는 기본값
+const API_BASE_URL = process.env.NEXT_PUBLIC_DAMDAM_BASE_URL || 'http://localhost:8080/api/v1/damdam'; // 환경 변수 또는 기본값
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
