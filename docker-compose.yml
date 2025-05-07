@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   backend:
+    container_name: backend
     image: backend:latest
     build:
       context: ./backend
@@ -10,6 +11,7 @@ services:
     restart: always
 
   frontend:
+    container_name: frontend
     image: frontend:latest
     build:
       context: ./frontend
@@ -18,6 +20,7 @@ services:
     restart: always
 
   ai-audio:
+    container_name: ai-audio
     image: ai-audio:latest
     build:
       context: ./ai-audio
@@ -26,10 +29,24 @@ services:
     restart: always
 
   ai-data:
+    container_name: ai-data
     image: ai-data:latest
     build:
       context: ./ai-data
     ports:
       - "8002:8002"
     restart: always
+
+  jenkins:
+    container_name: jenkins
+    image: jenkins/jenkins:latest
+    ports:
+      - "9090:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    restart: always
+
+volumes:
+  jenkins_home:
 

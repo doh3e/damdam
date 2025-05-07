@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'develop', url: 'https://lab.ssafy.com/your-repo.git', credentialsId: 'your-credential-id'
+                git branch: 'develop', url: 'https://lab.ssafy.com/s12-final/S12P31S202.git', credentialsId: 'gitlab-token'
             }
         }
 
