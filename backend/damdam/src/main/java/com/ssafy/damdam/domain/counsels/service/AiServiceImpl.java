@@ -12,11 +12,11 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class AiserviceImpl implements Aiservice {
+public class AiServiceImpl implements AiService {
 
 	private final RestClient restClient;
 
-	@Value("${fastapi.base-url}")
-	private String fastApiUrl;
+	@Value("${fastapi.llm.base-url}")
+	private String fastApiLLMUrl;
 	
 }
