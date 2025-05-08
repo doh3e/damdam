@@ -9,7 +9,7 @@ WORKDIR /app/damdam
 RUN chmod +x ./gradlew
 RUN ./gradlew build -x test    # ⭐ test 빼고 build만
 
-EXPOSE 8082
+EXPOSE 8080
 
-CMD ["java", "-jar", "build/libs/*.jar"]
+CMD ["sh", "-c", "java -jar build/libs/*.jar"]
 
