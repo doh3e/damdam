@@ -24,7 +24,7 @@ pipeline {
           echo '[INFO] Stopping and removing existing containers, volumes, and orphans...'
           sh '''
             docker-compose down --volumes --remove-orphans || true
-            docker rm -f frontend frontend-ssr backend ai-data ai-audio || true
+            docker rm -f frontend frontend-ssr backend ai-data ai-audio redis postgres || true
           '''
         }
       }
