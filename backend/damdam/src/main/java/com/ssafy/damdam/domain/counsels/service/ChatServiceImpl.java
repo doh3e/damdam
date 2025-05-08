@@ -25,11 +25,7 @@ public class ChatServiceImpl implements ChatService {
 	private final SimpMessagingTemplate messagingTemplate;
 	private final RedisTemplate<String, Object> redisTemplate;
 
-	/**
-	 * 실시간 채팅 테스트용 handleChat 메서드
-	 * - 사용자 입력과 임시 AI 응답을 Redis 리스트에 순서대로 저장
-	 * - WebSocket 구독자에게 입력과 응답을 즉시 브로드캐스트
-	 */
+
 	@Override
 	@Transactional
 	public void handleChat(Long roomId, Long userId, ChatInputDto input) {
