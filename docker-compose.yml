@@ -7,6 +7,21 @@ services:
     container_name: backend
     ports:
       - "8080:8080"
+    depends_on:
+      - ai-data
+      - ai-audio
+    environment:
+      # FastAPI 서비스 URL (ai-data 컨테이너)
+      - FASTAPI_BASE_URL=http://ai-data:8001
+      # Audio 서비스 URL (ai-audio 컨테이너)
+      - AUDIO_SERVICE_URL=http://ai-audio:8002
+      # 예시: Spring 프로파일, DB/Redis 연결 정보 등
+      - SPRING_PROFILES_ACTIVE=local,API-KEY
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://your-db-host:5432/yourdb
+      - SPRING_DATASOURCE_USERNAME=youruser
+      - SPRING_DATASOURCE_PASSWORD=yourpass
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
     networks:
       - app-network
 
@@ -20,24 +35,31 @@ services:
       - app-network
 
   ai-data:
-    build:
-      context: ./ai-data
+    image: hashicorp/http-echo:latest
     container_name: ai-data
+    command: [ 
+      "-text={\"status\":\"up\"}",
+      "-status-code=200",
+      "-listen=:8001"
+    ]
     ports:
-      - "8002:8002"
+      - "8001:8001"
     networks:
       - app-network
 
   ai-audio:
-    build:
-      context: ./ai-audio
+    image: hashicorp/http-echo:latest
     container_name: ai-audio
+    command: [
+      "-text={\"status\":\"up\"}",
+      "-status-code=200",
+      "-listen=:8002"
+    ]
     ports:
-      - "8001:8001"
+      - "8002:8002"
     networks:
       - app-network
 
 networks:
   app-network:
     driver: bridge
-
