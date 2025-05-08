@@ -2,12 +2,10 @@ package com.ssafy.damdam.domain.users.service;
 
 import static com.ssafy.damdam.domain.users.exception.auth.AuthExceptionCode.*;
 
+import com.ssafy.damdam.domain.users.dto.user.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ssafy.damdam.domain.users.dto.user.ProfileInputDto;
-import com.ssafy.damdam.domain.users.dto.user.ProfileOutputDto;
-import com.ssafy.damdam.domain.users.dto.user.UserSettingDto;
 import com.ssafy.damdam.domain.users.entity.UserInfo;
 import com.ssafy.damdam.domain.users.entity.UserSetting;
 import com.ssafy.damdam.domain.users.entity.Users;
@@ -114,4 +112,24 @@ public class UserServiceImpl implements UserService {
 			setting.modifyBotCustom(dto.getBotCustom());
 		setting.modifyAlarm(dto.getIsAlarm());
 	}
+
+	@Override
+	public UserSurveyOutputDto getSurvey() {
+		Users user = validateUser();
+		return new UserSurveyOutputDto();
+	}
+
+	@Override
+	@Transactional
+	public void postSurvey(UserSurveyInputDto survey) {
+		Users user = validateUser();
+	}
+
+	@Override
+	@Transactional
+	public void deleteSurvey() {
+		Users user = validateUser();
+	}
+
+
 }
