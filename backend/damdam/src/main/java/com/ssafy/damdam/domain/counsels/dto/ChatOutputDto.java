@@ -1,6 +1,11 @@
 package com.ssafy.damdam.domain.counsels.dto;
 
+import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -8,19 +13,17 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class ChatOutputDto {
-	private Long counsId;
-	private String talker;
-	private boolean isVoice;
-	private String content;
+	private String sender;
+	private Boolean isVoice;
+	private String message;
 
-	/** ISO 형식 타임스탬프 (서버에서 추가) */
-	private String timestamp;
+	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+	private LocalDateTime timestamp;
 
-	/** 남은 토큰 수 (서버에서 decrementToken 후) */
 	private int tokenCount;
 
-	/** 감정 분석 결과 예시: 0~100 사이 값 */
 	private int happiness;
 	private int angry;
 	private int disgust;
@@ -28,4 +31,5 @@ public class ChatOutputDto {
 	private int neutral;
 	private int sadness;
 	private int surprise;
+
 }

@@ -1,5 +1,6 @@
 package com.ssafy.damdam.domain.users.dto.user;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ssafy.damdam.domain.users.entity.UserSetting;
 import com.ssafy.damdam.domain.users.entity.Users;
 
@@ -20,8 +21,8 @@ public class UserSettingDto {
 	private String profileImage;
 
 	// 봇 정보
-	private boolean isDarkmode;
-	private boolean isAlarm;
+	private Boolean isDarkmode;
+	private Boolean isAlarm;
 	private String botImage;
 	private String botCustom;
 
@@ -30,8 +31,8 @@ public class UserSettingDto {
 			.nickname(setting.getUsers().getNickname())
 			.email(setting.getUsers().getEmail())
 			.profileImage(setting.getUsers().getProfileImage())
-			.isDarkmode(setting.isDarkmode())
-			.isAlarm(setting.isAlarm())
+			.isDarkmode(setting.getIsDarkmode())
+			.isAlarm(setting.getIsAlarm())
 			.botImage(setting.getBotImage())
 			.botCustom(setting.getBotCustom())
 			.build();
