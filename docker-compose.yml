@@ -1,6 +1,33 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:17
+    container_name: postgres
+    environment:
+      - POSTGRES_DB=damdam
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=ssafy
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+
+  redis:
+    image: redis:6
+    container_name: redis
+    # Redis 설정을 CLI 플래그로 직접 전달
+    command: [
+      "redis-server",
+      "--requirepass", "ssafy!@",
+      "--maxmemory", "1gb",
+      "--maxmemory-policy", "allkeys-lru"
+    ]
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
   backend:
     build:
       context: ./backend
@@ -10,18 +37,18 @@ services:
     depends_on:
       - ai-data
       - ai-audio
+      - postgres
+      - redis
     environment:
-      # FastAPI 서비스 URL (ai-data 컨테이너)
       - FASTAPI_BASE_URL=http://ai-data:8001
-      # Audio 서비스 URL (ai-audio 컨테이너)
       - AUDIO_SERVICE_URL=http://ai-audio:8002
-      # 예시: Spring 프로파일, DB/Redis 연결 정보 등
       - SPRING_PROFILES_ACTIVE=local,API-KEY
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://your-db-host:5432/yourdb
-      - SPRING_DATASOURCE_USERNAME=youruser
-      - SPRING_DATASOURCE_PASSWORD=yourpass
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/damdam
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=ssafy
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
+      - SPRING_REDIS_PASSWORD=ssafy!@
     networks:
       - app-network
 
@@ -37,11 +64,7 @@ services:
   ai-data:
     image: hashicorp/http-echo:latest
     container_name: ai-data
-    command: [ 
-      "-text={\"status\":\"up\"}",
-      "-status-code=200",
-      "-listen=:8001"
-    ]
+    command: ["-text={\"status\":\"up\"}", "-status-code=200", "-listen=:8001"]
     ports:
       - "8001:8001"
     networks:
@@ -50,11 +73,7 @@ services:
   ai-audio:
     image: hashicorp/http-echo:latest
     container_name: ai-audio
-    command: [
-      "-text={\"status\":\"up\"}",
-      "-status-code=200",
-      "-listen=:8002"
-    ]
+    command: ["-text={\"status\":\"up\"}", "-status-code=200", "-listen=:8002"]
     ports:
       - "8002:8002"
     networks:
