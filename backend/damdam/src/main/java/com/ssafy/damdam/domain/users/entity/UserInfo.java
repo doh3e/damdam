@@ -40,16 +40,17 @@ public class UserInfo extends BaseTimeEntityWithUpdatedAt {
 	@Column(name = "career", length = 100)
 	private String career;
 
-	@Column(name = "mbti", length = 4)
-	private String mbti;
+	@Enumerated(EnumType.STRING)
+	@Column(name = "mbti", length = 8)
+	private Mbti mbti;
 
 	public static UserInfo createDefaultInfo(Users user) {
 		UserInfo userInfo = new UserInfo();
 		userInfo.users = user;
 		userInfo.gender = Gender.UNKNOWN;
-		userInfo.age = Age.TWENTIES;
+		userInfo.age = Age.UNKNOWN;
 		userInfo.career = "";
-		userInfo.mbti = "";
+		userInfo.mbti = Mbti.UNKNOWN;
 		return userInfo;
 	}
 
@@ -65,7 +66,7 @@ public class UserInfo extends BaseTimeEntityWithUpdatedAt {
 		this.career = career;
 	}
 
-	public void modifyMbti(String mbti) {
+	public void modifyMbti(Mbti mbti) {
 		this.mbti = mbti;
 	}
 }

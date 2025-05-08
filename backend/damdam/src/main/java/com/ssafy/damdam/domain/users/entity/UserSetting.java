@@ -31,7 +31,7 @@ public class UserSetting extends BaseTimeEntityWithUpdatedAt {
 	private Users users;
 
 	@Column(name = "is_darkmode", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
-	private boolean isDarkmode;
+	private Boolean isDarkmode;
 
 	@Column(name = "bot_image", length = 255)
 	private String botImage;
@@ -40,7 +40,7 @@ public class UserSetting extends BaseTimeEntityWithUpdatedAt {
 	private String botCustom;
 
 	@Column(name = "is_alarm", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
-	private boolean isAlarm;
+	private Boolean isAlarm;
 
 	public static UserSetting createDefaultSetting(Users savedUser) {
 		UserSetting setting = new UserSetting();
@@ -55,10 +55,10 @@ public class UserSetting extends BaseTimeEntityWithUpdatedAt {
 	public static UserSetting createUserSetting(Users users, UserSettingDto dto) {
 		UserSetting setting = new UserSetting();
 		setting.users = users;
-		setting.isDarkmode = dto.isDarkmode();
+		setting.isDarkmode = dto.getIsDarkmode();
 		setting.botImage = dto.getBotImage();
 		setting.botCustom = dto.getBotCustom();
-		setting.isAlarm = dto.isAlarm();
+		setting.isAlarm = dto.getIsAlarm();
 		return setting;
 	}
 
