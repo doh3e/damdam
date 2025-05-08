@@ -16,22 +16,28 @@ pipeline {
 
 
     stage('Build with DIND') {
-      // 이 스테이지만 DIND 에이전트에서 실행
       agent {
         docker {
           image 'docker:24.0.5-dind'
-          // privilege 모드 + TLS 비활성화 + 인증서 볼륨 바인드
-          args '--privileged -e DOCKER_TLS_CERTDIR="" -v jenkins-docker-certs:/certs/client'
+          args """
+            --privileged
+            -e DOCKER_TLS_CERTDIR=""
+            -e DOCKER_CONFIG=/root/.docker
+            -v jenkins-docker-certs:/certs/client
+            -v ${env.WORKSPACE}/.docker:/root/.docker
+          """
         }
       }
       environment {
-        // UNIX 소켓 대신 TLS 비활성화 했으므로 기본 소켓 경로 사용
+        // DinD 컨테이너가 내부 데몬 소켓을 사용하도록
         DOCKER_HOST = 'unix:///var/run/docker.sock'
       }
       steps {
-        sh 'docker info'                         // 데몬 정상 동작 확인
-        sh 'docker build -t my-app:${GIT_COMMIT} .'  // 이미지 빌드
-        sh 'docker-compose up --build -d'         // docker-compose 사용 예시
+        // 워크스페이스에 .docker 디렉토리 생성
+        sh 'mkdir -p ${WORKSPACE}/.docker'
+        sh 'docker info'                        
+        sh 'docker build -t my-app:${GIT_COMMIT} .'  
+        sh 'docker-compose up --build -d'         
       }
     }
   
