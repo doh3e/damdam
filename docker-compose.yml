@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: backend
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+
+  ai-data:
+    build:
+      context: ./ai-data
+    container_name: ai-data
+    ports:
+      - "8002:8002"
+    networks:
+      - app-network
+
+  ai-audio:
+    build:
+      context: ./ai-audio
+    container_name: ai-audio
+    ports:
+      - "8001:8001"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
