@@ -27,7 +27,6 @@ services:
       - "6379:6379"
     networks:
       - app-network
-
   backend:
     build:
       context: ./backend
@@ -40,18 +39,17 @@ services:
       - postgres
       - redis
 
-    # 1) secrets 파일을 컨테이너 ./config 밑으로 마운트
     volumes:
       - ./backend/src/main/resources/application-API-KEY.properties:/config/application-API-KEY.properties:ro
 
     environment:
-      # 2) local + API-KEY 프로파일 활성화
+      # (1) 로컬 + API-KEY 프로파일 활성화
       - SPRING_PROFILES_ACTIVE=local,API-KEY
 
-      # 3) 추가로 ./config 폴더도 프로퍼티 검색 경로에 포함시키기
-      - SPRING_CONFIG_ADDITIONAL_LOCATION=file:./config/
+      # (2) /config 를 추가 프로퍼티 로딩 경로로 지정 (절대경로!)
+      - SPRING_CONFIG_ADDITIONAL_LOCATION=file:/config/
 
-      # 4) 나머지 env-vars (DB, Redis, 등)
+      # (3) 나머지 env-vars
       - FASTAPI_BASE_URL=http://ai-data:8001
       - AUDIO_SERVICE_URL=http://ai-audio:8002
       - POSTGRE_URL=jdbc:postgresql://postgres:5432/damdam
@@ -62,7 +60,6 @@ services:
 
     networks:
       - app-network
-
   frontend:
     build:
       context: ./frontend
