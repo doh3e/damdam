@@ -27,6 +27,7 @@ services:
       - "6379:6379"
     networks:
       - app-network
+
   backend:
     build:
       context: ./backend
@@ -39,17 +40,18 @@ services:
       - postgres
       - redis
 
+    # 1) 이 한 줄로 호스트 파일을 컨테이너 /config 디렉터리에 올려 둡니다.
     volumes:
       - ./backend/src/main/resources/application-API-KEY.properties:/config/application-API-KEY.properties:ro
 
     environment:
-      # (1) 로컬 + API-KEY 프로파일 활성화
+      # 2) local + API-KEY 프로파일을 활성화
       - SPRING_PROFILES_ACTIVE=local,API-KEY
 
-      # (2) /config 를 추가 프로퍼티 로딩 경로로 지정 (절대경로!)
+      # 3) /config 아래 파일을 추가 설정 위치로 지정
       - SPRING_CONFIG_ADDITIONAL_LOCATION=file:/config/
 
-      # (3) 나머지 env-vars
+      # 4) 그 외 기존 환경 변수들
       - FASTAPI_BASE_URL=http://ai-data:8001
       - AUDIO_SERVICE_URL=http://ai-audio:8002
       - POSTGRE_URL=jdbc:postgresql://postgres:5432/damdam
@@ -60,6 +62,7 @@ services:
 
     networks:
       - app-network
+
   frontend:
     build:
       context: ./frontend
