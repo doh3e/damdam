@@ -65,8 +65,31 @@ public class CounselServiceImpl implements CounselService {
 	}
 
 	@Override
-	public CounsOutputDto getCounsel(Long id) {
-		return null;
+	public CounsOutputDto getCounsel(Long id){
+		Users user = validateUser();
+		Counseling counseling = counselingRepository.findById(id)
+			.orElseThrow(() -> new CounsException(COUNSEL_NOT_FOUND));
+
+		if (!counseling.getUsers().getUserId().equals(user.getUserId())) {
+			throw new CounsException(NOT_YOUR_COUNSEL);
+		}
+
+		return CounsOutputDto.fromEntity(counseling);
+	}
+
+	@Override
+	@Transactional
+	public void patchCounsel(Long counsId, String counsTitle) {
+
+		Users user = validateUser();
+		Counseling counseling = counselingRepository.findById(counsId)
+			.orElseThrow(() -> new CounsException(COUNSEL_NOT_FOUND));
+
+		if (!counseling.getUsers().getUserId().equals(user.getUserId())) {
+			throw new CounsException(NOT_YOUR_COUNSEL);
+		}
+
+		counseling.updateCounsel(counsTitle);
 	}
 
 	@Override
@@ -84,7 +107,18 @@ public class CounselServiceImpl implements CounselService {
 	}
 
 	@Override
+	@Transactional
 	public void closeCounsel(Long counsId) {
+		Users user = validateUser();
+		Counseling counseling = counselingRepository.findById(counsId)
+			.orElseThrow(() -> new CounsException(COUNSEL_NOT_FOUND));
+
+		if (!counseling.getUsers().getUserId().equals(user.getUserId())) {
+			throw new CounsException(NOT_YOUR_COUNSEL);
+		}
+
+		counseling.updateCounsel(counseling.getCounsTitle());
+		counseling.setClosed(true);
 
 	}
 }

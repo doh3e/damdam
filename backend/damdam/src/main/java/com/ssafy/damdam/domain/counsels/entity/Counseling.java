@@ -46,4 +46,11 @@ public class Counseling extends BaseTimeEntityWithUpdatedAt {
 		this.counsTitle = prefix + "_상담일지";
 	}
 
+	public void updateCounsel(String counsTitle) {
+		this.counsTitle = counsTitle;
+	}
+
+	public void setClosed(boolean b) {
+		this.isClosed = b;
+	}
 }

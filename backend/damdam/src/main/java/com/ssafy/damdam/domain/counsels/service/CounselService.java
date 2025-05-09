@@ -13,7 +13,10 @@ public interface CounselService {
 
 	CounsOutputDto getCounsel(Long id);
 
+	void patchCounsel(Long counsId, String counsTitle);
+
 	void deleteCounsel(Long counsId);
 
 	void closeCounsel(Long counsId);
+
 }
