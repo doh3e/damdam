@@ -39,15 +39,19 @@ services:
       - ai-audio
       - postgres
       - redis
+
+    # 1) secrets 파일을 컨테이너 ./config 밑으로 마운트
     volumes:
       - ./backend/src/main/resources/application-API-KEY.properties:/config/application-API-KEY.properties:ro
 
     environment:
-      # 2) 로컬 + API-KEY 프로파일 활성화 → application-local.properties 와 
-      #    application-API-KEY.properties 둘 다 로드됨
+      # 2) local + API-KEY 프로파일 활성화
       - SPRING_PROFILES_ACTIVE=local,API-KEY
 
-      # 3) 나머지 환경 변수들은 그대로
+      # 3) 추가로 ./config 폴더도 프로퍼티 검색 경로에 포함시키기
+      - SPRING_CONFIG_ADDITIONAL_LOCATION=file:./config/
+
+      # 4) 나머지 env-vars (DB, Redis, 등)
       - FASTAPI_BASE_URL=http://ai-data:8001
       - AUDIO_SERVICE_URL=http://ai-audio:8002
       - POSTGRE_URL=jdbc:postgresql://postgres:5432/damdam
@@ -55,6 +59,7 @@ services:
       - POSTGRE_PASSWORD=ssafy
       - REDIS_HOST=redis
       - REDIS_PASSWORD=ssafy!@
+
     networks:
       - app-network
 
