@@ -1,15 +1,9 @@
 package com.ssafy.damdam.domain.users.controller;
 
+import com.ssafy.damdam.domain.users.dto.user.*;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.ssafy.damdam.domain.users.dto.user.ProfileInputDto;
-import com.ssafy.damdam.domain.users.dto.user.ProfileOutputDto;
-import com.ssafy.damdam.domain.users.dto.user.UserSettingDto;
 import com.ssafy.damdam.domain.users.service.UserService;
 
 import lombok.RequiredArgsConstructor;
@@ -49,6 +43,26 @@ public class UserController {
 	) {
 		userService.editUserSetting(userSettingDto);
 		return ResponseEntity.ok().body("시스템 설정 수정이 완료되었습니다.");
+	}
+
+	@GetMapping("/survey")
+	public ResponseEntity<UserSurveyOutputDto> getSurvey() {
+		UserSurveyOutputDto survey = userService.getSurvey();
+		return ResponseEntity.ok(survey);
+	}
+
+	@PostMapping("/survey")
+	public ResponseEntity<String> postSurvey(
+			@RequestBody UserSurveyInputDto survey
+	) {
+		userService.postSurvey(survey);
+		return ResponseEntity.ok().body("사전 설문조사 응답이 완료되었습니다.");
+	}
+
+	@DeleteMapping("/survey")
+	public ResponseEntity<String> deleteSurvey() {
+		userService.deleteSurvey();
+		return ResponseEntity.ok().body("사전 설문조사 응답이 삭제되었습니다.");
 	}
 
 }

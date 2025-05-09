@@ -33,10 +33,10 @@ public class UserSetting extends BaseTimeEntityWithUpdatedAt {
 	@Column(name = "is_darkmode", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
 	private Boolean isDarkmode;
 
-	@Column(name = "bot_image", length = 255)
+	@Column(name = "bot_image")
 	private String botImage;
 
-	@Column(name = "bot_custom", length = 255)
+	@Column(name = "bot_custom")
 	private String botCustom;
 
 	@Column(name = "is_alarm", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
