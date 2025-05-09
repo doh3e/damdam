@@ -6,7 +6,7 @@ export const profileSchema = z.object({
   gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'UNKNOWN']),
   age: z.enum(['UNKOWN', 'TEENS', 'TWENTIES', 'THIRTIES', 'FORTIES', 'FIFTIES', 'OVER']),
   career: z.string().optional(),
-  mbti: z.string().optional(),
+  mbti: z.enum(['MALE', 'FEMALE', 'OTHER', 'UNKNOWN']),
 });
 
 export type ProfileFormValues = z.infer<typeof profileSchema>;
