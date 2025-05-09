@@ -51,6 +51,7 @@ public class CounselServiceImpl implements CounselService {
 				.counsTitle(c.getCounsTitle())
 				.createdAt(c.getCreatedAt())
 				.updatedAt(c.getUpdatedAt())
+				.isClosed(c.getIsClosed())
 				.build())
 			.toList();
 	}
