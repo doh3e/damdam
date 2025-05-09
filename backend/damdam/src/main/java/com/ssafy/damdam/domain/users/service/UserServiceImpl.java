@@ -133,6 +133,8 @@ public class UserServiceImpl implements UserService {
 	@Transactional
 	public void postSurvey(UserSurveyInputDto survey) {
 		Users user = validateUser();
+		UserSurvey newSurvey = UserSurvey.of(user, survey);
+		userSurveyRepository.save(newSurvey);
 	}
 
 	@Override
@@ -145,6 +147,4 @@ public class UserServiceImpl implements UserService {
 
 		userSurveyRepository.delete(survey);
 	}
-
-
 }
