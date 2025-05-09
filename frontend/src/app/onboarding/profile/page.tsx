@@ -5,7 +5,7 @@ import ProfileForm from './ProfileForm';
 
 export default function ProfilePage() {
   return (
-    <div className="flex flex-col justify-center items-center py-12">
+    <div className="flex flex-col justify-center items-center py-3">
       {/* 환영합니다 카드 */}
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg border border-gray-100 p-8 flex flex-col items-center">
         {/* 로고 및 환영문구 */}
@@ -21,10 +21,10 @@ export default function ProfilePage() {
             회원정보 입력 안내
           </h2>
           <p className="text-sm text-gray-600">
-            간단한 회원정보 입력력을 통해 담담이가 <strong>더 맞춤화된 상담</strong>과 <br />
-            <strong>정확한 분석 레포트</strong>를 제공할 수 있어요! <br />
-            지금 건너뛰어도 괜찮아요. <br />
-            <strong>마이페이지</strong>에서 언제든 다시 수정하실 수 있어요!
+            담담이와 더 편하게 대화할 수 있도록 <strong>기본정보</strong>를 <br />
+            설정할 수 있어요! 원하는 항목만 <strong>선택적으로 설정</strong>하거나 <strong>건너뛰기</strong>하실 수
+            있어요! <br />
+            <strong>마이페이지</strong>에서 언제든 다시 수정해 보세요!
           </p>
         </div>
 
@@ -34,13 +34,13 @@ export default function ProfilePage() {
         {/* 회원정보 입력 버튼 */}
         <div className="w-full flex flex-col gap-3 mt-4">
           <Link
-            href="/onboarding/profile"
+            href="/onboarding/welcome"
             className="py-3 rounded-xl text-center font-semibold text-white bg-[#e24b4b] hover:scale-103 transition duration-300"
           >
             저장하기
           </Link>
           <Link
-            href="/"
+            href="/onboarding/welcome"
             className="py-3 rounded-xl text-center font-semibold bg-gray-200 hover:scale-103 transition duration-300"
           >
             건너뛰기

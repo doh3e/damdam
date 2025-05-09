@@ -73,20 +73,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" suppressHydrationWarning>
-      <head /> {/* Next.js가 자동으로 head 태그 내용을 관리 (metadata, viewport 객체 활용) */}
+      <head />
+      {/* Next.js가 자동으로 head 태그 내용을 관리 (metadata, viewport 객체 활용) */}
       <body className={cn('min-h-screen bg-muted font-sans antialiased', nonoSans.variable)}>
         {/* === 앱 전체 뷰 컨테이너 === */}
         <div className="mx-auto flex min-h-screen max-w-screen-sm flex-col bg-background shadow-md">
           {/* === 헤더 영역 === */}
           <Header />
-
           {/* === 메인 콘텐츠 영역 === */}
           <main className="flex-1">
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
               <QueryClientProviders>{children}</QueryClientProviders>
             </ThemeProvider>
           </main>
-
           {/* === 하단 네비게이션 바 영역 === */}
           <BottomNavigation />
         </div>

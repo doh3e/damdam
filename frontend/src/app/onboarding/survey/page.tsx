@@ -19,31 +19,8 @@ export default function SurveyPage() {
         </p>
 
         {/* 설문지 본문 */}
-        <div className="mt-4 w-full px-3 py-4 rounded bg-yellow-50">
-          <h2 className="text-base underline underline-offset-4 font-semibold text-gray-800 mb-2">사전설문 안내</h2>
-          <p className="text-sm text-gray-600">
-            간단한 사전 설문을 통해 담담이가 <strong>더 맞춤화된 상담</strong>과 <br />
-            <strong>정확한 분석 레포트</strong>를 제공할 수 있어요! <br />
-            설문은 약 <strong>10분</strong>정도 소요되며, 지금 건너뛰어도 괜찮아요. <br />
-            <strong>마이페이지</strong>에서 언제든 다시 참여하실 수 있어요!
-          </p>
-        </div>
 
         {/* 사전설문 버튼 */}
-        <div className="w-full flex gap-3 mt-4">
-          <Link
-            href="/signup/survey"
-            className="py-3 rounded-xl text-center font-semibold text-white bg-[#e24b4b] hover:scale-103 transition duration-300"
-          >
-            사전설문하러 가기
-          </Link>
-          <Link
-            href="/"
-            className="py-3 rounded-xl text-center font-semibold bg-gray-200 hover:scale-103 transition duration-300"
-          >
-            건너뛰기
-          </Link>
-        </div>
       </div>
     </div>
   );

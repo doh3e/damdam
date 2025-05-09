@@ -22,15 +22,15 @@ export default function WelcomePage() {
           <p className="text-sm text-gray-600">
             간단한 사전 설문을 통해 담담이가 <strong>더 맞춤화된 상담</strong>과 <br />
             <strong>정확한 분석 레포트</strong>를 제공할 수 있어요! <br />
-            설문은 약 <strong>10분</strong>정도 소요되며, 지금 건너뛰어도 괜찮아요. <br />
-            <strong>마이페이지</strong>에서 언제든 다시 참여하실 수 있어요!
+            설문은 약 <strong>10분</strong>정도 소요되며 지금 건너뛰어도 괜찮아요. <br />
+            <strong>마이페이지</strong>에서 언제든 다시 참여하실 수 있답니다.
           </p>
         </div>
 
         {/* 사전설문 버튼 */}
         <div className="w-full flex flex-col gap-3 mt-4">
           <Link
-            href="/onboarding/profile"
+            href="/onboarding/survey"
             className="py-3 rounded-xl text-center font-semibold text-white bg-[#e24b4b] hover:scale-103 transition duration-300"
           >
             사전설문하러 가기
