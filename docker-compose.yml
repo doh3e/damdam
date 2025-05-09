@@ -39,19 +39,14 @@ services:
       - ai-audio
       - postgres
       - redis
-
-    # ① .env 파일 로드
-    env_file:
-      - .env
-
     environment:
-      # ② spring.jwt.secret 에 매핑될 환경변수
+      # Jenkinsfile 에서 주입된 SPRING_JWT_SECRET 로 spring.jwt.secret 플레이스홀더가 해결됩니다
       - SPRING_JWT_SECRET
 
-      # ③ 활성화할 프로파일
+      # 활성 프로파일
       - SPRING_PROFILES_ACTIVE=local,API-KEY
 
-      # ④ 나머지 기존 env-vars
+      # 나머지 환경변수
       - FASTAPI_BASE_URL=http://ai-data:8001
       - AUDIO_SERVICE_URL=http://ai-audio:8002
       - POSTGRE_URL=jdbc:postgresql://postgres:5432/damdam
