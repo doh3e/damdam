@@ -28,6 +28,7 @@ services:
     networks:
       - app-network
 
+
   backend:
     build:
       context: ./backend
@@ -40,23 +41,21 @@ services:
       - postgres
       - redis
 
-    # ─── 여기에 volumes: 만 추가 ────────────────────────────────
+    # ① application-API-KEY.properties 를 /config 에 마운트
     volumes:
-      # 호스트의 application-API-KEY.properties 를
-      # 컨테이너 /config 밑에 읽기 전용으로 올려둡니다.
       - ./backend/src/main/resources/application-API-KEY.properties:/config/application-API-KEY.properties:ro
 
     environment:
-      # ─── 추가로 /config 를 프로퍼티 검색 경로에 포함 ─────────
+      # ② /config 폴더도 추가 설정 경로에 포함
       - SPRING_CONFIG_ADDITIONAL_LOCATION=file:/config/
 
-      # 기존처럼 로컬+API-KEY 프로파일 활성화
+      # ③ local + API-KEY 프로파일 활성화
       - SPRING_PROFILES_ACTIVE=local,API-KEY
 
-      # Jenkins Credentials 로 주입된 JWT 시크릿
+      # ④ Jenkins Credentials 로 바인딩된 JWT 시크릿
       - SPRING_JWT_SECRET
 
-      # 나머지 환경변수들
+      # ⑤ 나머지 기존 env-vars (파일에 정의된 POSTGRE_*, REDIS_* 도 사용)
       - FASTAPI_BASE_URL=http://ai-data:8001
       - AUDIO_SERVICE_URL=http://ai-audio:8002
       - POSTGRE_URL=jdbc:postgresql://postgres:5432/damdam
