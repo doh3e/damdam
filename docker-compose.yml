@@ -41,18 +41,18 @@ services:
       - postgres
       - redis
 
-    # ─── application-API-KEY.properties 를 /config 에 마운트 ──────────
+    # 외부 props 파일 마운트
     volumes:
       - ./backend/src/main/resources/application-API-KEY.properties:/config/application-API-KEY.properties:ro
 
     environment:
-      # ─── Spring Boot 2.4+ 신규 ConfigData 방식으로 /config 읽기 ──────
-      - SPRING_CONFIG_IMPORT=optional:configtree:/config/
+      # application-API-KEY.properties 파일을 추가로 로드
+      - SPRING_CONFIG_ADDITIONAL_LOCATION=file:/config/application-API-KEY.properties
 
-      # 로컬 + API-KEY 프로파일 활성화
-      - SPRING_PROFILES_ACTIVE=local,API-KEY
+      # 활성 프로파일 (API-KEY 프로파일이 먼저 와야 위 파일이 적용됩니다)
+      - SPRING_PROFILES_ACTIVE=API-KEY,local
 
-      # Jenkins Credentials 로 바인딩된 JWT 시크릿
+      # Jenkins Credentials 로 주입된 JWT 시크릿
       - SPRING_JWT_SECRET
 
       # 나머지 env-vars
@@ -66,7 +66,7 @@ services:
 
     networks:
       - app-network
-
+      
   frontend:
     build:
       context: ./frontend
