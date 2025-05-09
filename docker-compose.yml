@@ -43,12 +43,11 @@ services:
       - FASTAPI_BASE_URL=http://ai-data:8001
       - AUDIO_SERVICE_URL=http://ai-audio:8002
       - SPRING_PROFILES_ACTIVE=local,API-KEY
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/damdam
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=ssafy
-      - SPRING_REDIS_HOST=redis
-      - SPRING_REDIS_PORT=6379
-      - SPRING_REDIS_PASSWORD=ssafy!@
+      - POSTGRE_URL=jdbc:postgresql://postgres:5432/damdam
+      - POSTGRE_USERNAME=postgres
+      - POSTGRE_PASSWORD=ssafy
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=ssafy!@
     networks:
       - app-network
 
