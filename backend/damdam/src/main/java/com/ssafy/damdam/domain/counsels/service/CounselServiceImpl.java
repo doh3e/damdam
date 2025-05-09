@@ -48,6 +48,7 @@ public class CounselServiceImpl implements CounselService {
 		return counsList.stream()
 			.map(c -> CounsListDto.builder()
 				.counsId(c.getCounsId())
+				.counsTitle(c.getCounsTitle())
 				.createdAt(c.getCreatedAt())
 				.updatedAt(c.getUpdatedAt())
 				.build())

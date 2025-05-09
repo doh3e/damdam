@@ -15,6 +15,7 @@ public class CounsOutputDto {
 
 	// 상담 상세 정보를 보여주는 dto
 	private Long counsId;
+	private String counsTitle;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 	private Boolean isClosed;

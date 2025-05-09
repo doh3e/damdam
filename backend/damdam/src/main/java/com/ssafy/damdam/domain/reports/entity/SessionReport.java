@@ -33,6 +33,9 @@ public class SessionReport extends BaseTimeEntity {
 	@JoinColumn(name = "couns_id", nullable = false)
 	private Counseling counseling;
 
+	@Column(name = "s_report_title", length = 30, nullable = false)
+	private String sReportTitle;
+
 	@Column(name = "summary", columnDefinition = "TEXT")
 	private String summary;
 
