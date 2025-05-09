@@ -61,7 +61,7 @@ public class CounselController {
 		return ResponseEntity.ok("상담이 삭제되었습니다.");
 	}
 
-	@PatchMapping("/{counsId}")
+	@PostMapping("/{counsId}")
 	public ResponseEntity<Void> closeCounsel(@PathVariable Long counsId) {
 		// 1) RDB에서 isClosed 플래그 업데이트
 		counselService.closeCounsel(counsId);
