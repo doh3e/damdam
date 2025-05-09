@@ -47,7 +47,7 @@ services:
 
     environment:
       # ─── Spring Boot 2.4+ 신규 ConfigData 방식으로 /config 읽기 ──────
-      - SPRING_CONFIG_IMPORT=optional:configtree:/config
+      - SPRING_CONFIG_IMPORT=optional:configtree:/config/
 
       # 로컬 + API-KEY 프로파일 활성화
       - SPRING_PROFILES_ACTIVE=local,API-KEY
