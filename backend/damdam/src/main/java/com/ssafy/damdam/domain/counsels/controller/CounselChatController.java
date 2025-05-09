@@ -2,6 +2,7 @@ package com.ssafy.damdam.domain.counsels.controller;
 
 import java.security.Principal;
 
+import com.ssafy.damdam.domain.counsels.service.AiService;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.stereotype.Controller;
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 public class CounselChatController {
 
 	private final ChatService chatService;
+	private final AiService aiService;
 
 	@MessageMapping("/counsels/{roomId}/chat")
 	public void handleChat(

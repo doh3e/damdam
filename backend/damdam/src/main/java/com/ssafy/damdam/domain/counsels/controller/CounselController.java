@@ -2,6 +2,7 @@ package com.ssafy.damdam.domain.counsels.controller;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 import com.ssafy.damdam.domain.counsels.service.ChatService;
 import org.springframework.http.ResponseEntity;
@@ -43,6 +44,16 @@ public class CounselController {
 	public ResponseEntity<CounsOutputDto> getCounsel(@PathVariable Long counsId) {
 		return ResponseEntity.ok(counselService.getCounsel(counsId));
 	}
+
+	@PatchMapping("/{counsId}")
+	public ResponseEntity<String> patchCounselTitle(
+			@PathVariable Long counsId,
+			@RequestBody Map<String, String> body
+			) {
+		counselService.patchCounsel(counsId, body.get("counsTitle"));
+		return ResponseEntity.ok("상담 제목이 수정되었습니다.");
+	}
+
 
 	@DeleteMapping("/{counsId}")
 	public ResponseEntity<String> deleteCounsel(@PathVariable Long counsId) {

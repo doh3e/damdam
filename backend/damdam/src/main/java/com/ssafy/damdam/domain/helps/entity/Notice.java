@@ -20,7 +20,7 @@ public class Notice extends BaseTimeEntityWithUpdatedAt {
     @Column(name = "n_category", nullable = false, length = 20)
     private NoticeCategory category;
 
-    @Column(name = "title", length = 400, nullable = false)
+    @Column(name = "title", length = 100, nullable = false)
     private String title;
 
     @Column(name = "content", columnDefinition = "TEXT", nullable = false)

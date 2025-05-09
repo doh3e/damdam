@@ -37,7 +37,7 @@ public class UserInfo extends BaseTimeEntityWithUpdatedAt {
 	@Column(name = "age", length = 20)
 	private Age age;
 
-	@Column(name = "career", length = 100)
+	@Column(name = "career", length = 30)
 	private String career;
 
 	@Enumerated(EnumType.STRING)
