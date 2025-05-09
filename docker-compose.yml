@@ -42,7 +42,7 @@ services:
 
     # ① .env 파일 로드
     env_file:
-      - .env
+      - /home/ubuntu/S12P31S202/.env
 
     environment:
       # ② spring.jwt.secret 에 매핑될 환경변수
