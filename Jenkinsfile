@@ -18,6 +18,14 @@ pipeline {
       }
     }
 
+    stage('Prepare .env') {
+      steps {
+        echo '[INFO] Copying .env into workspace...'
+        // EC2 홈디렉터리의 .env를 워크스페이스 루트로 복사
+        sh 'cp /home/ubuntu/S12P31S202/.env ${WORKSPACE}/.env'
+      }
+    }
+    
     stage('Clean up old containers') {
       steps {
         dir("${WORKSPACE}") {
