@@ -39,10 +39,17 @@ services:
       - ai-audio
       - postgres
       - redis
+    volumes:
+      - ./backend/src/main/resources/application-API-KEY.properties:/config/application-API-KEY.properties:ro
+
     environment:
+      # 2) 로컬 + API-KEY 프로파일 활성화 → application-local.properties 와 
+      #    application-API-KEY.properties 둘 다 로드됨
+      - SPRING_PROFILES_ACTIVE=local,API-KEY
+
+      # 3) 나머지 환경 변수들은 그대로
       - FASTAPI_BASE_URL=http://ai-data:8001
       - AUDIO_SERVICE_URL=http://ai-audio:8002
-      - SPRING_PROFILES_ACTIVE=local,API-KEY
       - POSTGRE_URL=jdbc:postgresql://postgres:5432/damdam
       - POSTGRE_USERNAME=postgres
       - POSTGRE_PASSWORD=ssafy
