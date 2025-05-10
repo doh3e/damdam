@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: postgres
+    environment:
+      - POSTGRES_DB=damdam
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=ssafy
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+
+  redis:
+    image: redis:6
+    container_name: redis
+    # Redis 설정을 CLI 플래그로 직접 전달
+    command: [
+      "redis-server",
+      "--requirepass", "ssafy!@",
+      "--maxmemory", "1gb",
+      "--maxmemory-policy", "allkeys-lru"
+    ]
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+
+  backend:
+    build:
+      context: ./backend
+    container_name: backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - ai-data
+      - ai-audio
+      - postgres
+      - redis
+
+    # 외부 props 파일 마운트
+    volumes:
+      - ./backend/src/main/resources/application-API-KEY.properties:/config/application-API-KEY.properties:ro
+
+    environment:
+      # application-API-KEY.properties 파일을 추가로 로드
+      - SPRING_CONFIG_ADDITIONAL_LOCATION=file:/config/application-API-KEY.properties
+
+      # 활성 프로파일 (API-KEY 프로파일이 먼저 와야 위 파일이 적용됩니다)
+      - SPRING_PROFILES_ACTIVE=API-KEY,local
+
+      # Jenkins Credentials 로 주입된 JWT 시크릿
+      - SPRING_JWT_SECRET
+
+      # 나머지 env-vars
+      - FASTAPI_BASE_URL=http://ai-data:8001
+      - AUDIO_SERVICE_URL=http://ai-audio:8002
+      - POSTGRE_URL=jdbc:postgresql://postgres:5432/damdam
+      - POSTGRE_USERNAME=postgres
+      - POSTGRE_PASSWORD=ssafy
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=ssafy!@
+
+    networks:
+      - app-network
+      
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+
+  ai-data:
+    image: hashicorp/http-echo:latest
+    container_name: ai-data
+    command: ["-text={\"status\":\"up\"}", "-status-code=200", "-listen=:8001"]
+    ports:
+      - "8001:8001"
+    networks:
+      - app-network
+
+  ai-audio:
+    image: hashicorp/http-echo:latest
+    container_name: ai-audio
+    command: ["-text={\"status\":\"up\"}", "-status-code=200", "-listen=:8002"]
+    ports:
+      - "8002:8002"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
