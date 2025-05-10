@@ -1,9 +1,19 @@
 package com.ssafy.damdam.domain.users.controller;
 
-import com.ssafy.damdam.domain.users.dto.user.*;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
+import com.ssafy.damdam.domain.users.dto.user.ProfileInputDto;
+import com.ssafy.damdam.domain.users.dto.user.ProfileOutputDto;
+import com.ssafy.damdam.domain.users.dto.user.UserSettingDto;
+import com.ssafy.damdam.domain.users.dto.user.UserSurveyInputDto;
+import com.ssafy.damdam.domain.users.dto.user.UserSurveyOutputDto;
 import com.ssafy.damdam.domain.users.service.UserService;
 
 import lombok.RequiredArgsConstructor;
@@ -28,7 +38,7 @@ public class UserController {
 		@RequestBody ProfileInputDto profileInputDto
 	) {
 		userService.editUserProfile(profileInputDto);
-		return ResponseEntity.ok().body("프로필 수정이 완료되었습니다.");
+		return ResponseEntity.noContent().build();
 	}
 
 	@GetMapping("/setting")
@@ -42,7 +52,7 @@ public class UserController {
 		@RequestBody UserSettingDto userSettingDto
 	) {
 		userService.editUserSetting(userSettingDto);
-		return ResponseEntity.ok().body("시스템 설정 수정이 완료되었습니다.");
+		return ResponseEntity.noContent().build();
 	}
 
 	@GetMapping("/survey")
@@ -53,16 +63,16 @@ public class UserController {
 
 	@PostMapping("/survey")
 	public ResponseEntity<String> postSurvey(
-			@RequestBody UserSurveyInputDto survey
+		@RequestBody UserSurveyInputDto survey
 	) {
 		userService.postSurvey(survey);
-		return ResponseEntity.ok().body("사전 설문조사 응답이 완료되었습니다.");
+		return ResponseEntity.noContent().build();
 	}
 
 	@DeleteMapping("/survey")
 	public ResponseEntity<String> deleteSurvey() {
 		userService.deleteSurvey();
-		return ResponseEntity.ok().body("사전 설문조사 응답이 삭제되었습니다.");
+		return ResponseEntity.noContent().build();
 	}
 
 }

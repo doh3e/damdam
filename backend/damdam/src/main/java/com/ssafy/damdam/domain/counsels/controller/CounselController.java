@@ -58,13 +58,13 @@ public class CounselController {
 		@Valid @RequestBody PatchCounselTitleRequest req
 	) {
 		counselService.patchCounsel(counsId, req.getCounsTitle());
-		return ResponseEntity.ok("상담 제목이 수정되었습니다.");
+		return ResponseEntity.noContent().build();
 	}
 
 	@DeleteMapping("/{counsId}")
 	public ResponseEntity<String> deleteCounsel(@PathVariable Long counsId) {
 		counselService.deleteCounsel(counsId);
-		return ResponseEntity.ok("상담이 삭제되었습니다.");
+		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/{counsId}")
