@@ -1,8 +1,8 @@
 package com.ssafy.damdam.domain.users.dto.auth;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -21,9 +21,9 @@ public class CustomOAuth2User implements OAuth2User {
 	 * @param nameAttributeKey principalName 으로 사용할 속성 키
 	 */
 	public CustomOAuth2User(
-			UserDto userDto,
-			Map<String, Object> attributes,
-			String nameAttributeKey
+		UserDto userDto,
+		Map<String, Object> attributes,
+		String nameAttributeKey
 	) {
 		this.userDto = userDto;
 		this.attributes = attributes;
@@ -38,7 +38,7 @@ public class CustomOAuth2User implements OAuth2User {
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
 		// 단일 ROLE_USER 권한만 부여
-		return List.of((GrantedAuthority) () -> userDto.getRole());
+		return List.of((GrantedAuthority)userDto::getRole);
 	}
 
 	@Override

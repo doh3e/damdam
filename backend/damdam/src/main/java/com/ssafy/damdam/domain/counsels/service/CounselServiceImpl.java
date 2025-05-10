@@ -4,12 +4,12 @@ import static com.ssafy.damdam.domain.counsels.exception.CounsExceptionCode.*;
 import static com.ssafy.damdam.domain.users.exception.auth.AuthExceptionCode.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ssafy.damdam.domain.counsels.dto.CounsListDto;
-import com.ssafy.damdam.domain.counsels.dto.CounsOutputDto;
+import com.ssafy.damdam.domain.counsels.dto.CounselingDto;
 import com.ssafy.damdam.domain.counsels.entity.Counseling;
 import com.ssafy.damdam.domain.counsels.exception.CounsException;
 import com.ssafy.damdam.domain.counsels.repository.CounselingRepository;
@@ -39,19 +39,15 @@ public class CounselServiceImpl implements CounselService {
 	}
 
 	@Override
-	public List<CounsListDto> getCounselList() {
+	public List<CounselingDto> getCounselList() {
 
 		Users user = validateUser();
 		List<Counseling> counsList =
 			counselingRepository.findAllByUsers_UserIdOrderByCreatedAtDesc(user.getUserId());
 
 		return counsList.stream()
-			.map(c -> CounsListDto.builder()
-				.counsId(c.getCounsId())
-				.createdAt(c.getCreatedAt())
-				.updatedAt(c.getUpdatedAt())
-				.build())
-			.toList();
+			.map(CounselingDto::fromEntity)
+			.collect(Collectors.toList());
 	}
 
 	@Override
@@ -64,8 +60,31 @@ public class CounselServiceImpl implements CounselService {
 	}
 
 	@Override
-	public CounsOutputDto getCounsel(Long id) {
-		return null;
+	public CounselingDto getCounsel(Long id) {
+		Users user = validateUser();
+		Counseling counseling = counselingRepository.findById(id)
+			.orElseThrow(() -> new CounsException(COUNSEL_NOT_FOUND));
+
+		if (!counseling.getUsers().getUserId().equals(user.getUserId())) {
+			throw new CounsException(NOT_YOUR_COUNSEL);
+		}
+
+		return CounselingDto.fromEntity(counseling);
+	}
+
+	@Override
+	@Transactional
+	public void patchCounsel(Long counsId, String counsTitle) {
+
+		Users user = validateUser();
+		Counseling counseling = counselingRepository.findById(counsId)
+			.orElseThrow(() -> new CounsException(COUNSEL_NOT_FOUND));
+
+		if (!counseling.getUsers().getUserId().equals(user.getUserId())) {
+			throw new CounsException(NOT_YOUR_COUNSEL);
+		}
+
+		counseling.updateCounsel(counsTitle);
 	}
 
 	@Override
@@ -83,7 +102,18 @@ public class CounselServiceImpl implements CounselService {
 	}
 
 	@Override
+	@Transactional
 	public void closeCounsel(Long counsId) {
+		Users user = validateUser();
+		Counseling counseling = counselingRepository.findById(counsId)
+			.orElseThrow(() -> new CounsException(COUNSEL_NOT_FOUND));
+
+		if (!counseling.getUsers().getUserId().equals(user.getUserId())) {
+			throw new CounsException(NOT_YOUR_COUNSEL);
+		}
+
+		counseling.updateCounsel(counseling.getCounsTitle());
+		counseling.setClosed(true);
 
 	}
 }

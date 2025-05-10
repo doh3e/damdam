@@ -24,6 +24,9 @@ public class PeriodReport extends BaseTimeEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private Users users;
 
+    @Column(name = "p_report_title", length = 30, nullable = false)
+    private String pReportTitle;
+
     @Column(name = "start_date", nullable = false)
     private java.time.LocalDate startDate;
 

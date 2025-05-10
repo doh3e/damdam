@@ -44,7 +44,7 @@ public class Users extends BaseTimeEntityWithUpdatedAt {
 	@Column(name = "provider", nullable = false, length = 20)
 	private Provider provider;
 
-	@Column(name = "personal_id")
+	@Column(name = "personal_id", unique = true, nullable = false)
 	private String personalId;
 
 	@Column(name = "last_login")
