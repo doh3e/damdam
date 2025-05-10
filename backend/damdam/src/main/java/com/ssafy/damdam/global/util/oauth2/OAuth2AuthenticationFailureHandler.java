@@ -30,8 +30,9 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
 		String redirectUrl;
 		log.info("exception {}", exception.toString());
 		log.info("errorCode {}", errorCode);
-		redirectUrl = "http://localhost:8080/error?status=500&message=" + URLEncoder.encode("알 수 없는 오류가 발생했습니다.", StandardCharsets.UTF_8);
-		//redirectUrl = "https://k12s202.p.ssafy.io/error?status=500&message=" + URLEncoder.encode("알 수 없는 오류가 발생했습니다.", StandardCharsets.UTF_8);
+		// redirectUrl = "http://localhost:8080/error?status=500&message=" + URLEncoder.encode("알 수 없는 오류가 발생했습니다.", StandardCharsets.UTF_8);
+		redirectUrl = "https://k12s202.p.ssafy.io/error?status=500&message=" + URLEncoder.encode("알 수 없는 오류가 발생했습니다.",
+			StandardCharsets.UTF_8);
 
 		getRedirectStrategy().sendRedirect(request, response, redirectUrl);
 	}
