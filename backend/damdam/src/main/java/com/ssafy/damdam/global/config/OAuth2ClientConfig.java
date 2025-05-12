@@ -1,7 +1,6 @@
 package com.ssafy.damdam.global.config;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientProperties;
 import org.springframework.context.annotation.Bean;
@@ -36,10 +35,11 @@ public class OAuth2ClientConfig {
                     .authorizationUri(prov.getAuthorizationUri())
                     .tokenUri(prov.getTokenUri())
                     .userInfoUri(prov.getUserInfoUri())
-                    .userNameAttributeName(prov.getUserNameAttributeName())
+                    // ← 여기만 변경
+                    .userNameAttributeName(prov.getUserNameAttribute())
                     .build();
             })
-            .collect(Collectors.toList());
+            .toList();  // collect(Collectors.toList()) 대신 toList()
 
         return new InMemoryClientRegistrationRepository(registrations);
     }
