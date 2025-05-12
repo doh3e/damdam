@@ -1,13 +1,8 @@
 package com.ssafy.damdam.domain.users.controller;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.ssafy.damdam.domain.users.dto.user.ProfileInputDto;
 import com.ssafy.damdam.domain.users.dto.user.ProfileOutputDto;
@@ -18,6 +13,9 @@ import com.ssafy.damdam.domain.users.service.UserService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -33,11 +31,12 @@ public class UserController {
 		return ResponseEntity.ok(dto);
 	}
 
-	@PatchMapping("/profile")
-	public ResponseEntity<String> patchProfile(
-		@RequestBody ProfileInputDto profileInputDto
-	) {
-		userService.editUserProfile(profileInputDto);
+	@PatchMapping(value = "/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<Void> patchProfile(
+		@RequestPart(value = "profileInputDto", required = false) ProfileInputDto profileInputDto,
+		@RequestPart(value = "profileImage", required = false) MultipartFile file
+	) throws IOException {
+		userService.editUserProfile(profileInputDto, file);
 		return ResponseEntity.noContent().build();
 	}
 
@@ -47,11 +46,12 @@ public class UserController {
 		return ResponseEntity.ok(dto);
 	}
 
-	@PatchMapping("/setting")
-	public ResponseEntity<String> patchSetting(
-		@RequestBody UserSettingDto userSettingDto
-	) {
-		userService.editUserSetting(userSettingDto);
+	@PatchMapping(value = "/setting", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<Void> patchSetting(
+		@RequestPart (value = "userSettingDto", required = false) UserSettingDto userSettingDto,
+		@RequestPart (value = "botImage", required = false) MultipartFile file
+	) throws IOException {
+		userService.editUserSetting(userSettingDto, file);
 		return ResponseEntity.noContent().build();
 	}
 
@@ -62,7 +62,7 @@ public class UserController {
 	}
 
 	@PostMapping("/survey")
-	public ResponseEntity<String> postSurvey(
+	public ResponseEntity<Void> postSurvey(
 		@RequestBody UserSurveyInputDto survey
 	) {
 		userService.postSurvey(survey);
@@ -70,7 +70,7 @@ public class UserController {
 	}
 
 	@DeleteMapping("/survey")
-	public ResponseEntity<String> deleteSurvey() {
+	public ResponseEntity<Void> deleteSurvey() {
 		userService.deleteSurvey();
 		return ResponseEntity.noContent().build();
 	}
