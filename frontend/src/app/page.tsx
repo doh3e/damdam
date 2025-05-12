@@ -12,7 +12,7 @@ export default function HomePage() {
     <div className="p-4 space-y-6">
       {/* 서비스 소개 */}
       <section className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-        <h3 className="text-lg font-semibold mb-2 text-red-500">서비스 소개 (front 브랜치 배포테스트)</h3>
+        <h3 className="text-lg font-semibold mb-2 text-red-500">서비스 소개 (front 브랜치 배포테스트2)</h3>
         <p className="text-gray-700 mb-4">
           담담은 자연어 처리(NLP) 기술을 활용한 AI 심리상담 챗봇 서비스입니다. 언제 어디서나 편안하게 대화를 통해 마음의
           짐을 덜어낼 수 있습니다.
