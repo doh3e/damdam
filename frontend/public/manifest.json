@@ -1,0 +1,9 @@
+{
+  "name": "담담이 - AI 마음상담 서비스",
+  "short_name": "담담이",
+  "description": "AI와 함께하는 마음 성장 플랫폼, 담담이입니다.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#fae9de"
+}

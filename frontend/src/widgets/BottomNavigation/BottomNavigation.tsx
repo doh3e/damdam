@@ -35,7 +35,7 @@ const BottomNavigation = () => {
   const pathname = usePathname();
 
   return (
-    <nav className="sticky bottom-0 z-50 border-t bg-background">
+    <nav className="sticky bottom-0 z-30 border-t bg-background">
       {/* 네비게이션 아이템들을 담는 내부 컨테이너 (높이, flex 정렬 유지) */}
       <div className="flex h-16 items-center justify-around px-4">
         {' '}
