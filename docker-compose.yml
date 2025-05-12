@@ -42,9 +42,9 @@ services:
 
     # 외부 props 파일 마운트
     volumes:
-      # - ./backend/src/main/resources/:/config/:ro
-      - ./backend/src/main/resources/application-API-KEY.properties:/config/application-API-KEY.properties:ro
-      - ./backend/src/main/resources/application-local.properties:/config/application-local.properties:ro
+      - ./backend/src/main/resources/:/config/:ro
+      # - ./backend/src/main/resources/application-API-KEY.properties:/config/application-API-KEY.properties:ro
+      # - ./backend/src/main/resources/application-local.properties:/config/application-local.properties:ro
 
     environment:
       # /config 디렉토리의 모든 application-*.properties 파일을 추가로 로드
