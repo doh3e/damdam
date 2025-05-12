@@ -9,6 +9,7 @@ import org.springframework.security.oauth2.client.registration.*;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 
 @Configuration
+@EnableConfigurationProperties(OAuth2ClientProperties.class)  // 이 줄을 추가
 public class OAuth2ClientConfig {
 
     private final OAuth2ClientProperties properties;
