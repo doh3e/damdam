@@ -10,12 +10,12 @@ import Link from 'next/link';
 export default function HomePage() {
   return (
     <div className="p-4 space-y-6">
-
       {/* 서비스 소개 */}
       <section className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
         <h3 className="text-lg font-semibold mb-2 text-red-500">서비스 소개</h3>
         <p className="text-gray-700 mb-4">
-          담담은 자연어 처리(NLP) 기술을 활용한 AI 심리상담 챗봇 서비스입니다. 언제 어디서나 편안하게 대화를 통해 마음의 짐을 덜어낼 수 있습니다.
+          담담은 자연어 처리(NLP) 기술을 활용한 AI 심리상담 챗봇 서비스입니다. 언제 어디서나 편안하게 대화를 통해 마음의
+          짐을 덜어낼 수 있습니다.
         </p>
         <div className="flex justify-around text-center gap-4">
           <div className="flex flex-col items-center">
@@ -66,7 +66,6 @@ export default function HomePage() {
           <li>개선과 품질 향상을 위해 데이터가 활용될 수 있습니다.</li>
         </ul>
       </section>
-
     </div>
   );
 }
