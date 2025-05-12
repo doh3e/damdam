@@ -107,18 +107,18 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public UserSettingDto getUserSetting() {
+	public UserSettingOutputDto getUserSetting() {
 		Users user = validateUser();
 		UserSetting setting = userSettingRepository
 			.findByUsers_UserId(user.getUserId())
 			.orElseThrow(() -> new AuthException(AUTH_MEMBER_NOT_FOUND));
 
-		return UserSettingDto.fromEntity(setting);
+		return UserSettingOutputDto.fromEntity(setting);
 	}
 
 	@Override
 	@Transactional
-	public void editUserSetting(UserSettingDto dto, MultipartFile file) throws IOException {
+	public void editUserSetting(UserSettingInputDto dto, MultipartFile file) throws IOException {
 		Users user = validateUser();
 		UserSetting setting = userSettingRepository
 			.findByUsers_UserId(user.getUserId())

@@ -11,9 +11,9 @@ public interface UserService {
 
 	void editUserProfile(ProfileInputDto profileInputDto, MultipartFile file) throws IOException;
 
-	UserSettingDto getUserSetting();
+	UserSettingOutputDto getUserSetting();
 
-	void editUserSetting(UserSettingDto userSettingDto, MultipartFile file) throws IOException;
+	void editUserSetting(UserSettingInputDto userSettingInputDto, MultipartFile file) throws IOException;
 
     UserSurveyOutputDto getSurvey();
 
