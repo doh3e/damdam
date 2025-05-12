@@ -10,4 +10,5 @@ RUN chmod +x ./gradlew  && \
 
 EXPOSE 8080
 
-CMD ["java", "-jar", "app.jar"]
+# debug 모드로 실행하도록 --debug 옵션 추가
+CMD ["java", "-jar", "app.jar", "--debug"]
