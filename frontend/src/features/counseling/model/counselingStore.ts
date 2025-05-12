@@ -5,7 +5,7 @@
  */
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware'; // Zustand 개발자 도구 (선택 사항)
-import { ChatMessage, CounselingStatus } from '@/entities/counseling/model/types';
+import { ChatMessage, CounselingDisplayStatus } from '@/entities/counseling/model/types';
 import { WebSocketMessageType } from '@/shared/types/websockets'; // 웹소켓 메시지 타입 임포트
 
 /**
@@ -19,8 +19,8 @@ type WebsocketStatus = 'idle' | 'connecting' | 'connected' | 'disconnected' | 'e
 interface CounselingState {
   /** 현재 진행 중인 상담 세션의 ID (없으면 null) */
   currentSessionId: string | null;
-  /** 현재 상담 세션의 상태 */
-  currentSessionStatus: CounselingStatus | null;
+  /** 현재 상담 세션의 종료 여부 (true: 종료됨, false: 진행중, null: 아직 세션 정보 없음) */
+  isCurrentSessionClosed: boolean | null;
   /** 현재 상담의 채팅 메시지 목록 */
   messages: ChatMessage[];
   /** 웹소켓 연결 상태 */
@@ -39,8 +39,8 @@ interface CounselingState {
 interface CounselingActions {
   /** 현재 상담 세션 ID를 설정합니다. */
   setCurrentSessionId: (sessionId: string | null) => void;
-  /** 현재 상담 세션 상태를 설정합니다. */
-  setCurrentSessionStatus: (status: CounselingStatus | null) => void;
+  /** 현재 상담 세션의 종료 여부를 설정합니다. */
+  setIsCurrentSessionClosed: (isClosed: boolean | null) => void;
   /** 메시지 목록 전체를 설정합니다. (예: 상담방 진입 시 이전 대화 로드) */
   setMessages: (messages: ChatMessage[]) => void;
   /** 메시지 목록에 새 메시지를 추가합니다. */
@@ -64,7 +64,7 @@ interface CounselingActions {
  */
 const initialState: CounselingState = {
   currentSessionId: null,
-  currentSessionStatus: null,
+  isCurrentSessionClosed: null,
   messages: [],
   websocketStatus: 'idle',
   isAiTyping: false,
@@ -85,7 +85,7 @@ export const useCounselingStore = create<CounselingState & CounselingActions>()(
 
       setCurrentSessionId: (sessionId) => set({ currentSessionId: sessionId }),
 
-      setCurrentSessionStatus: (status) => set({ currentSessionStatus: status }),
+      setIsCurrentSessionClosed: (isClosed) => set({ isCurrentSessionClosed: isClosed }),
 
       setMessages: (messages) => set({ messages }),
 
