@@ -40,9 +40,9 @@ services:
       - postgres
       - redis
 
-    # 외부 props 파일 마운트
     volumes:
-      - /home/ubuntu/secure/application-API-KEY.properties:/config/application-API-KEY.properties:ro
+      # 프로젝트 워크스페이스에 있는 실제 파일을 마운트
+      - ./backend/damdam/src/main/resources/application-API-KEY.properties:/config/application-API-KEY.properties:ro
       - ./backend/damdam/src/main/resources/application-local.properties:/config/application-local.properties:ro
 
 
