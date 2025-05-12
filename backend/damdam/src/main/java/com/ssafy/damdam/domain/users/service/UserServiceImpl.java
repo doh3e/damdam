@@ -130,8 +130,6 @@ public class UserServiceImpl implements UserService {
 		}
 		if (dto != null) {
 			setting.modifyDarkmode(dto.getIsDarkmode());
-			if (dto.getBotImage() != null)
-				setting.modifyBotImage(dto.getBotImage());
 			if (dto.getBotCustom() != null)
 				setting.modifyBotCustom(dto.getBotCustom());
 			setting.modifyAlarm(dto.getIsAlarm());
