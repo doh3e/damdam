@@ -71,6 +71,10 @@ dependencies {
     /* Swagger-ui */
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 
+    /* AWS S3 */
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter:3.1.1'
+    implementation 'com.amazonaws:aws-java-sdk-s3:1.12.767'
+
 }
 
 tasks.named('test') {

@@ -29,8 +29,8 @@ public class UserSurvey extends BaseTimeEntity {
     @Column(name = "stress", nullable = false, columnDefinition = "INT DEFAULT 0")
     private int stress;
 
-    @Column(name = "suicide", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
-    private boolean suicide;
+    @Column(name = "is_suicidal", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean isSuicidal;
 
     @Column(name = "stress_reason", length = 200)
     private String stressReason;
@@ -43,7 +43,7 @@ public class UserSurvey extends BaseTimeEntity {
         survey.depression   = dto.getDepression();
         survey.anxiety      = dto.getAnxiety();
         survey.stress       = dto.getStress();
-        survey.suicide      = dto.isSuicide();
+        survey.isSuicidal      = dto.getIsSuicidal();
         survey.stressReason = dto.getStressReason();
         return survey;
     }

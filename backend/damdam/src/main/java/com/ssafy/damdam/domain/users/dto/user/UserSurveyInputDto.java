@@ -14,6 +14,6 @@ public class UserSurveyInputDto {
     private int depression;
     private int anxiety;
     private int stress;
-    private boolean suicide;
+    private Boolean isSuicidal;
     private String stressReason;
 }
