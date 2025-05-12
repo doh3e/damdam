@@ -41,11 +41,10 @@ services:
       - redis
 
     volumes:
-      # 프로젝트 워크스페이스에 있는 실제 파일을 마운트
-      # - ./backend/damdam/src/main/resources/application-API-KEY.properties:/config/application-API-KEY.properties:ro
-      # - ./backend/damdam/src/main/resources/application-local.properties:/config/application-local.properties:ro
-      - ./backend/damdam/src/main/resources/:/config/:ro
-
+      # 보안용 API-KEY 프로퍼티 파일 (절대경로)
+      - /home/ubuntu/secure/application-API-KEY.properties:/config/application-API-KEY.properties:ro
+      # 로컬용 프로퍼티 파일 (상대경로)
+      - ./backend/damdam/src/main/resources/application-local.properties:/config/application-local.properties:ro
 
     environment:
       # /config 디렉토리의 모든 application-*.properties 파일을 추가로 로드
