@@ -16,7 +16,6 @@ import lombok.NoArgsConstructor;
 public class ProfileInputDto {
 	// 기본 가입 정보
 	private String nickname;
-	private String profileImage;
 
 	// 유저 추가 입력 정보
 	private Gender gender;
