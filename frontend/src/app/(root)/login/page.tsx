@@ -30,7 +30,7 @@ export default function LoginPage() {
         <div className="w-full flex flex-col gap-3">
           <a
             // href="http://localhost:8080/oauth2/authorization/naver"
-            href="http://localhost:3000/onboarding/profile"
+            href="http://localhost:3000/signup/profile"
             className="flex items-center justify-center py-3 rounded-xl font-semibold text-white bg-[#03C75A] hover:bg-[#02b152] transition"
           >
             <Image src="/naver.png" alt="네이버" width={24} height={24} className="mr-2" />

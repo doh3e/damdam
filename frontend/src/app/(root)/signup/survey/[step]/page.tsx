@@ -23,11 +23,11 @@ export default function SurveyStepPage() {
 
   // step 이동 핸들러
   const handlePrev = () => {
-    if (stepIdx > 0) router.push(`/onboarding/survey/${stepIdx}`);
+    if (stepIdx > 0) router.push(`/signup/survey/${stepIdx}`);
   };
   const handleNext = () => {
     if (stepIdx < surveySections.length - 1) {
-      router.push(`/onboarding/survey/${stepIdx + 2}`);
+      router.push(`/signup/survey/${stepIdx + 2}`);
     }
   };
 

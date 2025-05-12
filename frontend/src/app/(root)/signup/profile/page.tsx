@@ -34,13 +34,13 @@ export default function ProfilePage() {
         {/* 회원정보 입력 버튼 */}
         <div className="w-full flex flex-col gap-3 mt-4">
           <Link
-            href="/onboarding/welcome"
+            href="/signup/welcome"
             className="py-3 rounded-xl text-center font-semibold text-white bg-[#e24b4b] hover:scale-103 transition duration-300"
           >
             저장하기
           </Link>
           <Link
-            href="/onboarding/welcome"
+            href="/signup/welcome"
             className="py-3 rounded-xl text-center font-semibold bg-gray-200 hover:scale-103 transition duration-300"
           >
             건너뛰기
