@@ -3,13 +3,16 @@ package com.ssafy.damdam.global.config;
 import java.util.List;
 
 import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.oauth2.client.registration.*;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 
 @Configuration
-@EnableConfigurationProperties(OAuth2ClientProperties.class)  // 이 줄을 추가
+@EnableConfigurationProperties(OAuth2ClientProperties.class)
 public class OAuth2ClientConfig {
 
     private final OAuth2ClientProperties properties;
@@ -36,11 +39,10 @@ public class OAuth2ClientConfig {
                     .authorizationUri(prov.getAuthorizationUri())
                     .tokenUri(prov.getTokenUri())
                     .userInfoUri(prov.getUserInfoUri())
-                    // ← 여기만 변경
                     .userNameAttributeName(prov.getUserNameAttribute())
                     .build();
             })
-            .toList();  // collect(Collectors.toList()) 대신 toList()
+            .toList();
 
         return new InMemoryClientRegistrationRepository(registrations);
     }
