@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   manifest: '/manifest.json', // manifest.json 경로 추가
   icons: {
     // 선호하는 아이콘 추가 (예: apple-touch-icon)
-    apple: '/icons/icon-192x192.png', // 예시 경로, 실제 아이콘 경로로 수정해주세요.
+    // apple: '/icons/icon-192x192.png', // 예시 경로, 실제 아이콘 경로로 수정해주세요.
   },
   // PWA 관련 추가 메타 태그 (필요시)
   applicationName: '담담',
@@ -40,14 +40,14 @@ export const metadata: Metadata = {
     siteName: '담담이',
     title: { template: '%s | 담담이', default: '담담이 - AI 심리상담 챗봇' },
     description: '언제 어디서나 편안하게 대화하며 마음의 짐을 덜어낼 수 있는 AI 심리상담 챗봇',
-    images: [{ url: '/icons/icon-512x512.png' }], // 대표 이미지, 실제 경로로 수정해주세요.
+    // images: [{ url: '/icons/icon-512x512.png' }], // 대표 이미지, 실제 경로로 수정해주세요.
   },
   twitter: {
     // 트위터 카드
     card: 'summary_large_image', // 큰 이미지 카드 사용 권장
     title: { template: '%s | 담담이', default: '담담이 - AI 마음상담 챗봇' },
     description: '언제 어디서나 편안하게 대화하며 마음의 짐을 덜어낼 수 있는 AI 심리상담 챗봇',
-    images: ['/icons/icon-512x512.png'], // 대표 이미지, 실제 경로로 수정해주세요.
+    // images: ['/icons/icon-512x512.png'], // 대표 이미지, 실제 경로로 수정해주세요.
   },
 };
 
@@ -73,20 +73,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" suppressHydrationWarning>
-      <head /> {/* Next.js가 자동으로 head 태그 내용을 관리 (metadata, viewport 객체 활용) */}
+      <head />
+      {/* Next.js가 자동으로 head 태그 내용을 관리 (metadata, viewport 객체 활용) */}
       <body className={cn('min-h-screen bg-muted font-sans antialiased', nonoSans.variable)}>
         {/* === 앱 전체 뷰 컨테이너 === */}
         <div className="mx-auto flex min-h-screen max-w-screen-sm flex-col bg-background shadow-md">
           {/* === 헤더 영역 === */}
           <Header />
-
           {/* === 메인 콘텐츠 영역 === */}
           <main className="flex-1">
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
               <QueryClientProviders>{children}</QueryClientProviders>
             </ThemeProvider>
           </main>
-
           {/* === 하단 네비게이션 바 영역 === */}
           <BottomNavigation />
         </div>

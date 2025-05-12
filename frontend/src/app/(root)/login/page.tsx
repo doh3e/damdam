@@ -29,14 +29,15 @@ export default function LoginPage() {
         {/* 소셜 로그인 버튼 */}
         <div className="w-full flex flex-col gap-3">
           <a
-            href="http://localhost:8080/oauth2/authorization/naver"
+            // href="http://localhost:8080/oauth2/authorization/naver"
+            href="http://localhost:3000/signup/profile"
             className="flex items-center justify-center py-3 rounded-xl font-semibold text-white bg-[#03C75A] hover:bg-[#02b152] transition"
           >
             <Image src="/naver.png" alt="네이버" width={24} height={24} className="mr-2" />
             네이버로 로그인
           </a>
           <a
-            href="http://localhost:8080/oauth2/authorization/kakao"
+            href="https://k12s202.p.ssafy.io/oauth2/authorization/kakao"
             className="flex items-center justify-center py-3 rounded-xl font-semibold text-gray-900 bg-[#FEE500] hover:bg-yellow-300 transition"
           >
             <Image src="/kakao.png" alt="카카오" width={24} height={24} className="mr-2" />
