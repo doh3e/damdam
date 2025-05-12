@@ -11,3 +11,4 @@ qa_answers.json
 __pycache__/
 *.pyc
 *.log
+*.pem

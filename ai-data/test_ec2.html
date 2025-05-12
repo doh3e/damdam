@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>심리상담 챗봇</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f0f4f8;
+    }
+    h2 {
+      margin-bottom: 20px;
+    }
+    #chat-box {
+      max-height: 500px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 15px;
+      background: #ffffff;
+      margin-bottom: 20px;
+    }
+    .message {
+      margin: 10px 0;
+    }
+    .user {
+      color: #1e90ff;
+      font-weight: bold;
+    }
+    .bot {
+      color: #2c3e50;
+    }
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 15px;
+      border: none;
+      border-radius: 6px;
+      background-color: #1e90ff;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #1c7ed6;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>🧠 심리상담 챗봇</h2>
+
+  <div id="chat-box">
+    <!-- 대화 내역이 여기에 표시됩니다 -->
+  </div>
+
+  <form id="chat-form">
+    <textarea id="message" rows="4" placeholder="마음 속 이야기를 적어보세요..."></textarea><br />
+    <button type="submit">상담하기</button>
+  </form>
+
+  <script>
+    const form = document.getElementById("chat-form");
+    const chatBox = document.getElementById("chat-box");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const textarea = document.getElementById("message");
+      const message = textarea.value.trim();
+      if (!message) {
+        alert("상담 내용을 입력해 주세요 🙏");
+        return;
+      }
+
+      // 사용자 메시지 표시
+      chatBox.innerHTML += `<div class="message"><span class="user">🙋 상담자님:</span> ${message}</div>`;
+      chatBox.scrollTop = chatBox.scrollHeight;
+      textarea.value = "";
+
+      try {
+        const res = await fetch("http://3.39.21.2:8000/generate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ message }),
+        });
+
+        if (!res.ok) throw new Error("서버 오류");
+
+        const data = await res.json();
+        const reply = data.reply || "죄송해요. 상담 응답을 생성하지 못했어요 😢";
+
+        chatBox.innerHTML += `<div class="message"><span class="bot">🧠 상담사:</span> ${reply}</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+      } catch (err) {
+        chatBox.innerHTML += `<div class="message"><span class="bot">⚠️ 오류:</span> 서버와의 통신에 문제가 발생했어요.</div>`;
+        console.error("❌ fetch error:", err);
+      }
+    });
+  </script>
+
+</body>
+</html>

@@ -1,6 +1,7 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 
+
 model_id = "google/gemma-3-4b-it"
 
 # 모델과 토크나이저 불러오기
