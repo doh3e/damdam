@@ -1,0 +1,104 @@
+package com.ssafy.damdam.global.aws.s3;
+
+import com.ssafy.damdam.global.aws.s3.exception.S3Exception;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.tika.Tika;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.transfer.s3.S3TransferManager;
+import software.amazon.awssdk.transfer.s3.model.Upload;
+import software.amazon.awssdk.transfer.s3.model.UploadRequest;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static com.ssafy.damdam.global.aws.s3.exception.S3ExceptionCode.*;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class S3FileUploadService {
+
+	@Value("${spring.cloud.aws.s3.bucket}")
+	private String bucket;
+
+	@Value("${spring.cloud.aws.s3.bucket.url}")
+	private String defaultUrl;
+
+	private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(5);
+
+	private final S3TransferManager transferManager;
+	private final S3AsyncClient s3AsyncClient;
+	private final Tika tika;
+
+	/**
+	 * 이미지 파일을 S3에 업로드하고, 이전 파일이 있으면 삭제 후 새 URL을 반환합니다.
+	 * @param uploadFile 업로드할 MultipartFile (이미지)
+	 * @param folder     버킷 내에 저장할 폴더명 (예: "profiles")
+	 * @param oldKey     이전에 저장된 S3 객체 키 (삭제할 대상), 없으면 null 또는 빈 문자열
+	 * @return 업로드된 파일의 URL
+	 */
+	@Transactional
+	public String uploadFile(MultipartFile uploadFile, String folder, String oldKey) throws IOException {
+		if (!isImage(uploadFile)) {
+			throw new S3Exception(IS_NOT_IMAGE);
+		}
+
+		String origName = uploadFile.getOriginalFilename();
+		String ext = origName.substring(origName.lastIndexOf('.'));
+		String saveFileName = UUID.randomUUID().toString().replaceAll("-", "") + ext;
+		String s3Key = folder + "/" + saveFileName;
+
+		if (!ext.equalsIgnoreCase(".jpg")
+				&& !ext.equalsIgnoreCase(".jpeg")
+				&& !ext.equalsIgnoreCase(".png")) {
+			throw new S3Exception(IS_NOT_IMAGE);
+		}
+
+		PutObjectRequest putReq = PutObjectRequest.builder()
+				.bucket(bucket)
+				.key(s3Key)
+				.contentType(tika.detect(uploadFile.getInputStream()))
+				.build();
+
+		Upload upload = transferManager.upload(
+				UploadRequest.builder()
+						.putObjectRequest(putReq)
+						.requestBody(
+								AsyncRequestBody.fromInputStream(
+										uploadFile.getInputStream(),
+										uploadFile.getSize(),
+										EXECUTOR
+								)
+						)
+						.build()
+		);
+
+		upload.completionFuture().join();
+
+		if (oldKey != null && !oldKey.isBlank()) {
+			s3AsyncClient.deleteObject(b -> b.bucket(bucket).key(oldKey)).join();
+		}
+
+		String imageUrl = defaultUrl + s3Key;
+		return imageUrl;
+	}
+
+	private boolean isImage(MultipartFile file) {
+		try {
+			String mime = tika.detect(file.getInputStream());
+			return mime.startsWith("image/");
+		} catch (IOException e) {
+			throw new S3Exception(IMAGE_TRNAS_BAD_REQUEST);
+		}
+	}
+}

@@ -7,6 +7,7 @@ import com.ssafy.damdam.domain.users.dto.user.*;
 import com.ssafy.damdam.domain.users.entity.UserSurvey;
 import com.ssafy.damdam.domain.users.exception.user.UserException;
 import com.ssafy.damdam.domain.users.repository.UserSurveyRepository;
+import com.ssafy.damdam.global.aws.s3.S3FileUploadService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +22,9 @@ import com.ssafy.damdam.global.util.user.UserUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @Slf4j
 @Service
@@ -33,6 +37,7 @@ public class UserServiceImpl implements UserService {
 	private final UserSettingRepository userSettingRepository;
 	private final UserUtil userUtil;
 	private final UserSurveyRepository userSurveyRepository;
+	private final S3FileUploadService s3FileUploadService;
 
 	// 유저 검증 메서드
 	private Users validateUser() {
@@ -68,28 +73,36 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	@Transactional
-	public void editUserProfile(ProfileInputDto dto) {
+	public void editUserProfile(ProfileInputDto dto, MultipartFile file) throws IOException {
 		Users user = validateUser();
 
 		Users userOrigin = usersRepository.findById(user.getUserId())
-			.orElseThrow(() -> new AuthException(AUTH_MEMBER_NOT_FOUND));
+				.orElseThrow(() -> new AuthException(AUTH_MEMBER_NOT_FOUND));
+		UserInfo userInfo = userInfoRepository.findByUsers_UserId(user.getUserId())
+				.orElseThrow(() -> new AuthException(AUTH_MEMBER_NOT_FOUND));
 
-		UserInfo userInfo = userInfoRepository
-			.findByUsers_UserId(user.getUserId())
-			.orElseThrow(() -> new AuthException(AUTH_MEMBER_NOT_FOUND));
+		if (file != null && !file.isEmpty()) {
+			String imageUrl = s3FileUploadService.uploadFile(file, "profile_images", userOrigin.getProfileImage());
+			userOrigin.modifyProfileUrl(imageUrl);
+		}
 
-		if (dto.getNickname() != null)
-			userOrigin.modifyNickname(dto.getNickname());
-		if (dto.getProfileImage() != null)
-			userOrigin.modifyProfileUrl(dto.getProfileImage());
-		if (dto.getGender() != null)
-			userInfo.modifyGender(dto.getGender());
-		if (dto.getAge() != null)
-			userInfo.modifyAge(dto.getAge());
-		if (dto.getCareer() != null)
-			userInfo.modifyCareer(dto.getCareer());
-		if (dto.getMbti() != null)
-			userInfo.modifyMbti(dto.getMbti());
+		if (dto != null) {
+			if (dto.getNickname() != null) {
+				userOrigin.modifyNickname(dto.getNickname());
+			}
+			if (dto.getGender() != null) {
+				userInfo.modifyGender(dto.getGender());
+			}
+			if (dto.getAge() != null) {
+				userInfo.modifyAge(dto.getAge());
+			}
+			if (dto.getCareer() != null) {
+				userInfo.modifyCareer(dto.getCareer());
+			}
+			if (dto.getMbti() != null) {
+				userInfo.modifyMbti(dto.getMbti());
+			}
+		}
 
 	}
 
@@ -105,17 +118,24 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	@Transactional
-	public void editUserSetting(UserSettingDto dto) {
+	public void editUserSetting(UserSettingDto dto, MultipartFile file) throws IOException {
 		Users user = validateUser();
 		UserSetting setting = userSettingRepository
 			.findByUsers_UserId(user.getUserId())
 			.orElseThrow(() -> new AuthException(AUTH_MEMBER_NOT_FOUND));
-		setting.modifyDarkmode(dto.getIsDarkmode());
-		if (dto.getBotImage() != null)
-			setting.modifyBotImage(dto.getBotImage());
-		if (dto.getBotCustom() != null)
-			setting.modifyBotCustom(dto.getBotCustom());
-		setting.modifyAlarm(dto.getIsAlarm());
+
+		if (file != null && !file.isEmpty()) {
+			String imageUrl = s3FileUploadService.uploadFile(file, "bot_images", setting.getBotImage());
+			setting.modifyBotImage(imageUrl);
+		}
+		if (dto != null) {
+			setting.modifyDarkmode(dto.getIsDarkmode());
+			if (dto.getBotImage() != null)
+				setting.modifyBotImage(dto.getBotImage());
+			if (dto.getBotCustom() != null)
+				setting.modifyBotCustom(dto.getBotCustom());
+			setting.modifyAlarm(dto.getIsAlarm());
+		}
 	}
 
 	@Override
