@@ -42,8 +42,9 @@ services:
 
     volumes:
       # 프로젝트 워크스페이스에 있는 실제 파일을 마운트
-      - ./backend/damdam/src/main/resources/application-API-KEY.properties:/config/application-API-KEY.properties:ro
-      - ./backend/damdam/src/main/resources/application-local.properties:/config/application-local.properties:ro
+      # - ./backend/damdam/src/main/resources/application-API-KEY.properties:/config/application-API-KEY.properties:ro
+      # - ./backend/damdam/src/main/resources/application-local.properties:/config/application-local.properties:ro
+      - ./backend/damdam/src/main/resources/:/config/:ro
 
 
     environment:
