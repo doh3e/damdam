@@ -1,14 +1,10 @@
 package com.ssafy.damdam.domain.users.controller;
 
+import com.ssafy.damdam.domain.users.dto.user.*;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.ssafy.damdam.domain.users.dto.user.ProfileInputDto;
-import com.ssafy.damdam.domain.users.dto.user.ProfileOutputDto;
-import com.ssafy.damdam.domain.users.dto.user.UserSettingDto;
-import com.ssafy.damdam.domain.users.dto.user.UserSurveyInputDto;
-import com.ssafy.damdam.domain.users.dto.user.UserSurveyOutputDto;
 import com.ssafy.damdam.domain.users.service.UserService;
 
 import lombok.RequiredArgsConstructor;
@@ -41,17 +37,17 @@ public class UserController {
 	}
 
 	@GetMapping("/setting")
-	public ResponseEntity<UserSettingDto> getSetting() {
-		UserSettingDto dto = userService.getUserSetting();
+	public ResponseEntity<UserSettingOutputDto> getSetting() {
+		UserSettingOutputDto dto = userService.getUserSetting();
 		return ResponseEntity.ok(dto);
 	}
 
 	@PatchMapping(value = "/setting", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<Void> patchSetting(
-		@RequestPart (value = "userSettingDto", required = false) UserSettingDto userSettingDto,
-		@RequestPart (value = "botImage", required = false) MultipartFile file
+			@RequestPart (value = "userSettingInputDto", required = false) UserSettingInputDto userSettingInputDto,
+			@RequestPart (value = "botImage", required = false) MultipartFile file
 	) throws IOException {
-		userService.editUserSetting(userSettingDto, file);
+		userService.editUserSetting(userSettingInputDto, file);
 		return ResponseEntity.noContent().build();
 	}
 
