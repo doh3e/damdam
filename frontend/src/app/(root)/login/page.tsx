@@ -29,8 +29,7 @@ export default function LoginPage() {
         {/* 소셜 로그인 버튼 */}
         <div className="w-full flex flex-col gap-3">
           <a
-            // href="http://localhost:8080/oauth2/authorization/naver"
-            href="http://localhost:3000/signup/profile"
+            href="https://k12s202.p.ssafy.io/oauth2/authorization/naver"
             className="flex items-center justify-center py-3 rounded-xl font-semibold text-white bg-[#03C75A] hover:bg-[#02b152] transition"
           >
             <Image src="/naver.png" alt="네이버" width={24} height={24} className="mr-2" />
@@ -44,7 +43,7 @@ export default function LoginPage() {
             카카오로 로그인
           </a>
           <a
-            href="http://localhost:8080/oauth2/authorization/google"
+            href="https://k12s202.p.ssafy.io/oauth2/authorization/google"
             className="flex items-center justify-center py-3 rounded-xl font-semibold text-white bg-[#EA4335] hover:bg-[#d93025] transition"
           >
             <Image src="/google.png" alt="구글" width={24} height={24} className="mr-2" />
@@ -54,7 +53,7 @@ export default function LoginPage() {
 
         {/* 하단 안내 */}
         <div className="w-full mt-8 text-xs text-center text-gray-400">
-          소셜 계정으로 로그인하면 자동으로 회원가입이 진행됩니다.
+          <a href="http://localhost:3000/signup/profile">소셜 계정으로 로그인하면 자동으로 회원가입이 진행됩니다.</a>
         </div>
       </div>
     </div>
