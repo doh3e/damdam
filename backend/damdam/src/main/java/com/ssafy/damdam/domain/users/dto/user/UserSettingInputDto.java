@@ -15,7 +15,5 @@ public class UserSettingInputDto {
 
     private Boolean isDarkmode;
     private Boolean isAlarm;
-    private String botImage;
     private String botCustom;
-
 }
