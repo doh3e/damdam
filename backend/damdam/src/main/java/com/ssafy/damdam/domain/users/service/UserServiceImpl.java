@@ -1,13 +1,15 @@
 package com.ssafy.damdam.domain.users.service;
 
 import static com.ssafy.damdam.domain.users.exception.auth.AuthExceptionCode.*;
+import static com.ssafy.damdam.domain.users.exception.user.UserExceptionCode.USER_SURVEY_NOT_FOUND;
 
+import com.ssafy.damdam.domain.users.dto.user.*;
+import com.ssafy.damdam.domain.users.entity.UserSurvey;
+import com.ssafy.damdam.domain.users.exception.user.UserException;
+import com.ssafy.damdam.domain.users.repository.UserSurveyRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ssafy.damdam.domain.users.dto.user.ProfileInputDto;
-import com.ssafy.damdam.domain.users.dto.user.ProfileOutputDto;
-import com.ssafy.damdam.domain.users.dto.user.UserSettingDto;
 import com.ssafy.damdam.domain.users.entity.UserInfo;
 import com.ssafy.damdam.domain.users.entity.UserSetting;
 import com.ssafy.damdam.domain.users.entity.Users;
@@ -30,6 +32,7 @@ public class UserServiceImpl implements UserService {
 	private final UserInfoRepository userInfoRepository;
 	private final UserSettingRepository userSettingRepository;
 	private final UserUtil userUtil;
+	private final UserSurveyRepository userSurveyRepository;
 
 	// 유저 검증 메서드
 	private Users validateUser() {
@@ -113,5 +116,35 @@ public class UserServiceImpl implements UserService {
 		if (dto.getBotCustom() != null)
 			setting.modifyBotCustom(dto.getBotCustom());
 		setting.modifyAlarm(dto.getIsAlarm());
+	}
+
+	@Override
+	public UserSurveyOutputDto getSurvey() {
+		Users user = validateUser();
+
+		UserSurvey survey = userSurveyRepository
+				.findByUsers_UserId(user.getUserId())
+				.orElseThrow(() -> new UserException(USER_SURVEY_NOT_FOUND));
+
+		return UserSurveyOutputDto.fromEntity(survey);
+	}
+
+	@Override
+	@Transactional
+	public void postSurvey(UserSurveyInputDto survey) {
+		Users user = validateUser();
+		UserSurvey newSurvey = UserSurvey.of(user, survey);
+		userSurveyRepository.save(newSurvey);
+	}
+
+	@Override
+	@Transactional
+	public void deleteSurvey() {
+		Users user = validateUser();
+		UserSurvey survey = userSurveyRepository
+			.findByUsers_UserId(user.getUserId())
+			.orElseThrow(() -> new UserException(USER_SURVEY_NOT_FOUND));
+
+		userSurveyRepository.delete(survey);
 	}
 }

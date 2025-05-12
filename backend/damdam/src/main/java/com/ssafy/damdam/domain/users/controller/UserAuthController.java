@@ -23,7 +23,7 @@ public class UserAuthController {
 	@DeleteMapping("/leaving")
 	public ResponseEntity<String> leaving() {
 		userAuthServiceImpl.deleteUser();
-		return ResponseEntity.ok().body("탈퇴 요청이 완료되었습니다.");
+		return ResponseEntity.noContent().build();
 	}
 
 }

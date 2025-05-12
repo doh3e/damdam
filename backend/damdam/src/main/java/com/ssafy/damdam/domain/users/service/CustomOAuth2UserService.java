@@ -47,9 +47,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 		OAuth2Response oAuth2Response = getOAuth2Response(provider, defaultUser);
 		UserDto newUserDto = UserDto.createUserDto(oAuth2Response);
 
-		// 3. personalId 생성 (provider + "_" + socialId)
-		String socialId = oAuth2Response.getProviderId();
-		String personalId = provider + "_" + socialId;
+		String personalId = newUserDto.getPersonalId();
 
 		// 4. personalId로 기존 회원 조회
 		Optional<Users> byPersonal = usersRepository.findByPersonalId(personalId);
