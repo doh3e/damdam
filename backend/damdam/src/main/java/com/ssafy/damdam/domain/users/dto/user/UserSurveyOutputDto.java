@@ -18,7 +18,7 @@ public class UserSurveyOutputDto {
     private int depression;
     private int anxiety;
     private int stress;
-    private boolean suicide;
+    private Boolean isSuicidal;
     private String stressReason;
 
     public static UserSurveyOutputDto fromEntity(UserSurvey survey) {
@@ -29,7 +29,7 @@ public class UserSurveyOutputDto {
                 .depression(survey.getDepression())
                 .anxiety(survey.getAnxiety())
                 .stress(survey.getStress())
-                .suicide(survey.isSuicide())
+                .isSuicidal(survey.getIsSuicidal())
                 .stressReason(survey.getStressReason())
                 .build();
     }
