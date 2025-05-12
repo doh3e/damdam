@@ -42,7 +42,7 @@ services:
 
     volumes:
       # 보안용 API-KEY 프로퍼티 파일 (절대경로)
-      - /home/ubuntu/secure/application-API-KEY.properties:/config/application-API-KEY.properties:ro
+      - /home/ubuntu/S12P31S202/backend/damdam/src/main/resources/application-API-KEY.properties:/config/application-API-KEY.properties:ro
       # 로컬용 프로퍼티 파일 (상대경로)
       - ./backend/damdam/src/main/resources/application-local.properties:/config/application-local.properties:ro
 
