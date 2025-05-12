@@ -22,10 +22,10 @@ pipeline {
     stage('Clean up old containers') {
       steps {
         dir("${WORKSPACE}") {
-          echo '[INFO] Stopping and removing existing containers, volumes, and orphans...'
+          echo '[INFO] Stopping and removing existing containers and orphans...'
           sh '''
-            docker-compose down --volumes --remove-orphans || true
-            docker rm -f frontend frontend-ssr backend ai-data ai-audio redis postgres || true
+            # 볼륨은 삭제하지 않고, orphan 컨테이너만 제거
+            docker-compose down --remove-orphans || true
           '''
         }
       }
