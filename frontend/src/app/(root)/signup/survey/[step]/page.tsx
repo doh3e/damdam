@@ -6,6 +6,8 @@ import { useSurveyStore } from '@/app/store/surveyStore';
 import { useState } from 'react';
 import { generateSurveyResult } from '@/shared/types/survey';
 import Modal from '@/shared/ui/modal';
+import { Button } from '@/shared/ui/button';
+import { API_BASE_URL } from '@/shared/config';
 
 export default function SurveyStepPage() {
   const router = useRouter(); // 페이지 이동 함수
@@ -14,7 +16,7 @@ export default function SurveyStepPage() {
   const section = surveySections[stepIdx]; // step에 해당하는 설문지
 
   // Zustand 등에서 답변 상태 관리
-  const { answers, setAnswer, reset } = useSurveyStore();
+  const { answers, stressReason, setStressReason, setAnswer, reset } = useSurveyStore();
 
   // 답변 점수 변경 핸들러
   const handleScoreChange = (qIdx: number, score: number) => {
@@ -31,9 +33,10 @@ export default function SurveyStepPage() {
     }
   };
 
-  // 제출 모달
+  // 모달 상태
   const [modalMessage, setModalMessage] = useState<string | null>(null);
   const [modalSubMessage, setModalSubMessage] = useState<string | null>(null);
+  const [showExitModal, setShowExitModal] = useState(false);
 
   const handleSurveySubmit = async () => {
     const isAllAnswered = surveySections.every((section, i) => {
@@ -45,25 +48,35 @@ export default function SurveyStepPage() {
       setModalSubMessage('잠시만요! 아직 답변하지 않은 문항이 있어요');
       return;
     }
-    const result = generateSurveyResult(answers, surveySections);
+    const result = generateSurveyResult(answers, surveySections, stressReason);
+    console.log(result);
     try {
-      await axios.post('/users/survey', result);
+      await axios.post(`${API_BASE_URL}/users/survey`, result);
       setModalMessage('설문에 답해주셔서 감사해요!');
       setModalSubMessage('이제 담담이는 회원님에 대해 더 잘 이해했어요!');
+      console.log(result);
+
       reset();
     } catch (err) {
       setModalMessage('제출에 실패했습니다!');
       setModalSubMessage('잠시 후 다시 시도해주세요');
+      console.log(result);
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center py-2">
-      <div className="w-full max-w-xl bg-white rounded-xl shadow p-6">
+      <div className="w-full max-w-xl bg-white rounded-xl shadow p-6 relative">
+        {/* 사전설문 질문 문구 */}
         <h2 className="text-lg font-bold mb-2">
           마음 상태 설문 ({step}/{surveySections.length})
         </h2>
-        <p className="text-xs text-gray-500 mb-4">{section.description}</p>
+        <p className="text-xl text-gray-900 mb-4 leading-relaxed">
+          📝
+          <span className="font-bold text-orange-500 whitespace-nowrap">최근 2주간</span>
+          동안 다음의 문제들로 얼마나 자주 방해를 받았나요?
+        </p>
+        {/* 사전설문 선택지 */}
         <form>
           {section.questions.map((q, qIdx) => (
             <div key={q.id} className="mb-5">
@@ -86,6 +99,28 @@ export default function SurveyStepPage() {
             </div>
           ))}
         </form>
+        {/* 텍스트 입력 페이지 */}
+        {stepIdx === surveySections.length - 1 && (
+          <div className="mb-5">
+            <textarea
+              id="stressReason"
+              className="w-full min-h-[160px] p-2 border rounded"
+              value={stressReason}
+              onChange={(e) => setStressReason(e.target.value)}
+              placeholder="편하게, 적고 싶은 만큼만, 얘기하고 싶은 것만 써주셔도 돼요! 😊"
+            ></textarea>
+          </div>
+        )}
+        {/* 나가기 버튼 */}
+        <button
+          className="absolute right-0 top-0 px-4 py-2 text-sm text-gray-400 hover:text-orange-500 font-semibold"
+          onClick={() => setShowExitModal(true)}
+          aria-label="설문 나가기"
+          type="button"
+        >
+          X
+        </button>
+        {/* 설문 간 이동 버튼 */}
         <div className="flex justify-between mt-6">
           <button
             onClick={handlePrev}
@@ -111,6 +146,8 @@ export default function SurveyStepPage() {
               설문완료
             </button>
           )}
+
+          {/* 제출 모달 */}
           {modalMessage && (
             <Modal
               message={modalMessage}
@@ -123,6 +160,31 @@ export default function SurveyStepPage() {
           )}
         </div>
       </div>
+      {/* 나가기(닫기) 모달 */}
+      {showExitModal && (
+        <Modal
+          message="정말 설문을 종료할까요?"
+          submessage="지금 나가면 작성한 답변이 저장되지 않을 수 있어요. 그래도 나가시겠어요?"
+          onClose={() => setShowExitModal(false)}
+        >
+          <div className="flex w-full gap-3 mt-4">
+            <Button variant="secondary" className="w-1/2" onClick={() => setShowExitModal(false)} type="button">
+              취소
+            </Button>
+            <Button
+              variant="destructive"
+              className="w-1/2"
+              onClick={() => {
+                setShowExitModal(false);
+                router.push('/');
+              }}
+              type="button"
+            >
+              나가기
+            </Button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
