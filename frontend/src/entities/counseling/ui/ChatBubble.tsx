@@ -4,6 +4,8 @@
  * FSD 아키텍처에 따라 `entities` 레이어의 `counseling` 슬라이스 내 `ui`에 위치합니다.
  */
 import React from 'react';
+import { format } from 'date-fns'; // date-fns format 함수 import
+import { ko } from 'date-fns/locale'; // 한국어 로케일 import
 import { ChatMessage, SenderType } from '@/entities/counseling/model/types';
 import UserAvatar from '@/entities/user/ui/UserAvatar'; // 방금 만든 UserAvatar 임포트
 import { AiProfile } from '@/entities/user/model/types'; // AI 프로필 타입 임포트
@@ -36,12 +38,8 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   const isUserMessage = message.sender === SenderType.USER;
   const isAiMessage = message.sender === SenderType.AI;
 
-  // TODO: 실제 날짜 포맷팅 유틸리티 함수로 교체 필요 (예: shared/lib/formatDate.ts)
-  const formattedTime = new Date(message.timestamp).toLocaleTimeString('ko-KR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  });
+  // date-fns를 사용하여 시간 포맷팅 (오전/오후 hh:mm)
+  const formattedTime = format(new Date(message.timestamp), 'a hh:mm', { locale: ko });
 
   return (
     <div
@@ -84,7 +82,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
             <p className="text-xs font-semibold mb-0.5 text-muted-foreground">{aiProfile.name}</p>
           )}
           {/* 메시지 텍스트 내용 */}
-          {message.text && <p className="text-sm whitespace-pre-wrap">{message.text}</p>}
+          {message.content && <p className="text-sm whitespace-pre-wrap">{message.content}</p>}
           {/* TODO: message.recommendations 렌더링 로직 추가 (다음 단계에서 RecommendedContentItem 사용) */}
         </div>
         <span className="text-xs text-muted-foreground self-end whitespace-nowrap">{formattedTime}</span>
