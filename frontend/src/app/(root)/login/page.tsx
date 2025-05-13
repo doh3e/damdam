@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
+import { NAVER_LOGIN_URL, KAKAO_LOGIN_URL, GOOGLE_LOGIN_URL } from '@/shared/config';
 
 export default function LoginPage() {
   return (
@@ -29,21 +30,21 @@ export default function LoginPage() {
         {/* 소셜 로그인 버튼 */}
         <div className="w-full flex flex-col gap-3">
           <a
-            href="https://k12s202.p.ssafy.io/oauth2/authorization/naver"
+            href={NAVER_LOGIN_URL}
             className="flex items-center justify-center py-3 rounded-xl font-semibold text-white bg-[#03C75A] hover:bg-[#02b152] transition"
           >
             <Image src="/naver.png" alt="네이버" width={24} height={24} className="mr-2" />
             네이버로 로그인
           </a>
           <a
-            href="https://k12s202.p.ssafy.io/oauth2/authorization/kakao"
+            href={KAKAO_LOGIN_URL}
             className="flex items-center justify-center py-3 rounded-xl font-semibold text-gray-900 bg-[#FEE500] hover:bg-yellow-300 transition"
           >
             <Image src="/kakao.png" alt="카카오" width={24} height={24} className="mr-2" />
             카카오로 로그인
           </a>
           <a
-            href="https://k12s202.p.ssafy.io/oauth2/authorization/google"
+            href={GOOGLE_LOGIN_URL}
             className="flex items-center justify-center py-3 rounded-xl font-semibold text-white bg-[#EA4335] hover:bg-[#d93025] transition"
           >
             <Image src="/google.png" alt="구글" width={24} height={24} className="mr-2" />

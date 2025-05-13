@@ -1,7 +1,6 @@
 import axios, { AxiosError, type AxiosInstance, type InternalAxiosRequestConfig, type AxiosResponse } from 'axios';
 import { useAuthStore } from '@/app/store/authStore';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_DAMDAM_BASE_URL || 'http://localhost:8080/api/v1/damdam'; // 환경 변수 또는 기본값
+import { API_BASE_URL } from '../config';
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -9,7 +8,7 @@ const axiosInstance: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // 쿠키 기반 인증 시 필요
+  // withCredentials: true, // 쿠키 기반 인증 시 필요
 });
 
 // 요청 인터셉터(Zustand token 사용)

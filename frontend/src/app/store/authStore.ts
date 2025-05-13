@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 interface AuthState {
   token: string | null; // JWT 등 인증 토큰
@@ -14,6 +14,6 @@ export const useAuthStore = create<AuthState>()(
       setToken: (token) => set({ token }), // 로그인 성공 시 토큰 저장
       clearToken: () => set({ token: null }), // 로그아웃 시 토큰 삭제
     }),
-    { name: 'auth-storage' }
+    { name: 'auth-store', storage: createJSONStorage(() => localStorage) }
   )
 );

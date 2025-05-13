@@ -77,4 +77,45 @@
 
 @layer utilities {
   /* 각종 유틸리티 스타일 */
+
+  /* 
+   * 스크롤 바 스타일 커스터마이징
+   * color_palete.md 색상 값 활용:
+   * - 섬브(thumb): 페일 코랄 핑크(#F5B6AF) 75% 투명도
+   * - 트랙(track): 라이트 그레이(#F8F8F8) 또는 투명
+   */
+
+  /* Webkit 기반 브라우저 (Chrome, Safari, Edge 등) */
+  .scrollbar-custom::-webkit-scrollbar {
+    width: 8px; /* 스크롤 바 너비 */
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-track {
+    background: transparent; /* 트랙 배경 투명 */
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-thumb {
+    background-color: rgba(245, 182, 175, 0.75); /* 페일 코랄 핑크 75% 투명도 */
+    border-radius: 20px; /* 둥근 모서리 */
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(245, 182, 175, 0.9); /* 호버 시 더 진한 색상 */
+  }
+
+  /* Firefox */
+  .scrollbar-custom {
+    scrollbar-width: thin; /* 얇은 스크롤 바 */
+    scrollbar-color: rgba(245, 182, 175, 0.75) transparent; /* 섬브 색상과 트랙 색상 */
+  }
+
+  /* 스크롤 바 숨김 (필요 시 사용) */
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE/Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
 }

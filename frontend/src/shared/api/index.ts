@@ -6,9 +6,7 @@
  * 향후 인증 토큰 처리, 공통 에러 핸들링 등을 추가할 수 있습니다.
  */
 
-// API 기본 URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_DAMDAM_BASE_URL || 'http://localhost:8080/api'; // Next.js API Routes를 사용하는 경우 또는 로컬 개발용 프록시 설정
-
+import { API_BASE_URL } from '../config';
 /**
  * API 요청 시 사용될 공통 헤더입니다.
  * @returns {HeadersInit} 공통 헤더 객체
