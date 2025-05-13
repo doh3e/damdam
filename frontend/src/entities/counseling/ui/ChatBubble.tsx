@@ -6,10 +6,11 @@
 import React from 'react';
 import { format } from 'date-fns'; // date-fns format 함수 import
 import { ko } from 'date-fns/locale'; // 한국어 로케일 import
-import { ChatMessage, SenderType } from '@/entities/counseling/model/types';
+import { ChatMessage, SenderType, MessageType } from '@/entities/counseling/model/types';
 import UserAvatar from '@/entities/user/ui/UserAvatar'; // 방금 만든 UserAvatar 임포트
 import { AiProfile } from '@/entities/user/model/types'; // AI 프로필 타입 임포트
 import { cn } from '@/shared/lib/utils'; // Tailwind CSS 클래스 병합 유틸리티
+import RecommendedContentItem from './RecommendedContentItem'; // 추천 콘텐츠 컴포넌트 임포트
 
 /**
  * ChatBubble 컴포넌트의 Props 인터페이스
@@ -37,6 +38,8 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
 }) => {
   const isUserMessage = message.sender === SenderType.USER;
   const isAiMessage = message.sender === SenderType.AI;
+  const isRecommendation = message.messageType === MessageType.RECOMMENDATION;
+  const hasRecommendations = message.recommendations !== undefined && message.recommendations.length > 0;
 
   // date-fns를 사용하여 시간 포맷팅 (오전/오후 hh:mm)
   const formattedTime = format(new Date(message.timestamp), 'a hh:mm', { locale: ko });
@@ -67,7 +70,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
 
         <div
           className={cn(
-            'rounded-lg px-3 py-2 shadow-md break-words',
+            'flex flex-col rounded-lg px-3 py-2 shadow-md break-words',
             isUserMessage
               ? 'bg-primary text-primary-foreground rounded-br-none' // 사용자 말풍선 (globals.css의 --color-primary 사용)
               : 'bg-card text-card-foreground rounded-bl-none', // AI 말풍선 (globals.css의 --color-card 사용)
@@ -81,9 +84,29 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
           {isAiMessage && showSenderName && aiProfile?.name && (
             <p className="text-xs font-semibold mb-0.5 text-muted-foreground">{aiProfile.name}</p>
           )}
-          {/* 메시지 텍스트 내용 */}
+
+          {/* 메시지 텍스트 내용 - 추천 메시지 타입이 아니거나 텍스트 내용이 있는 경우만 표시 */}
           {message.content && <p className="text-sm whitespace-pre-wrap">{message.content}</p>}
-          {/* TODO: message.recommendations 렌더링 로직 추가 (다음 단계에서 RecommendedContentItem 사용) */}
+
+          {/* 추천 콘텐츠 목록 렌더링 */}
+          {hasRecommendations && (
+            <div className={cn('mt-2', isRecommendation ? 'pt-0' : 'pt-2 border-t border-border/40')}>
+              {message.recommendations?.map((recommendation, index) => (
+                <RecommendedContentItem
+                  key={recommendation.id || `${index}-${recommendation.title}`}
+                  content={recommendation}
+                  className="mb-2 last:mb-0"
+                />
+              ))}
+
+              {/* 추천 콘텐츠가 많은 경우 "더 보기" 버튼 추가 가능 (필요시) */}
+              {message.recommendations && message.recommendations.length > 3 && isRecommendation && (
+                <p className="text-xs text-primary font-medium text-center cursor-pointer hover:underline mt-1">
+                  추천 콘텐츠 더 보기
+                </p>
+              )}
+            </div>
+          )}
         </div>
         <span className="text-xs text-muted-foreground self-end whitespace-nowrap">{formattedTime}</span>
       </div>
