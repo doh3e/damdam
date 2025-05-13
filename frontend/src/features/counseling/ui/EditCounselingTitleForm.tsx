@@ -77,21 +77,21 @@ const EditCounselingTitleForm = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-soft-ivory border-primary">
         <DialogHeader>
-          <DialogTitle>상담 제목 수정</DialogTitle>
+          <DialogTitle className="text-foreground">상담 제목 수정</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="counseling-title" className="text-right">
+              <Label htmlFor="counseling-title" className="text-right text-foreground">
                 제목
               </Label>
               <Input
                 id="counseling-title"
                 value={titleInput}
                 onChange={handleInputChange}
-                className="col-span-3 border-border focus:ring-ring"
+                className="col-span-3 border-primary focus:ring-primary bg-light-gray"
                 disabled={mutation.isPending}
                 autoFocus
               />
@@ -104,7 +104,12 @@ const EditCounselingTitleForm = ({
           )}
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={mutation.isPending}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={mutation.isPending}
+                className="border-primary text-foreground hover:bg-light-gray"
+              >
                 취소
               </Button>
             </DialogClose>

@@ -58,8 +58,15 @@ const CreateReportButton = ({
     <Button
       onClick={handleCreateReport}
       disabled={isPending || !isSessionClosed || isSuccess}
-      variant="secondary"
-      className={`flex items-center justify-center space-x-2 bg-secondary hover:bg-secondary/90 text-secondary-foreground ${className || ''}`}
+      variant={isSuccess ? 'default' : 'secondary'}
+      className={`
+        flex items-center justify-center space-x-2 
+        ${
+          isSuccess
+            ? 'bg-calm-blue hover:bg-calm-blue/90 text-white'
+            : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+        }
+        ${className || ''}`}
       title={
         isSuccess
           ? '레포트가 이미 생성되었습니다'
