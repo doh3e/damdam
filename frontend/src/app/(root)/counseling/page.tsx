@@ -1,9 +1,64 @@
 'use client';
 
+import { useState } from 'react';
 import { useAuthStore } from '@/app/store/authStore'; // 인증 스토어 경로는 실제 프로젝트에 맞게 수정
 import PastCounselingList from '@/widgets/PastCounselingList/ui/PastCounselingList';
 import { Button } from '@/shared/ui/button'; // shadcn 버튼 컴포넌트
 import { useRouter } from 'next/navigation';
+import { Input } from '@/shared/ui/input'; // 입력 필드 컴포넌트 추가
+
+/**
+ * 개발 환경에서만 표시되는 임시 토큰 설정 컴포넌트
+ */
+const DevAuthControls = () => {
+  const { token, setToken, clearToken } = useAuthStore();
+  const [mockToken, setMockToken] = useState('');
+
+  const handleSetMockToken = () => {
+    if (mockToken.trim()) {
+      setToken(mockToken.trim());
+      alert('모의 토큰이 설정되었습니다!');
+    } else {
+      alert('토큰을 입력해주세요!');
+    }
+  };
+
+  const handleClearToken = () => {
+    clearToken();
+    setMockToken('');
+    alert('토큰이 삭제되었습니다!');
+  };
+
+  // 현재 환경이 개발 환경인지 확인
+  const isDev = process.env.NODE_ENV === 'development';
+
+  if (!isDev) return null;
+
+  return (
+    <div className="fixed bottom-20 right-4 z-50 bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+      <h3 className="text-sm font-semibold mb-2">개발 도구</h3>
+      <div className="flex flex-col gap-2">
+        <Input
+          value={mockToken}
+          onChange={(e) => setMockToken(e.target.value)}
+          placeholder="JWT 토큰 입력"
+          className="text-xs w-60"
+        />
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={handleSetMockToken} className="text-xs flex-1">
+            모의 토큰 설정
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleClearToken} className="text-xs flex-1">
+            토큰 삭제
+          </Button>
+        </div>
+        <div className="text-xs mt-1 truncate max-w-60">
+          {token ? `토큰 있음 ✅ ${token.substring(0, 15)}...` : '토큰 없음 ❌'}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 /**
  * 상담 페이지 (지난 상담 목록 또는 새 상담 시작)
@@ -38,6 +93,9 @@ const CounselingPage = () => {
           <Button onClick={handleLoginRedirect}>로그인하러 가기</Button>
         </div>
       )}
+
+      {/* 개발 환경에서만 표시되는 임시 인증 컨트롤 */}
+      <DevAuthControls />
     </div>
   );
 };
