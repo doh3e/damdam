@@ -13,9 +13,12 @@ import type { SendUserMessagePayload } from '@/shared/types/websockets';
  * @interface SendMessageFormProps
  * @property {string | null} currentCounsId - 현재 상담 세션의 ID (`couns_id`).
  *                                          `useWebSocket` 훅 초기화 및 메시지 객체 생성에 사용됩니다.
+ * @property {boolean} disabled - 폼을 비활성화할지 여부 (옵션, 예: 상담 종료 시)
  */
 interface SendMessageFormProps {
   currentCounsId: string | null;
+  /** 폼을 비활성화할지 여부 (옵션, 예: 상담 종료 시) */
+  disabled?: boolean;
 }
 
 /**
@@ -27,7 +30,7 @@ interface SendMessageFormProps {
  * @param {SendMessageFormProps} props - 컴포넌트 props
  * @returns {React.ReactElement} SendMessageForm 컴포넌트
  */
-const SendMessageForm = ({ currentCounsId }: SendMessageFormProps): React.ReactElement => {
+const SendMessageForm = ({ currentCounsId, disabled }: SendMessageFormProps): React.ReactElement => {
   const [newMessageInput, setNewMessageInput] = useState('');
   const addMessageToStore = useCounselingStore((state) => state.addMessage);
   // 현재 상담 ID (couns_id)와 인증 토큰 (필요시)을 useWebSocket에 전달해야 합니다.

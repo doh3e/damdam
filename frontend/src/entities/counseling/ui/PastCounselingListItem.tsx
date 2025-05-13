@@ -39,7 +39,7 @@ const PastCounselingListItem: React.FC<PastCounselingListItemProps> = ({
   aiProfile, // 임시 AI 프로필
 }) => {
   // 마지막 메시지 텍스트 (간결하게 표시하기 위해 길이 제한 등 필요할 수 있음)
-  const lastMessageText = session.lastMessage?.text || '대화 내용이 없습니다.';
+  const lastMessageText = session.lastMessage?.content || '대화 내용이 없습니다.';
   const lastMessageSender = session.lastMessage?.sender;
 
   // TODO: 실제 날짜 포맷팅 유틸리티 함수로 교체 필요 (예: shared/lib/formatDate.ts)
@@ -56,7 +56,7 @@ const PastCounselingListItem: React.FC<PastCounselingListItemProps> = ({
   const aiAvatarFallback = aiDisplayName.substring(0, 1);
 
   return (
-    <Link href={`/counseling/${session.id}`} passHref legacyBehavior>
+    <Link href={`/counseling/${session.couns_id}`} passHref legacyBehavior>
       <a
         className={cn(
           'flex items-center p-3 hover:bg-muted/80 rounded-lg transition-colors duration-150 cursor-pointer',
