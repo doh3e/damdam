@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useParams } from 'next/navigation'; // Next.js 13+ App Router에서 URL 파라미터 가져오기
+import { useParams, useRouter } from 'next/navigation'; // 라우터 추가
 import { useQueryClient } from '@tanstack/react-query'; // Tanstack Query 클라이언트 인스턴스 사용
 
 // Zustand 스토어 및 액션 임포트
 import { useCounselingStore } from '@/features/counseling/model/counselingStore';
+import { useAuthStore } from '@/app/store/authStore'; // 인증 스토어 추가
 
 // Tanstack Query 훅 임포트 (상담 세션 상세 정보 조회)
 import { useFetchCounselingSessionDetail } from '@/entities/counseling/model/queries';
@@ -26,7 +27,8 @@ import ChatMessageList from '@/widgets/ChatMessageList/ui/ChatMessageList'; // �
 import { Card, CardHeader, CardContent, CardFooter } from '@/shared/ui/card';
 import { Skeleton } from '@/shared/ui/skeleton'; // 로딩 상태 표시용
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert'; // 에러 메시지 표시용
-import { Terminal } from 'lucide-react'; // 에러 아이콘
+import { Terminal, AlertCircle } from 'lucide-react'; // 아이콘 추가
+import { Button } from '@/shared/ui/button'; // 버튼 컴포넌트 추가
 
 /**
  * @typedef {object} CounselingChatWindowProps
@@ -47,20 +49,21 @@ import { Terminal } from 'lucide-react'; // 에러 아이콘
 export function CounselingChatWindow() {
   // --- Hooks ---
   const params = useParams(); // URL 파라미터 훅
+  const router = useRouter(); // 라우터 추가
   const queryClient = useQueryClient(); // Tanstack Query 클라이언트 인스턴스
-  const {
-    setCurrentSessionId,
-    setMessages,
-    setIsCurrentSessionClosed,
-    currentSessionId,
-    messages, // messages 상태 직접 가져오기 (ChatMessageList에 전달)
-    isAiTyping, // AI 타이핑 상태 가져오기
-  } = useCounselingStore(); // Zustand 스토어 훅
+  const { token } = useAuthStore(); // 인증 토큰 가져오기
 
-  // URL 파라미터에서 상담 ID 추출. params.couns_id는 string | string[] | undefined
+  const { setCurrentSessionId, setMessages, setIsCurrentSessionClosed, currentSessionId, messages, isAiTyping } =
+    useCounselingStore();
+
+  // URL 파라미터에서 상담 ID 추출
   const couns_id_param = params.couns_id;
-  // ID를 string 타입으로 유지 (useFetchCounselingSessionDetail, setCurrentSessionId 모두 string 예상)
   const couns_id = Array.isArray(couns_id_param) ? couns_id_param[0] : couns_id_param;
+
+  // 인증 에러 처리: 인증 실패 시 로그인 페이지로 리디렉션
+  const handleAuthError = () => {
+    router.push('/login');
+  };
 
   // --- Tanstack Query ---
   // 상담 세션 상세 정보 조회 쿼리
@@ -72,16 +75,15 @@ export function CounselingChatWindow() {
     // couns_id가 string | undefined 이므로, undefined일 경우 !!couns_id 가 false가 됨
     // enabled 옵션 제거 (타입 오류 및 couns_id 유효성 검사로 대체 가능)
   } = useFetchCounselingSessionDetail(couns_id || '', {
-    // 훅이 string을 기대하므로 || '' 추가
-    // enabled: !!couns_id, // couns_id가 유효한 경우(undefined, null, '' 이 아닐 때)에만 쿼리 실행 (Omit으로 제외되었을 수 있으므로 제거)
-    staleTime: 5 * 60 * 1000, // 5분 동안 데이터를 신선하게 유지
-    gcTime: 10 * 60 * 1000, // 10분 동안 캐시 유지
+    staleTime: 10 * 60 * 1000, // 10분 동안 데이터를 신선하게 유지
+    gcTime: 15 * 60 * 1000, // 15분 동안 캐시 유지
+    // enabled 옵션 제거 - 타입 오류 발생 (타입 정의에서 Omit으로 제외됨)
+    // 토큰과 couns_id 유효성 확인은 컴포넌트 조건부 렌더링에서 처리
   });
 
   // --- Zustand Store 업데이트 ---
   // 컴포넌트 마운트 또는 couns_id 변경 시 Zustand 스토어 상태 초기화/업데이트
   useEffect(() => {
-    // couns_id 타입 string으로 통일하여 비교
     if (couns_id && couns_id !== currentSessionId) {
       // 이전 세션 정보 및 메시지 초기화
       setCurrentSessionId(couns_id); // string 타입 전달
@@ -113,17 +115,37 @@ export function CounselingChatWindow() {
   // 웹소켓 메시지 수신 및 스토어 업데이트는 useWebSocket 훅 내부에서 처리한다고 가정
   const { isConnected, error: wsError } = useWebSocket({
     counsId: couns_id || null, // undefined 대신 null 전달
-    // autoConnect: true, // 기본값 사용
-    // authToken: token // 필요시 인증 토큰 전달
+    authToken: token, // 인증 토큰 전달
+    autoConnect: !!token, // 인증 토큰이 있을 때만 자동 연결
   });
 
-  // 웹소켓 에러 처리 (예시)
+  // 웹소켓 에러 처리
   useEffect(() => {
     if (wsError) {
       console.error('WebSocket Error:', wsError);
-      // 사용자에게 알림 표시 등의 추가 처리 가능
+      if (typeof wsError === 'string' && wsError.includes('신뢰할 수 없는 자격증명')) {
+        handleAuthError();
+      }
     }
   }, [wsError]);
+
+  // --- 로그인되지 않은 경우 UI ---
+  if (!token) {
+    return (
+      <Card className="w-full h-[calc(100vh-theme(space.16))] flex flex-col">
+        <CardContent className="flex flex-col items-center justify-center flex-grow p-8">
+          <AlertCircle className="w-16 h-16 text-orange-500 mb-6" />
+          <h2 className="text-xl font-semibold mb-4">로그인이 필요합니다</h2>
+          <p className="text-muted-foreground text-center mb-8 max-w-md">
+            상담 채팅 화면에 접근하려면 로그인이 필요합니다. 로그인 후 이용해주세요.
+          </p>
+          <Button onClick={handleAuthError} className="w-full max-w-xs">
+            로그인 페이지로 이동
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // --- 렌더링 로직 ---
 
@@ -170,7 +192,17 @@ export function CounselingChatWindow() {
           <Terminal className="h-4 w-4" />
           <AlertTitle>오류 발생</AlertTitle>
           <AlertDescription>
-            상담 정보를 불러오는 중 오류가 발생했습니다: {error?.message || '알 수 없는 오류'}
+            상담 정보를 불러오는 중 오류가 발생했습니다:
+            {error?.message?.includes('신뢰할 수 없는 자격증명') ? (
+              <div className="mt-2">
+                <p>인증에 실패했습니다. 로그인이 필요합니다.</p>
+                <Button variant="outline" size="sm" className="mt-2" onClick={handleAuthError}>
+                  로그인하기
+                </Button>
+              </div>
+            ) : (
+              error?.message || '알 수 없는 오류'
+            )}
             <br />
             잠시 후 다시 시도해주세요.
           </AlertDescription>
