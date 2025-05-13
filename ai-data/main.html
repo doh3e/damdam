@@ -1,0 +1,139 @@
+<!-- <!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>심리상담 챗봇 테스트</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+    }
+    #response, #summary {
+      white-space: pre-wrap;
+      background: #f2f2f2;
+      padding: 1rem;
+      margin-top: 1rem;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h2>💬 심리상담 챗봇 테스트</h2>
+  <label for="user_id">User ID:</label>
+  <input id="user_id" type="text" value="test_user" />
+
+  <h3>대화하기</h3>
+  <textarea id="message" placeholder="상담자님의 이야기를 입력해보세요..."></textarea>
+  <button onclick="sendMessage()">전송</button>
+  <div id="response"></div>
+
+  <h3>📝 감정 리포트 생성</h3>
+  <button onclick="getSummary()">요약 요청</button>
+  <div id="summary"></div>
+
+  <script>
+    const API_URL = "http://3.39.21.2:8000"; // EC2 퍼블릭 IP로 교체 // 필요 시 EC2 퍼블릭 IP로 변경
+
+    async function sendMessage() {
+      const message = document.getElementById("message").value;
+      const user_id = document.getElementById("user_id").value;
+      const res = await fetch(`${API_URL}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, user_id })
+      });
+      const data = await res.json();
+      document.getElementById("response").innerText = "AI 응답: " + data.ai_response;
+    }
+
+    async function getSummary() {
+      const user_id = document.getElementById("user_id").value;
+      const res = await fetch(`${API_URL}/summary`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id })
+      });
+      const data = await res.json();
+      document.getElementById("summary").innerText =
+        `📋 감정 요약:\n${data.summary}\n\n📊 감정 점수:\n` + JSON.stringify(data.scores, null, 2);
+      if (data.valence) document.getElementById("summary").innerText += `\n🧭 Valence: ${data.valence}, Arousal: ${data.arousal}`;
+    }
+  </script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI 심리상담 챗봇 테스트</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    input, button, textarea { font-size: 16px; padding: 8px; margin: 5px 0; width: 100%; }
+    .chat-box { border: 1px solid #ccc; padding: 10px; margin-top: 20px; background: #f9f9f9; }
+  </style>
+</head>
+<body>
+  <h2>💬 심리상담 챗봇</h2>
+
+  <label for="userId">User ID</label>
+  <input type="text" id="userId" value="test_user" />
+
+  <label for="userMessage">상담 내용</label>
+  <textarea id="userMessage" rows="3"></textarea>
+
+  <button onclick="sendMessage()">상담 전송</button>
+  <button onclick="requestSummary()">요약 요청</button>
+
+  <div class="chat-box" id="chatLog"></div>
+
+  <script>
+    const API_URL = "http://3.39.21.2:8000"; // EC2 퍼블릭 IP로 바꿔도 됨
+
+    function appendToLog(content) {
+      const chatLog = document.getElementById("chatLog");
+      chatLog.innerHTML += `<div>${content}</div>`;
+    }
+
+    async function sendMessage() {
+      const message = document.getElementById("userMessage").value;
+      const userId = document.getElementById("userId").value;
+
+      const response = await fetch(`${API_URL}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, user_id: userId }),
+      });
+
+      const data = await response.json();
+      appendToLog(`<b>🙋‍♀️ 상담자:</b> ${message}`);
+      appendToLog(`<b>🧠 챗봇:</b> ${data.ai_response}`);
+      document.getElementById("userMessage").value = "";
+    }
+
+    async function requestSummary() {
+      const userId = document.getElementById("userId").value;
+
+      const response = await fetch(`${API_URL}/summary`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId }),
+      });
+
+      const result = await response.json();
+
+      if (result.summary) {
+        appendToLog(`<hr><b>📋 감정 요약:</b> ${result.summary}`);
+        appendToLog(`<b>📊 감정 점수:</b> ${JSON.stringify(result.scores)}`);
+        appendToLog(`<b>🧭 Russell 지표:</b> valence = ${result.valence}, arousal = ${result.arousal}`);
+      } else {
+        appendToLog(`<b>⚠️ 요약 실패:</b> ${result.raw || "응답 파싱 실패"}`);
+      }
+    }
+  </script>
+</body>
+</html>
