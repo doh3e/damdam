@@ -6,9 +6,10 @@ interface ModalProps {
   message: string;
   submessage: string;
   onClose: () => void;
+  children?: React.ReactNode;
 }
 
-export default function Modal({ message, submessage, onClose }: ModalProps) {
+export default function Modal({ message, submessage, onClose, children }: ModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg border border-gray-100 p-8 flex flex-col items-center">
@@ -18,12 +19,16 @@ export default function Modal({ message, submessage, onClose }: ModalProps) {
           <h2 className="text-2xl font-bold text-gray-900 mb-1">{message}</h2>
         </div>
         <p className="text-base text-gray-700 mb-6 text-center">{submessage}</p>
-        <button
-          onClick={onClose}
-          className="w-full py-3 rounded-xl text-center font-semibold text-white bg-[#e24b4b] hover:scale-105 transition duration-300"
-        >
-          확인
-        </button>
+        {children ? (
+          children
+        ) : (
+          <button
+            onClick={onClose}
+            className="w-full py-3 rounded-xl text-center font-semibold text-white bg-[#e24b4b] hover:scale-105 transition duration-300"
+          >
+            확인
+          </button>
+        )}
       </div>
     </div>
   );

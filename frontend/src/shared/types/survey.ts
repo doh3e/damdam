@@ -1,5 +1,5 @@
 // 타입 정의
-export type SurveyCategory = 'depression' | 'anxiety' | 'stress';
+export type SurveyCategory = 'depression' | 'anxiety' | 'stress' | 'stressReason';
 
 export interface SurveyQuestion {
   id: string;
@@ -19,10 +19,15 @@ export interface SurveyResult {
   anxiety: number; // 불안 점수 합계
   stress: number; // 스트레스 점수 합계
   isSuicidal: boolean; // 우울 9번 문항 0 초과 여부
+  stressReason: string; // 스트레스 요인 텍스트
 }
 
 // 카테고리별 점수 합산 함수
-export function getCategoryScore(category: SurveyCategory, answers: number[][], sections: SurveySection[]): number {
+export function getCategoryScore(
+  category: Exclude<SurveyCategory, 'stressReason'>,
+  answers: number[][],
+  sections: SurveySection[]
+): number {
   const idx = sections.findIndex((s) => s.category === category);
   return answers[idx]?.reduce((sum, v) => sum + (v ?? 0), 0) ?? 0;
 }
@@ -35,11 +40,16 @@ export function checkSuicideRisk(answers: number[][], sections: SurveySection[])
 }
 
 // 설문 전체 결과 가공 함수 (API 전송용)
-export function generateSurveyResult(answers: number[][], sections: SurveySection[]): SurveyResult {
+export function generateSurveyResult(
+  answers: number[][],
+  sections: SurveySection[],
+  stressReason: string
+): SurveyResult {
   return {
     depression: getCategoryScore('depression', answers, sections),
     anxiety: getCategoryScore('anxiety', answers, sections),
     stress: getCategoryScore('stress', answers, sections),
     isSuicidal: checkSuicideRisk(answers, sections),
+    stressReason: stressReason || '',
   };
 }
