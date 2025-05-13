@@ -14,7 +14,7 @@ export default function CallbackPage() {
 
     // 2. 토큰 유효성 검사
     if (token) {
-      useAuthStore.getState().setToken(token);
+      useAuthStore.getState().setToken(token); // localStorage에 자동 저장
       router.replace('/signup/welcome'); // 3. 실제 환영 페이지로 이동
     } else {
       router.replace('/login?error=invalid_token'); // 4. 에러 처리
