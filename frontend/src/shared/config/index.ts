@@ -5,7 +5,7 @@
  */
 
 // HTTP API 기본 URL (Next.js 환경 변수를 우선적으로 사용)
-export const API_BASE_URL = process.env.NEXT_PUBLIC_DAMDAM_BASE_URL || 'http://localhost:8080/api';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_DAMDAM_BASE_URL!;
 
 // 소셜 로그인 URL
 export const NAVER_LOGIN_URL = process.env.NEXT_PUBLIC_NAVER_LOGIN_URL!;
@@ -14,7 +14,7 @@ export const GOOGLE_LOGIN_URL = process.env.NEXT_PUBLIC_GOOGLE_LOGIN_URL!;
 
 // 웹소켓 API 기본 URL (Next.js 환경 변수를 우선적으로 사용)
 // 실제 배포 환경에서는 'wss://' 프로토콜을 사용하고, 로컬에서는 'ws://'를 사용합니다.
-export const WEBSOCKET_BASE_URL = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'ws://localhost:8080';
+export const WEBSOCKET_BASE_URL = process.env.NEXT_PUBLIC_WEBSOCKET_URL!;
 
 // 예시: 기본 페이지 크기 상수
 export const DEFAULT_PAGE_SIZE = 10;
