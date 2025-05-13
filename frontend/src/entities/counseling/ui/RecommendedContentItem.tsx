@@ -1,67 +1,78 @@
 /**
  * @file RecommendedContentItem.tsx
- * AI가 추천하는 단일 콘텐츠 항목을 표시하는 UI 컴포넌트입니다.
+ * AI가 추천하는 콘텐츠 항목을 표시하는 UI 컴포넌트입니다.
  * FSD 아키텍처에 따라 `entities` 레이어의 `counseling` 슬라이스 내 `ui`에 위치합니다.
  */
 import React from 'react';
+import { ExternalLink } from 'lucide-react';
 import { RecommendedContent } from '@/entities/counseling/model/types';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card'; // Shadcn/ui Card 임포트
-import { Button } from '@/shared/ui/button'; // Shadcn/ui Button 임포트
 import { cn } from '@/shared/lib/utils';
-import { Link2 } from 'lucide-react'; // 아이콘 (예시)
 
-/**
- * RecommendedContentItem 컴포넌트의 Props 인터페이스
- */
 interface RecommendedContentItemProps {
-  /** 표시할 추천 콘텐츠 객체 */
+  /** 표시할 추천 콘텐츠 데이터 */
   content: RecommendedContent;
-  /** 추가적인 Tailwind CSS 클래스 */
+  /** 추가 클래스명 */
   className?: string;
 }
 
 /**
- * AI 추천 콘텐츠 항목을 표시하는 UI 컴포넌트입니다.
- * Shadcn/ui의 Card 컴포넌트를 활용하여 구조화하고, Button으로 링크를 제공합니다.
+ * AI가 추천하는 콘텐츠를 카드 형태로 표시하는 UI 컴포넌트입니다.
  *
  * @param {RecommendedContentItemProps} props - 컴포넌트 프로퍼티
  * @returns {JSX.Element} RecommendedContentItem 컴포넌트
  */
 const RecommendedContentItem: React.FC<RecommendedContentItemProps> = ({ content, className }) => {
-  const { title, url, description, thumbnailUrl } = content;
+  // 외부 링크로 이동하는 핸들러
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // 이벤트 버블링 방지
+    window.open(content.url, '_blank', 'noopener,noreferrer');
+  };
 
   return (
-    <Card className={cn('w-full max-w-xs overflow-hidden', className)}>
-      {thumbnailUrl && (
-        // 이미지가 있다면 CardHeader 대신 직접 img 태그 사용 또는 CardMedia 같은 커스텀 컴포넌트 고려
-        <div className="aspect-video overflow-hidden">
-          <img
-            src={thumbnailUrl}
-            alt={`${title} thumbnail`}
-            className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
-          />
-        </div>
+    <div
+      className={cn(
+        'flex flex-col border border-border rounded-md overflow-hidden bg-background hover:bg-accent/50 transition-colors cursor-pointer shadow-sm mb-2',
+        className
       )}
-      <CardHeader className={cn({ 'pt-4': thumbnailUrl })}>
-        {' '}
-        {/* 썸네일 있을 시 간격 조정 */}
-        <CardTitle className="text-md leading-tight">{title}</CardTitle>
-        {description && <CardDescription className="text-xs mt-1 leading-snug">{description}</CardDescription>}
-      </CardHeader>
-      <CardFooter className="pt-2 pb-3">
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full"
-          asChild // Button 내부에 다른 요소(a 태그)를 렌더링하기 위함
-        >
-          <a href={url} target="_blank" rel="noopener noreferrer">
-            <Link2 className="mr-2 h-3.5 w-3.5" />
-            자세히 보기
-          </a>
-        </Button>
-      </CardFooter>
-    </Card>
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      aria-label={`추천 콘텐츠: ${content.title}`}
+    >
+      <div className="flex items-start p-3">
+        {/* 썸네일 이미지가 있는 경우 */}
+        {content.thumbnailUrl && (
+          <div className="flex-shrink-0 mr-3">
+            <img
+              src={content.thumbnailUrl}
+              alt={`${content.title} 썸네일`}
+              className="w-16 h-16 object-cover rounded-md"
+              onError={(e) => {
+                // 이미지 로드 실패 시 이미지 표시 안함
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+              }}
+            />
+          </div>
+        )}
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between">
+            <h4 className="text-sm font-medium text-foreground line-clamp-2 mr-2">{content.title}</h4>
+            <ExternalLink size={14} className="flex-shrink-0 text-muted-foreground" />
+          </div>
+
+          {/* 설명이 있는 경우 */}
+          {content.description && (
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{content.description}</p>
+          )}
+
+          <div className="text-xs text-primary mt-1 flex items-center">
+            <span className="truncate">{new URL(content.url).hostname}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
