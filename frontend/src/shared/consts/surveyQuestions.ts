@@ -72,4 +72,12 @@ export const stressSection: SurveySection = {
   ],
 };
 
-export const surveySections: SurveySection[] = [depressionSection, anxietySection, stressSection];
+// 평가 항목: 스트레스 요인
+export const stressReasonSection: SurveySection = {
+  category: 'stressReason',
+  description: '“혹시 요즘 신경 쓰이는 일이나 생각들이 있다면 나눠볼래요?”',
+  options: [],
+  questions: [],
+};
+
+export const surveySections: SurveySection[] = [depressionSection, anxietySection, stressSection, stressReasonSection];
