@@ -2,6 +2,7 @@ package com.ssafy.damdam.domain.helps.service;
 
 import static com.ssafy.damdam.domain.users.exception.auth.AuthExceptionCode.*;
 
+import com.ssafy.damdam.domain.helps.dto.NoticeOutputDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,8 @@ import com.ssafy.damdam.global.util.user.UserUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
 
 @Slf4j
 @Service
@@ -35,4 +38,8 @@ public class HelpServiceImpl implements HelpService {
 		return user;
 	}
 
+	@Override
+	public List<NoticeOutputDto> getNoticeList() {
+		return List.of();
+	}
 }

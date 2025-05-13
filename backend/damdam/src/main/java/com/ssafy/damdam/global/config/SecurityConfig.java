@@ -96,6 +96,7 @@ public class SecurityConfig {
 			"https://localhost:8080",
 			"http://localhost:5173",
 			"https://localhost:5173",
+
 			"http://k12s202.p.ssafy.io",
 			"https://k12s202.p.ssafy.io"
 		));
