@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation'; // 현재 라우트 파라미터 확인용
+import { useParams, useRouter } from 'next/navigation'; // 라우터 추가
 
 // Tanstack Query 훅 임포트 (과거 상담 목록 조회)
 import { useFetchPastCounselingSessions } from '@/entities/counseling/model/queries';
@@ -14,13 +14,15 @@ import StartCounselingButton from '@/features/counseling/ui/StartCounselingButto
 
 // Zustand 스토어 임포트 (현재 활성 세션 ID 확인용)
 import { useCounselingStore } from '@/features/counseling/model/counselingStore';
+import { useAuthStore } from '@/app/store/authStore'; // 인증 스토어 추가
 
 // Shadcn/ui 컴포넌트 임포트
 import { Card, CardHeader, CardContent, CardFooter } from '@/shared/ui/card';
 import { ScrollArea } from '@/shared/ui/scroll-area'; // 목록 스크롤용
 import { Skeleton } from '@/shared/ui/skeleton'; // 로딩 상태 표시용
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert'; // 에러 메시지 표시용
-import { MessageSquareText, Terminal } from 'lucide-react'; // 아이콘
+import { MessageSquareText, Terminal, AlertCircle } from 'lucide-react'; // 아이콘 추가
+import { Button } from '@/shared/ui/button'; // Button 컴포넌트 임포트
 
 /**
  * @typedef {object} PastCounselingListProps
@@ -41,8 +43,8 @@ import { MessageSquareText, Terminal } from 'lucide-react'; // 아이콘
 export function PastCounselingList() {
   // --- Hooks ---
   const params = useParams(); // 현재 URL 파라미터 가져오기
-  // currentSessionIdFromStore는 현재 사용되지 않으므로 우선 주석 처리 또는 제거 검토
-  // const currentSessionIdFromStore = useCounselingStore((state) => state.currentSessionId);
+  const router = useRouter(); // 라우터 추가
+  const { token } = useAuthStore(); // 인증 토큰 가져오기
 
   // URL 파라미터에서 현재 보고 있는 상담 ID 추출 (활성 상태 표시에 사용)
   const currentViewingCounsIdParam = params.couns_id;
@@ -51,7 +53,7 @@ export function PastCounselingList() {
     : currentViewingCounsIdParam;
 
   // --- Tanstack Query ---
-  // 과거 상담 목록 조회 쿼리
+  // 과거 상담 목록 조회 쿼리 (인증 상태에 따라 실행 여부 결정)
   const {
     data: pastSessions, // 조회된 과거 상담 목록 데이터
     isLoading, // 데이터 로딩 중 상태
@@ -63,12 +65,38 @@ export function PastCounselingList() {
       /* API 파라미터 객체 (필요시: page, limit 등) */
     },
     {
-      staleTime: 5 * 60 * 1000, // 5분 동안 데이터를 신선하게 유지
-      gcTime: 10 * 60 * 1000, // 10분 동안 캐시 유지
+      staleTime: 10 * 60 * 1000, // 10분 동안 데이터를 신선하게 유지
+      gcTime: 15 * 60 * 1000, // 15분 동안 캐시 유지
+      enabled: !!token, // 인증 토큰이 있을 때만 쿼리 실행
     }
   );
 
+  // 인증 에러 처리: 인증 실패 시 로그인 페이지로 리디렉션
+  const handleAuthError = () => {
+    router.push('/login');
+  };
+
   // --- 렌더링 로직 ---
+  // 로그인하지 않은 경우의 UI
+  if (!token) {
+    return (
+      <Card className="w-full h-full flex flex-col border-r border-gray-200 dark:border-gray-700">
+        <CardHeader className="p-4 border-b">
+          <h2 className="text-xl font-semibold text-charcoal-black dark:text-white">대화</h2>
+        </CardHeader>
+        <CardContent className="flex-grow overflow-hidden p-0">
+          <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+            <AlertCircle className="w-12 h-12 text-orange-500 mb-4" />
+            <h3 className="text-lg font-medium mb-2">로그인이 필요합니다</h3>
+            <p className="text-muted-foreground mb-4">상담 내역을 확인하려면 로그인해주세요.</p>
+          </div>
+        </CardContent>
+        <CardFooter className="p-4 border-t">
+          <StartCounselingButton /> {/* 버튼에서 로그인 여부를 체크하고 처리함 */}
+        </CardFooter>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full h-full flex flex-col border-r border-gray-200 dark:border-gray-700">
@@ -96,7 +124,16 @@ export function PastCounselingList() {
               <AlertTitle>오류</AlertTitle>
               <AlertDescription>
                 상담 목록을 불러오는 중 오류가 발생했습니다.
-                {error?.message}
+                {error?.message?.includes('신뢰할 수 없는 자격증명') ? (
+                  <div className="mt-2">
+                    <p>로그인이 필요합니다.</p>
+                    <Button variant="outline" size="sm" className="mt-2" onClick={handleAuthError}>
+                      로그인하기
+                    </Button>
+                  </div>
+                ) : (
+                  error?.message
+                )}
               </AlertDescription>
             </Alert>
           )}
