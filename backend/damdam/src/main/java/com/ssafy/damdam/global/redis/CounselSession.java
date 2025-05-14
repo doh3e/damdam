@@ -31,22 +31,20 @@ public class CounselSession {
 	private Boolean isVoice;
 
 	// 상담 내용
-	private String content;
+	private String message;
 
 	// 각 감정별 수치 0~100
-	private String happiness;
+	private int happiness;
 
-	private String angry;
+	private int angry;
 
-	private String disgust;
+	private int neutral;
 
-	private String fear;
+	private int sadness;
 
-	private String neutral;
+	private int other;
 
-	private String sadness;
-
-	private String surprise;
+	private int messageOrder;
 
 	public void decrementToken() {
 		if (tokenCount > 0) tokenCount--;

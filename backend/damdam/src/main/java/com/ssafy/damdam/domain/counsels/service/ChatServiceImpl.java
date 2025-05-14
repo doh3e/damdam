@@ -2,13 +2,14 @@ package com.ssafy.damdam.domain.counsels.service;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ssafy.damdam.domain.counsels.dto.RedisUserChatInput;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ssafy.damdam.domain.counsels.dto.ChatInputDto;
-import com.ssafy.damdam.domain.counsels.dto.ChatOutputDto;
 import com.ssafy.damdam.global.redis.CounselSession;
 import com.ssafy.damdam.global.redis.CounselSessionRepository;
 
@@ -24,63 +25,57 @@ public class ChatServiceImpl implements ChatService {
 	private final CounselSessionRepository counselSessionRepository;
 	private final SimpMessagingTemplate messagingTemplate;
 	private final RedisTemplate<String, Object> redisTemplate;
-
+	private final ObjectMapper objectMapper;
 
 	@Override
 	@Transactional
 	public void handleChat(Long roomId, Long userId, ChatInputDto input) {
-		// Redis 세션 로드 또는 초기화
-		CounselSession session = counselSessionRepository.findById(roomId)
-			.orElseGet(() -> {
-				CounselSession s = new CounselSession();
-				s.setCounsId(roomId);
-				s.setTokenCount(20);
-				return s;
-			});
-
-		// 토큰 차감 및 세션 저장
-		session.decrementToken();
-		counselSessionRepository.save(session);
-
-		// Redis 리스트 키
 		String listKey = "counsel:" + roomId + ":messages";
 
-		// 1) 사용자 입력 기록
-		redisTemplate.opsForList().rightPush(listKey, input);
+		// 세션 조회 또는 생성
+		CounselSession session = counselSessionRepository.findById(roomId)
+				.orElseGet(() -> {
+					log.info("새로운 상담 세션 생성: roomId={}, userId={}", roomId, userId);
+					return counselSessionRepository.save(
+							CounselSession.builder()
+									.counsId(roomId)
+									.userId(userId)
+									.tokenCount(20)
+									.messageOrder(0)
+									.build()
+					);
+				});
 
-		// 2) 테스트용 AI 응답 생성
-		ChatOutputDto output = ChatOutputDto.builder()
-			.sender("AI")
-			.isVoice(false)
-			.message("이것은 테스트용 응답입니다. 유저가 보낸 메시지: '" + input.getMessage() + "'")
-			.timestamp(LocalDateTime.now())
-			.tokenCount(session.getTokenCount())
-			.happiness(50)
-			.angry(10)
-			.disgust(5)
-			.fear(5)
-			.neutral(30)
-			.sadness(0)
-			.surprise(0)
-			.build();
+		int tokenBefore = session.getTokenCount();
 
-		// AI 응답 기록
-		redisTemplate.opsForList().rightPush(listKey, output);
+		// Redis에 저장할 DTO 구성
+		RedisUserChatInput redisInput = RedisUserChatInput.builder()
+				.sender("USER")
+				.isVoice(input.getIsVoice())
+				.messageOrder(input.getMessageOrder())
+				.message(input.getMessage())
+				.timestamp(LocalDateTime.now())
+				.build();
 
-		// WebSocket 브로드캐스트: 사용자 메시지
-		messagingTemplate.convertAndSend(
-			"/sub/counsels/" + roomId + "/chat",
-			input
-		);
+		try {
+			// 메시지 저장
+			redisTemplate.opsForList().rightPush(listKey, redisInput);
+			log.info("Redis 저장 완료: roomId={}, messageOrder={}, message={}",
+					roomId, input.getMessageOrder(), input.getMessage());
 
-		// WebSocket 브로드캐스트: AI 응답
-		messagingTemplate.convertAndSend(
-			"/sub/counsels/" + roomId + "/chat",
-			output
-		);
+			// 웹소켓으로 전송
+			messagingTemplate.convertAndSend("/sub/counsels/" + roomId + "/chat", redisInput);
 
-		log.info("[Room {}] Input and Test Output saved to Redis and broadcast", roomId);
+			// 토큰 차감
+			session.decrementToken();
+			counselSessionRepository.save(session);
+			log.info("토큰 감소: roomId={}, 이전 토큰={}, 현재 토큰={}", roomId, tokenBefore, session.getTokenCount());
+
+		} catch (Exception e) {
+			log.error("채팅 처리 중 오류 발생: {}", e.getMessage(), e);
+		}
 	}
+
 
 	/**
 	 * 상담 종료 시 세션과 대화 이력 삭제
