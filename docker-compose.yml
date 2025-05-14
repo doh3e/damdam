@@ -106,16 +106,19 @@ services:
 
   #   networks:
   #     - app-network
-      
   frontend:
     build:
       context: ./frontend
-    container_name: frontend
+      args:
+        NEXT_PUBLIC_DAMDAM_BASE_URL: "https://k12s202.p.ssafy.io/api/v1/damdam"
+        NEXT_PUBLIC_WEBSOCKET_URL:    "wss://k12s202.p.ssafy.io/api/v1/damdam"
+        NEXT_PUBLIC_GOOGLE_LOGIN_URL: "https://k12s202.p.ssafy.io/oauth2/authorization/google"
+        NEXT_PUBLIC_NAVER_LOGIN_URL:  "https://k12s202.p.ssafy.io/oauth2/authorization/naver"
+        NEXT_PUBLIC_KAKAO_LOGIN_URL:  "https://k12s202.p.ssafy.io/oauth2/authorization/kakao"
+    environment:
+      - NODE_ENV=production      # 런타임에서도 NODE_ENV 확인용
     ports:
-      - "3000:3000"
-    networks:
-      - app-network
-
+      - "3000:3000"     
   ai-data:
     image: hashicorp/http-echo:latest
     container_name: ai-data
