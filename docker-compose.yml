@@ -111,7 +111,7 @@ services:
       context: ./frontend
       args:
         NEXT_PUBLIC_DAMDAM_BASE_URL: "https://k12s202.p.ssafy.io/api/v1/damdam"
-        NEXT_PUBLIC_WEBSOCKET_URL:    "wss://k12s202.p.ssafy.io/api/v1/damdam"
+        NEXT_PUBLIC_WEBSOCKET_URL:    "ws://k12s202.p.ssafy.io/ws-connect"
         NEXT_PUBLIC_GOOGLE_LOGIN_URL: "https://k12s202.p.ssafy.io/oauth2/authorization/google"
         NEXT_PUBLIC_NAVER_LOGIN_URL:  "https://k12s202.p.ssafy.io/oauth2/authorization/naver"
         NEXT_PUBLIC_KAKAO_LOGIN_URL:  "https://k12s202.p.ssafy.io/oauth2/authorization/kakao"
