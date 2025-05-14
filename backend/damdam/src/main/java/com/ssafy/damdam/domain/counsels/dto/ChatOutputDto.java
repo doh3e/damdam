@@ -16,7 +16,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ChatOutputDto {
 	private String sender;
-	private Boolean isVoice;
 	private String message;
 
 	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -26,10 +25,10 @@ public class ChatOutputDto {
 
 	private int happiness;
 	private int angry;
-	private int disgust;
-	private int fear;
 	private int neutral;
 	private int sadness;
-	private int surprise;
+	private int other;
+
+	private int messageOrder;
 
 }
