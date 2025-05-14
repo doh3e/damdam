@@ -13,6 +13,10 @@ public class AudioAiResponse {
 
     private String emotion;
     private String language;
-    private String event;
+    private int happiness;
+    private int sadness;
+    private int angry;
+    private int neutral;
+    private int other;
 
 }

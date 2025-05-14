@@ -18,6 +18,7 @@ import software.amazon.awssdk.transfer.s3.model.UploadRequest;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -39,6 +40,7 @@ public class S3FileUploadService {
 	private final S3TransferManager transferManager;
 	private final S3AsyncClient s3AsyncClient;
 	private final Tika tika;
+	private final ExecutorService virtualThreadExecutor;
 
 	/**
 	 * 이미지 파일을 S3에 업로드하고, 이전 파일이 있으면 삭제 후 새 URL을 반환합니다.
@@ -101,4 +103,52 @@ public class S3FileUploadService {
 			throw new S3Exception(IMAGE_TRNAS_BAD_REQUEST);
 		}
 	}
+
+	public String uploadAudio(MultipartFile file, String folder) {
+		try {
+			return virtualThreadExecutor.submit(() -> {
+				try {
+					// 1. 파일 이름과 확장자 처리
+					String origName = file.getOriginalFilename();
+					String ext = origName.substring(origName.lastIndexOf('.')).toLowerCase();
+					String saveFileName = UUID.randomUUID().toString().replaceAll("-", "") + ext;
+					String s3Key = folder + "/" + saveFileName;
+
+					if (!ext.equals(".mp3") && !ext.equals(".wav") && !ext.equals(".m4a")) {
+						throw new S3Exception(IS_NOT_AUDIO);
+					}
+
+					PutObjectRequest putReq = PutObjectRequest.builder()
+							.bucket(bucket)
+							.key(s3Key)
+							.contentType(tika.detect(file.getInputStream()))
+							.build();
+
+					Upload upload = transferManager.upload(
+							UploadRequest.builder()
+									.putObjectRequest(putReq)
+									.requestBody(
+											AsyncRequestBody.fromInputStream(
+													file.getInputStream(),
+													file.getSize(),
+													EXECUTOR
+											)
+									)
+									.build()
+					);
+
+					upload.completionFuture().join();
+					return defaultUrl + s3Key;
+
+				} catch (IOException e) {
+					log.error("[S3] 오디오 업로드 실패", e);
+					throw new UncheckedIOException(e);
+				}
+			}).get();
+
+		} catch (Exception e) {
+			throw new RuntimeException("오디오 업로드 중 예외 발생", e); // .get()의 checked 예외 처리
+		}
+	}
+
 }
