@@ -8,11 +8,9 @@ import lombok.RequiredArgsConstructor;
 public enum Feeling {
     HAPPINESS("행복"),
     ANGRY("분노"),
-    DISGUST("혐오"),
-    FEAR("공포"),
     NEUTRAL("중립"),
     SADNESS("슬픔"),
-    SURPRISE("놀람");
+    OTHER("기타");
 
     private final String displayName;
 }

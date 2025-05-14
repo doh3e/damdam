@@ -44,7 +44,7 @@ public class CustomOAuth2User implements OAuth2User {
 	@Override
 	public String getName() {
 		// personalId를 principalName으로 사용
-		return userDto.getPersonalId();
+		return String.valueOf(userDto.getUserId());
 	}
 
 	// 추가 정보 접근용 메서드
