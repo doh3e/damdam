@@ -80,9 +80,7 @@ const CounselingPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6 text-charcoal-black">지난 상담 내역</h1>
-
+    <div className="container mx-auto p-4 h-screen overflow-hidden">
       {token ? (
         // 인증된 사용자에게는 상담 목록 표시
         <PastCounselingList />

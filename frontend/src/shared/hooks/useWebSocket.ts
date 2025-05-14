@@ -34,6 +34,8 @@ interface UseWebSocketOptions {
   debug?: boolean;
   /** 웹소켓 연결 시 전달할 인증 토큰 (옵션) */
   authToken?: string | null;
+  /** 현재 상담 세션 상태 (종료 여부) */
+  isClosed?: boolean;
 }
 
 /**
@@ -52,6 +54,8 @@ interface UseWebSocketReturn {
   connect: () => void;
   /** 웹소켓 연결을 수동으로 종료하는 함수 */
   disconnect: () => void;
+  /** 현재 세션이 종료되었는지 여부 */
+  isClosed: boolean;
 }
 
 const DEFAULT_RECONNECT_ATTEMPTS = 3;
@@ -70,6 +74,7 @@ export const useWebSocket = ({
   reconnectInterval = DEFAULT_RECONNECT_INTERVAL,
   debug = false,
   authToken = null,
+  isClosed = false,
 }: UseWebSocketOptions): UseWebSocketReturn => {
   const socketRef = useRef<WebSocket | null>(null);
   const [lastReceivedMessage, setLastReceivedMessage] = useState<ReceivedWebSocketMessage | null>(null);
@@ -98,6 +103,12 @@ export const useWebSocket = ({
   const connect = useCallback(() => {
     if (!counsId) {
       log('counsId가 제공되지 않아 웹소켓을 연결할 수 없습니다.');
+      setWebsocketStatus('idle');
+      return;
+    }
+
+    if (isClosed) {
+      log('종료된 세션입니다. 웹소켓 연결을 시도하지 않습니다.');
       setWebsocketStatus('idle');
       return;
     }
@@ -263,6 +274,7 @@ export const useWebSocket = ({
     debug, // log 함수의 의존성
     useCounselingStore, // 스토어 자체보다는 개별 액션을 넣는 것이 더 정밀하지만, 일단 스토어 전체를 넣는 방식도 흔함.
     // 정확히는 get()이나 subscribe()를 사용하지 않는다면, 반환된 액션 함수들은 안정적(stable) 참조를 가짐.
+    isClosed,
   ]);
 
   const disconnect = useCallback(() => {
@@ -273,14 +285,14 @@ export const useWebSocket = ({
   }, [log, counsId]);
 
   useEffect(() => {
-    if (autoConnect && counsId) {
+    if (autoConnect && counsId && !isClosed) {
       connect();
     }
     // 컴포넌트 언마운트 시 웹소켓 연결 정리
     return () => {
       disconnect();
     };
-  }, [autoConnect, counsId, connect, disconnect]); // connect, disconnect를 의존성 배열에 추가
+  }, [autoConnect, counsId, connect, disconnect, isClosed]); // isClosed 의존성 추가
 
   const sendUserMessage = useCallback(
     (payload: SendUserMessagePayload) => {
@@ -308,5 +320,5 @@ export const useWebSocket = ({
 
   const isConnected = socketRef.current?.readyState === WebSocket.OPEN;
 
-  return { sendUserMessage, isConnected, lastReceivedMessage, error, connect, disconnect };
+  return { sendUserMessage, isConnected, lastReceivedMessage, error, connect, disconnect, isClosed };
 };

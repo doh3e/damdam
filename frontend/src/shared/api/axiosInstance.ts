@@ -18,6 +18,7 @@ axiosInstance.interceptors.request.use(
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
+    console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`, config);
     return config;
   },
   (error: AxiosError) => {
@@ -31,40 +32,59 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => {
     // 응답 데이터 가공
+    console.log(`[API Response] ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
     return response.data; // 실제 API 응답에서는 response.data.data 또는 response.data.result 등을 반환할 수 있습니다.
   },
   async (error: AxiosError) => {
     // 응답 에러 처리
     console.error('Response interceptor error:', error);
 
-    // 상세 에러 처리
+    // 상세 에러 정보 로깅
     if (error.response) {
-      const { status } = error.response;
+      const { status, data, config } = error.response;
+      console.error(`[API Error] ${config.method?.toUpperCase()} ${config.url} - Status: ${status}`, {
+        data,
+        message: error.message,
+        name: error.name,
+        config: error.config,
+      });
+
       // 예외처리 가이드에 따른 공통 에러 처리
       switch (status) {
         case 401:
           // 인증 에러 처리 (예: 로그인 페이지로 리디렉션, 토큰 갱신 시도)
-          console.error('Unauthorized error:', error.response.data);
+          console.error('Unauthorized error:', data);
           // 예시: await refreshTokenAndRetryRequest(error.config);
           break;
         case 403:
-          console.error('Forbidden error:', error.response.data);
+          console.error('Forbidden error:', data);
           // 접근 권한 없음 처리
           break;
         case 404:
-          console.error('Not found error:', error.response.data);
+          console.error('Not found error:', data);
           // 리소스 없음 처리
+          break;
+        case 500:
+          console.error('Server error:', data);
+          // 서버 에러 처리
           break;
         // 기타 상태 코드에 따른 처리
         default:
-          console.error(`Unhandled error: ${status}`, error.response.data);
+          console.error(`Unhandled error: ${status}`, data);
       }
     } else if (error.request) {
       // 요청이 만들어졌으나 응답을 받지 못한 경우 (네트워크 오류 등)
-      console.error('No response received:', error.request);
+      console.error('[API Error] No response received:', {
+        request: error.request,
+        message: error.message,
+        config: error.config,
+      });
     } else {
       // 요청 설정 중 에러 발생
-      console.error('Error setting up request:', error.message);
+      console.error('[API Error] Error setting up request:', {
+        message: error.message,
+        config: error.config,
+      });
     }
 
     return Promise.reject(error); // 에러를 전파하여 개별 API 호출에서도 처리할 수 있도록 함
@@ -108,7 +128,13 @@ export const apiClient = {
    * @returns Promise<TResponse> 응답 데이터
    */
   patch: <TRequest, TResponse>(endpoint: string, data: TRequest): Promise<TResponse> => {
-    return axiosInstance.patch(endpoint, data);
+    try {
+      console.log(`[PATCH Request] ${endpoint}`, { data });
+      return axiosInstance.patch(endpoint, data);
+    } catch (error) {
+      console.error(`[PATCH Error] ${endpoint}`, error);
+      throw error;
+    }
   },
 
   /**
@@ -131,7 +157,13 @@ export const apiClient = {
    * @returns Promise<T | void> 응답 데이터 또는 void
    */
   delete: <T = void>(endpoint: string, params?: Record<string, any>): Promise<T> => {
-    return axiosInstance.delete(endpoint, { params });
+    try {
+      console.log(`[DELETE Request] ${endpoint}`, { params });
+      return axiosInstance.delete(endpoint, { params });
+    } catch (error) {
+      console.error(`[DELETE Error] ${endpoint}`, error);
+      throw error;
+    }
   },
 };
 

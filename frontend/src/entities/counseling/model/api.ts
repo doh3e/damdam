@@ -11,7 +11,7 @@ import { CounselingSession, ChatMessage, MessageType } from './types';
 export type FetchPastCounselingSessionsParams = {
   page?: number;
   limit?: number;
-  is_closed?: boolean; // status 대신 is_closed 사용
+  isClosed?: boolean; // is_closed 대신 isClosed 사용
 };
 
 /**
@@ -27,7 +27,7 @@ export const fetchPastCounselingSessions = async (
   const queryParams = new URLSearchParams();
   if (params?.page) queryParams.append('page', params.page.toString());
   if (params?.limit) queryParams.append('limit', params.limit.toString());
-  if (typeof params?.is_closed === 'boolean') queryParams.append('is_closed', params.is_closed.toString());
+  if (typeof params?.isClosed === 'boolean') queryParams.append('isClosed', params.isClosed.toString());
 
   const endpoint = `/counsels${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
   return apiClient.get<CounselingSession[]>(endpoint);
@@ -42,24 +42,24 @@ export interface CounselingSessionWithMessages {
 
 /**
  * 특정 상담 세션의 상세 정보 및 메시지 목록을 가져오는 API 함수입니다.
- * GET /counsels/{couns_id}
+ * GET /counsels/{counsId}
  * API 명세서에 따르면 "개별 상담 세션 진입, 상담 채팅 내역 보기"를 수행합니다.
  *
- * @param {string} couns_id - 조회할 상담 세션의 ID
+ * @param {string} counsId - 조회할 상담 세션의 ID
  * @param {{ page?: number; limit?: number }} [messageParams] - 메시지 페이지네이션 파라미터 (필요시 API 명세 확인)
  * @returns {Promise<CounselingSessionWithMessages>} 해당 상담 세션 정보 및 메시지 목록
  */
 export const fetchCounselingSessionDetails = async (
-  couns_id: string,
+  counsId: string,
   messageParams?: { page?: number; limit?: number }
 ): Promise<CounselingSessionWithMessages> => {
-  if (!couns_id) throw new Error('Counseling ID (couns_id) is required to fetch session details.');
+  if (!counsId) throw new Error('Counseling ID (counsId) is required to fetch session details.');
 
   const queryParams = new URLSearchParams();
   if (messageParams?.page) queryParams.append('page', messageParams.page.toString());
   if (messageParams?.limit) queryParams.append('limit', messageParams.limit.toString());
 
-  const endpoint = `/counsels/${couns_id}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+  const endpoint = `/counsels/${counsId}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
   // API 응답이 세션 정보와 메시지를 함께 포함한다고 가정합니다.
   // 실제 API 응답 구조에 따라 TResponse 타입을 정확히 명시해야 합니다.
   // 예를 들어, 백엔드가 { counselingSession: {...}, messages: [...] } 형태로 반환한다면 그에 맞게 수정합니다.
@@ -71,9 +71,9 @@ export const fetchCounselingSessionDetails = async (
   // 현재는 명확한 분리를 위해 CounselingSessionWithMessages 타입을 사용합니다.
 };
 
-// 사용자 ID는 JWT 토큰에서 추출하므로 요청 바디에서 user_id 제거
+// 사용자 ID는 JWT 토큰에서 추출하므로 요청 바디에서 userId 제거
 export type CreateCounselingSessionPayload = {
-  couns_title?: string;
+  counsTitle?: string;
   initialContext?: Record<string, any>;
 };
 
@@ -89,80 +89,80 @@ export type CreateCounselingSessionPayload = {
 export const createCounselingSession = async (
   payload?: CreateCounselingSessionPayload // 요청 바디는 선택 사항
 ): Promise<CounselingSession> => {
-  // 사용자 ID는 JWT로 전달되므로, payload에서 user_id 관련 로직 제거
+  // 사용자 ID는 JWT로 전달되므로, payload에서 userId 관련 로직 제거
   return apiClient.post<CreateCounselingSessionPayload | undefined, CounselingSession>('/counsels', payload);
 };
 
 /**
- * 특정 상담 세션을 종료하는 API 함수입니다. (is_closed = true로 업데이트는 백엔드에서 처리)
- * POST /counsels/{couns_id}
- * 요청 바디는 필요 없으며, JWT 인증 토큰과 경로 파라미터의 couns_id를 사용합니다.
+ * 특정 상담 세션을 종료하는 API 함수입니다. (isClosed = true로 업데이트는 백엔드에서 처리)
+ * POST /counsels/{counsId}
+ * 요청 바디는 필요 없으며, JWT 인증 토큰과 경로 파라미터의 counsId를 사용합니다.
  *
- * @param {string} couns_id - 종료할 상담 세션의 ID
+ * @param {string} counsId - 종료할 상담 세션의 ID
  * @returns {Promise<void>} 성공 여부 (백엔드 응답에 따라 수정 가능, 예: 업데이트된 CounselingSession)
  */
-export const closeCounselingSession = async (couns_id: string): Promise<void> => {
-  if (!couns_id) throw new Error('Counseling ID (couns_id) is required to close the session.');
-  const endpoint = `/counsels/${couns_id}`;
-  // 요청 바디 불필요, is_closed 설정은 백엔드 담당
+export const closeCounselingSession = async (counsId: string): Promise<void> => {
+  if (!counsId) throw new Error('Counseling ID (counsId) is required to close the session.');
+  const endpoint = `/counsels/${counsId}`;
+  // 요청 바디 불필요, isClosed 설정은 백엔드 담당
   // 백엔드가 업데이트된 세션 정보를 반환하지 않는다고 가정하고 Promise<void>로 변경
   return apiClient.post<undefined, void>(endpoint, undefined);
 };
 
 /**
  * 특정 상담 세션을 삭제하는 API 함수입니다.
- * DELETE /counsels/{couns_id}
+ * DELETE /counsels/{counsId}
  *
- * @param {string} couns_id - 삭제할 상담 세션의 ID
+ * @param {string} counsId - 삭제할 상담 세션의 ID
  * @returns {Promise<void>}
  */
-export const deleteCounselingSession = async (couns_id: string): Promise<void> => {
-  if (!couns_id) throw new Error('Counseling ID (couns_id) is required to delete the session.');
-  const endpoint = `/counsels/${couns_id}`;
+export const deleteCounselingSession = async (counsId: string): Promise<void> => {
+  if (!counsId) throw new Error('Counseling ID (counsId) is required to delete the session.');
+  const endpoint = `/counsels/${counsId}`;
   return apiClient.delete(endpoint);
 };
 
 export type UpdateCounselingTitlePayload = {
-  couns_title: string;
+  counsTitle: string;
 };
 
 /**
  * 특정 상담 세션의 제목을 수정하는 API 함수입니다.
- * PATCH /counsels/{couns_id}
+ * PATCH /counsels/{counsId}
  *
- * @param {string} couns_id - 제목을 수정할 상담 세션의 ID
+ * @param {string} counsId - 제목을 수정할 상담 세션의 ID
  * @param {UpdateCounselingTitlePayload} payload - 변경할 제목 정보
  * @returns {Promise<CounselingSession>} 수정된 상담 세션 정보
  */
 export const updateCounselingTitle = async (
-  couns_id: string,
+  counsId: string,
   payload: UpdateCounselingTitlePayload
 ): Promise<CounselingSession> => {
-  if (!couns_id) throw new Error('Counseling ID (couns_id) is required to update the title.');
-  if (!payload || !payload.couns_title) throw new Error('New title (couns_title) is required.');
+  if (!counsId) throw new Error('Counseling ID (counsId) is required to update the title.');
+  if (!payload || !payload.counsTitle) throw new Error('New title (counsTitle) is required.');
 
-  const endpoint = `/counsels/${couns_id}`;
+  const endpoint = `/counsels/${counsId}`;
   return apiClient.patch<UpdateCounselingTitlePayload, CounselingSession>(endpoint, payload);
 };
 
 export type CreateSessionReportResponse = {
-  report_id: string; // ERD `session_report.s_report_id` (INT) 와 타입 일치 필요, 여기서는 string으로 가정
+  reportId: string; // ERD `session_report.s_report_id` (INT) 와 타입 일치 필요, 여기서는 string으로 가정
   message?: string; // 성공 또는 정보 메시지 (옵션)
 };
 
 /**
  * 특정 상담 세션에 대한 개별 레포트를 발행하는 API 함수입니다.
- * POST /counsels/{couns_id}/reports
+ * POST /counsels/{counsId}/reports
  *
- * @param {string} couns_id - 레포트를 발행할 상담 세션의 ID
+ * @param {string} counsId - 레포트를 발행할 상담 세션의 ID
  * @returns {Promise<CreateSessionReportResponse>} 발행된 레포트 정보
  */
-export const createSessionReport = async (couns_id: string): Promise<CreateSessionReportResponse> => {
-  if (!couns_id) throw new Error('Counseling ID (couns_id) is required to create a session report.');
+export const createSessionReport = async (counsId: string): Promise<CreateSessionReportResponse> => {
+  if (!counsId) throw new Error('Counseling ID (counsId) is required to create a session report.');
 
-  const endpoint = `/counsels/${couns_id}/reports`;
+  const endpoint = `/counsels/${counsId}/reports`;
   // 이 API는 요청 바디가 필요 없을 수 있습니다 (서버에서 해당 세션 정보로 자동 생성).
-  // 응답 타입도 실제 백엔드 명세에 따라 달라질 수 있습니다 (예: 생성된 Report 객체 전체 또는 report_id만).
+  // 응답 타입도 실제 백엔드 명세에 따라 달라질 수 있습니다 (예: 생성된 Report 객체 전체 또는 reportId만).
   return apiClient.post<undefined, CreateSessionReportResponse>(endpoint, undefined);
 };
 

@@ -51,9 +51,8 @@ const StartCounselingButton = ({ onStartSuccess }: StartCounselingButtonProps): 
     }
 
     createSession(undefined, {
-      onSuccess: (data: CounselingSession) => {
-        // 응답 데이터 타입을 CounselingSession으로 명시
-        const newSessionId = data?.couns_id; // 실제 응답 객체에서 couns_id (string)를 가져옴
+      onSuccess: (data: any) => {
+        const newSessionId = data?.counsId;
 
         if (newSessionId) {
           console.log('새 상담 세션 생성 성공:', newSessionId);
@@ -91,7 +90,7 @@ const StartCounselingButton = ({ onStartSuccess }: StartCounselingButtonProps): 
   };
 
   // 인증 상태에 따라 버튼 텍스트 변경
-  const buttonText = !token ? '로그인이 필요합니다' : isPending ? '상담 시작 중...' : '새 대화 시작';
+  const buttonText = !token ? '로그인이 필요합니다' : isPending ? '상담 시작 중...' : '새 상담 시작';
 
   return (
     <Button

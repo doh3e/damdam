@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation'; // 라우터 추가
+import { useParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 // Tanstack Query 훅 임포트 (과거 상담 목록 조회)
 import { useFetchPastCounselingSessions } from '@/entities/counseling/model/queries';
+import { useDeleteCounselingSession, useUpdateCounselingTitle } from '@/entities/counseling/model/mutations'; // 상담 세션 삭제/수정 뮤테이션
 
 // 엔티티(Entity) 컴포넌트 임포트
 import PastCounselingListItem from '@/entities/counseling/ui/PastCounselingListItem';
@@ -21,8 +23,10 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/shared/ui/card';
 import { ScrollArea } from '@/shared/ui/scroll-area'; // 목록 스크롤용
 import { Skeleton } from '@/shared/ui/skeleton'; // 로딩 상태 표시용
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert'; // 에러 메시지 표시용
-import { MessageSquareText, Terminal, AlertCircle } from 'lucide-react'; // 아이콘 추가
+import { MessageSquareText, Terminal, AlertCircle, Trash2, Edit, PlusCircle } from 'lucide-react'; // 아이콘 추가
 import { Button } from '@/shared/ui/button'; // Button 컴포넌트 임포트
+import { Input } from '@/shared/ui/input'; // 제목 수정용 Input 컴포넌트 추가
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/shared/ui/dialog'; // 모달 다이얼로그 추가
 
 /**
  * @typedef {object} PastCounselingListProps
@@ -45,6 +49,13 @@ export function PastCounselingList() {
   const params = useParams(); // 현재 URL 파라미터 가져오기
   const router = useRouter(); // 라우터 추가
   const { token } = useAuthStore(); // 인증 토큰 가져오기
+  const { mutate: deleteSession } = useDeleteCounselingSession(); // 상담 세션 삭제 뮤테이션
+  const { mutate: updateTitle } = useUpdateCounselingTitle(); // 상담 제목 수정 뮤테이션 추가
+
+  // 상태 관리 - 제목 수정 모달
+  const [titleEditModalOpen, setTitleEditModalOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<any>(null);
+  const [newTitle, setNewTitle] = useState('');
 
   // URL 파라미터에서 현재 보고 있는 상담 ID 추출 (활성 상태 표시에 사용)
   const currentViewingCounsIdParam = params.couns_id;
@@ -76,13 +87,81 @@ export function PastCounselingList() {
     router.push('/login');
   };
 
+  // 상담 세션 삭제 처리
+  const handleDeleteSession = (e: React.MouseEvent, counsId: string | number) => {
+    e.preventDefault(); // 링크 클릭 방지
+    e.stopPropagation(); // 이벤트 버블링 방지
+
+    // counsId가 string인지 확인
+    const sessionId = String(counsId);
+
+    if (!sessionId) {
+      console.error('상담 ID가 없습니다.');
+      alert('상담 ID가 없어 삭제할 수 없습니다.');
+      return;
+    }
+
+    if (window.confirm('정말로 이 상담 기록을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+      deleteSession(sessionId, {
+        onSuccess: () => {
+          console.log('상담 세션이 성공적으로 삭제되었습니다.');
+          // 만약 현재 보고 있는 세션이 삭제된 세션이라면 목록 페이지로 리디렉션
+          if (currentViewingCounsId === sessionId) {
+            router.push('/counseling');
+          }
+        },
+        onError: (error: Error) => {
+          console.error('상담 세션 삭제 중 오류가 발생했습니다:', error);
+          alert('상담 세션 삭제 중 오류가 발생했습니다.');
+        },
+      });
+    }
+  };
+
+  // 제목 수정 모달 열기
+  const handleOpenTitleEditModal = (e: React.MouseEvent, session: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedSession(session);
+    setNewTitle(session.counsTitle || '');
+    setTitleEditModalOpen(true);
+  };
+
+  // 제목 수정 제출
+  const handleTitleUpdate = () => {
+    if (!selectedSession || !selectedSession.counsId || !newTitle.trim()) {
+      alert('세션 정보가 없거나 제목이 비어있습니다.');
+      return;
+    }
+
+    const sessionId = String(selectedSession.counsId);
+    updateTitle(
+      {
+        counsId: sessionId,
+        payload: { counsTitle: newTitle.trim() },
+      },
+      {
+        onSuccess: () => {
+          console.log('상담 제목이 성공적으로 변경되었습니다.');
+          setTitleEditModalOpen(false);
+        },
+        onError: (error: Error) => {
+          console.error('상담 제목 변경 중 오류가 발생했습니다:', error);
+          alert('상담 제목 변경 중 오류가 발생했습니다.');
+        },
+      }
+    );
+  };
+
   // --- 렌더링 로직 ---
   // 로그인하지 않은 경우의 UI
   if (!token) {
     return (
       <Card className="w-full h-full flex flex-col border-r border-gray-200 dark:border-gray-700">
         <CardHeader className="p-4 border-b">
-          <h2 className="text-xl font-semibold text-charcoal-black dark:text-white">대화</h2>
+          <h2 className="text-xl font-semibold" style={{ color: '#222222' }}>
+            대화
+          </h2>
         </CardHeader>
         <CardContent className="flex-grow overflow-hidden p-0">
           <div className="flex flex-col items-center justify-center h-full p-6 text-center">
@@ -99,15 +178,19 @@ export function PastCounselingList() {
   }
 
   return (
-    <Card className="w-full h-full flex flex-col border-r border-gray-200 dark:border-gray-700">
-      {/* 상단: "대화" 텍스트 */}
-      <CardHeader className="p-4 border-b">
-        <h2 className="text-xl font-semibold text-charcoal-black dark:text-white">대화</h2>
+    <Card className="w-full h-[500px] flex flex-col border-r border-gray-200 dark:border-gray-700 overflow-hidden">
+      {/* 상단: "대화" 텍스트와 새 대화 시작 버튼 */}
+      <CardHeader className="p-4 border-b flex-shrink-0 flex justify-between items-center">
+        <h2 className="text-xl font-semibold" style={{ color: '#222222' }}>
+          상담 기록
+        </h2>
+        <br />
+        <StartCounselingButton />
       </CardHeader>
 
       {/* 중앙: 과거 상담 목록 (스크롤 가능 영역) */}
       <CardContent className="flex-grow overflow-hidden p-0">
-        <ScrollArea className="h-full p-4">
+        <ScrollArea className="h-full w-full p-4">
           {/* 1. 로딩 상태 처리 */}
           {isLoading && (
             <div className="space-y-3">
@@ -140,7 +223,7 @@ export function PastCounselingList() {
 
           {/* 3. 데이터 로딩 성공 시 */}
           {!isLoading && !isError && (
-            <div className="space-y-2">
+            <div className="space-y-2 min-h-[300px]">
               {/* 3a. 목록이 비어있을 경우 */}
               {pastSessions && pastSessions.length === 0 && (
                 <div className="text-center text-gray-500 dark:text-gray-400 py-10">
@@ -152,47 +235,90 @@ export function PastCounselingList() {
 
               {/* 3b. 목록이 있을 경우 */}
               {pastSessions &&
-                pastSessions.map((session) => (
-                  // 각 상담 아이템을 Link로 감싸서 클릭 시 해당 상담 상세 페이지로 이동
-                  // API 명세서 및 CounselingSession 타입 정의 기반으로 props 전달 (snake_case 사용)
-                  <Link
-                    key={session.couns_id}
-                    href={`/counseling/${session.couns_id}`}
-                    passHref
-                    legacyBehavior // Link 안에 다른 컴포넌트(PastCounselingListItem)가 있을 때 필요
-                  >
-                    <a // PastCounselingListItem 컴포넌트 자체가 Link 역할을 할 수 있도록 내부에서 Link 사용 지양
-                      className={`block rounded-lg transition-colors ${
-                        // 현재 보고 있는 상담 ID와 일치하면 활성 스타일 적용
-                        currentViewingCounsId === session.couns_id // snake_case로 수정
-                          ? 'bg-pale-coral-pink/30 dark:bg-pale-coral-pink/20'
-                          : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      {/* PastCounselingListItem에 session 객체 전체를 넘기거나 필요한 props를 snake_case로 전달 */}
-                      {/* PastCounselingListItem 내부에서 props를 받아 처리하도록 수정 필요 */}
-                      <PastCounselingListItem
-                        session={session} // session 객체 전체 전달
-                        isActive={currentViewingCounsId === session.couns_id} // snake_case로 수정
-                        // 아래는 session 객체에 포함되어 있으므로 PastCounselingListItem에서 session.xxx로 접근
-                        // counsId={session.couns_id}
-                        // counsTitle={session.couns_title}
-                        // createdAt={session.created_at}
-                        // isClosed={session.is_closed}
-                      />
-                    </a>
-                  </Link>
-                ))}
+                pastSessions.length > 0 &&
+                pastSessions.map((session) => {
+                  // counsId가 있는지 확인하고 유효한 키 생성
+                  if (!session?.counsId) return null;
+
+                  const sessionId = String(session.counsId);
+                  const isActive = currentViewingCounsId === sessionId;
+
+                  return (
+                    <div key={sessionId} className="relative mb-2">
+                      <div
+                        className={`block rounded-lg transition-colors pr-16 ${
+                          isActive
+                            ? 'bg-pale-coral-pink/30 dark:bg-pale-coral-pink/20'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                        onClick={() => router.push(`/counseling/${sessionId}`)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <PastCounselingListItem
+                          session={session}
+                          isActive={isActive}
+                          showTitle={true} // 제목 표시 옵션 추가
+                        />
+                      </div>
+                      {/* 수정 버튼 */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-1/2 right-8 transform -translate-y-1/2 h-6 w-6 rounded-full opacity-70 hover:opacity-100 hover:bg-blue-100 hover:text-blue-600 z-10"
+                        onClick={(e) => handleOpenTitleEditModal(e, session)}
+                        title="상담 제목 수정하기"
+                      >
+                        <Edit size={16} />
+                      </Button>
+                      {/* 삭제 버튼 */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-1/2 right-2 transform -translate-y-1/2 h-6 w-6 rounded-full opacity-70 hover:opacity-100 hover:bg-red-100 hover:text-red-600 z-10"
+                        onClick={(e) => handleDeleteSession(e, session.counsId)}
+                        title="상담 삭제하기"
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </div>
+                  );
+                })}
             </div>
           )}
         </ScrollArea>
       </CardContent>
 
-      {/* 하단: 새 상담 시작 버튼 */}
-      <CardFooter className="p-4 border-t">
-        {/* StartCounselingButton 피처 컴포넌트 */}
-        <StartCounselingButton />
-      </CardFooter>
+      {/* 제목 수정 모달 */}
+      <Dialog open={titleEditModalOpen} onOpenChange={setTitleEditModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>상담 제목 수정</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="title" className="text-right col-span-1">
+                제목
+              </label>
+              <Input
+                id="title"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                className="col-span-3"
+                maxLength={30}
+                placeholder="30자 이내로 입력해주세요"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">취소</Button>
+            </DialogClose>
+            <Button onClick={handleTitleUpdate} disabled={!newTitle.trim()}>
+              저장
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

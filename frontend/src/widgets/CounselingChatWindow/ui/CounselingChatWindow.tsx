@@ -95,28 +95,14 @@ export function CounselingChatWindow() {
     // currentSessionId가 변경될 때도 useEffect가 실행되도록 의존성 배열에 추가
   }, [couns_id, currentSessionId, setCurrentSessionId, setMessages, setIsCurrentSessionClosed, queryClient]);
 
-  // --- Tanstack Query 성공 시 Zustand 스토어 업데이트 ---
-  // 데이터 로딩 성공 시 스토어에 메시지 목록과 세션 상태 업데이트
-  useEffect(() => {
-    if (sessionDetail) {
-      // API 명세서 및 entities/counseling/model/api.ts의 CounselingSessionWithMessages 타입 기반으로 데이터 구조 접근
-      const messagesFromServer = sessionDetail.messages || []; // messages 필드가 메시지 배열
-      // session 객체 안의 is_closed 필드 사용 (snake_case)
-      const isClosedFromServer = sessionDetail.session?.is_closed || false;
-
-      setMessages(messagesFromServer);
-      setIsCurrentSessionClosed(isClosedFromServer);
-    }
-  }, [sessionDetail, setMessages, setIsCurrentSessionClosed]);
-
-  // --- WebSocket 연결 ---
+  // --- 웹소켓 연결 ---
   // useWebSocket 훅 사용법에 맞게 수정
-  // 콜백 함수 제거, 옵션 객체 전달 방식으로 변경
-  // 웹소켓 메시지 수신 및 스토어 업데이트는 useWebSocket 훅 내부에서 처리한다고 가정
+  // 세션이 종료된 경우에는 웹소켓 연결을 시도하지 않도록 명확하게 설정
   const { isConnected, error: wsError } = useWebSocket({
-    counsId: couns_id || null, // undefined 대신 null 전달
-    authToken: token, // 인증 토큰 전달
-    autoConnect: !!token, // 인증 토큰이 있을 때만 자동 연결
+    counsId: couns_id ? couns_id : null, // couns_id가 undefined일 경우 null로 변환
+    authToken: token,
+    autoConnect: !!token && !sessionDetail?.session?.isClosed, // 세션이 종료되지 않은 경우에만 자동 연결
+    isClosed: sessionDetail?.session?.isClosed || false, // 명시적으로 종료 상태 전달
   });
 
   // 웹소켓 에러 처리
@@ -127,7 +113,21 @@ export function CounselingChatWindow() {
         handleAuthError();
       }
     }
-  }, [wsError]);
+  }, [wsError, handleAuthError]); // handleAuthError 의존성 추가
+
+  // --- Tanstack Query 성공 시 Zustand 스토어 업데이트 ---
+  // 데이터 로딩 성공 시 스토어에 메시지 목록과 세션 상태 업데이트
+  useEffect(() => {
+    if (sessionDetail) {
+      // API 명세서 및 entities/counseling/model/api.ts의 CounselingSessionWithMessages 타입 기반으로 데이터 구조 접근
+      const messagesFromServer = sessionDetail.messages || []; // messages 필드가 메시지 배열
+      // session 객체 안의 is_closed 필드 사용 (snake_case)
+      const isClosedFromServer = sessionDetail.session?.isClosed || false;
+
+      setMessages(messagesFromServer);
+      setIsCurrentSessionClosed(isClosedFromServer);
+    }
+  }, [sessionDetail, setMessages, setIsCurrentSessionClosed]);
 
   // --- 로그인되지 않은 경우 UI ---
   if (!token) {
@@ -223,8 +223,8 @@ export function CounselingChatWindow() {
 
   // 3. 데이터 로딩 성공 시 실제 UI 렌더링
   // CounselingSessionWithMessages 타입 정의에 맞춰 접근 (`sessionDetail.session`)
-  const counselingTitle = sessionDetail?.session?.couns_title || '상담 제목 없음';
-  const isClosed = sessionDetail?.session?.is_closed || false;
+  const counselingTitle = sessionDetail?.session?.counsTitle || '상담 제목 없음';
+  const isClosed = sessionDetail?.session?.isClosed || false;
 
   return (
     <Card className="w-full h-[calc(100vh-theme(space.16))] flex flex-col bg-soft-ivory dark:bg-gray-900">
@@ -263,9 +263,9 @@ export function CounselingChatWindow() {
 
       {/* 하단: 메시지 입력 폼 */}
       <CardFooter className="p-3 border-t bg-white dark:bg-gray-800">
-        {/* SendMessageForm 피처 컴포넌트 (상담 ID 전달) */}
+        {/* SendMessageForm 피처 컴포넌트에 정확한 정보 전달 */}
         {/* isClosed 상태에 따라 입력 폼 비활성화 */}
-        <SendMessageForm currentCounsId={couns_id} disabled={isClosed} />
+        <SendMessageForm currentCounsId={couns_id} disabled={sessionDetail?.session?.isClosed || false} />
       </CardFooter>
     </Card>
   );

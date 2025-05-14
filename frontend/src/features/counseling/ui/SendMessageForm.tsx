@@ -8,6 +8,7 @@ import { useCounselingStore } from '@/features/counseling/model/counselingStore'
 import { useWebSocket } from '@/shared/hooks/useWebSocket';
 import { type ChatMessage, MessageType, SenderType } from '@/entities/counseling/model/types';
 import type { SendUserMessagePayload } from '@/shared/types/websockets';
+import { useAuthStore } from '@/app/store/authStore'; // 인증 토큰 가져오기 위해 추가
 
 /**
  * @interface SendMessageFormProps
@@ -33,13 +34,14 @@ interface SendMessageFormProps {
 const SendMessageForm = ({ currentCounsId, disabled }: SendMessageFormProps): React.ReactElement => {
   const [newMessageInput, setNewMessageInput] = useState('');
   const addMessageToStore = useCounselingStore((state) => state.addMessage);
-  // 현재 상담 ID (couns_id)와 인증 토큰 (필요시)을 useWebSocket에 전달해야 합니다.
-  // authToken은 예를 들어 Zustand 스토어나 Context API에서 가져올 수 있습니다.
-  // const authToken = useAuthStore((state) => state.token); // 예시
+  const { token } = useAuthStore(); // 인증 토큰 가져오기
+
+  // useWebSocket 훅에 isClosed(disabled) 전달
   const { sendUserMessage, isConnected } = useWebSocket({
     counsId: currentCounsId,
-    // authToken: authToken, // 실제 인증 토큰 전달 로직 필요
-    autoConnect: true, // 컴포넌트 마운트 시 자동 연결 (또는 필요에 따라 false)
+    authToken: token, // 인증 토큰 전달
+    autoConnect: !disabled, // 세션이 종료되었으면 자동 연결 안함
+    isClosed: !!disabled, // disabled prop을 isClosed로 사용
   });
 
   const handleInputChange = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -56,7 +58,7 @@ const SendMessageForm = ({ currentCounsId, disabled }: SendMessageFormProps): Re
       // ChatMessage 타입의 실제 필드명에 맞춰 수정 (예: id, timestamp)
       const userMessage: ChatMessage = {
         id: Date.now().toString(), // 임시 클라이언트 ID (string 타입 가정)
-        couns_id: currentCounsId,
+        counsId: currentCounsId,
         sender: SenderType.USER,
         messageType: MessageType.TEXT, // message_type 대신 messageType 사용 (Linter 제안)
         content: trimmedMessage,
@@ -89,7 +91,10 @@ const SendMessageForm = ({ currentCounsId, disabled }: SendMessageFormProps): Re
     [handleSubmit]
   );
 
-  const isSendDisabled = !newMessageInput.trim() || !isConnected;
+  const isSendDisabled = !newMessageInput.trim() || !isConnected || disabled;
+
+  // 세션 종료 여부에 따른 메시지 설정 - disabled prop 활용
+  const placeholderText = disabled ? '종료된 상담입니다' : isConnected ? '메시지를 입력하세요...' : '연결 중입니다...';
 
   return (
     <form onSubmit={handleSubmit} className="flex items-end p-4 border-t border-border bg-background shadow-sm">
@@ -101,7 +106,7 @@ const SendMessageForm = ({ currentCounsId, disabled }: SendMessageFormProps): Re
         className="mr-2 text-muted-foreground hover:text-primary"
         aria-label="Attach file"
         title="파일 첨부 (구현 예정)"
-        disabled={!isConnected}
+        disabled={disabled || !isConnected}
       >
         <Paperclip className="h-5 w-5" />
       </Button>
@@ -114,7 +119,7 @@ const SendMessageForm = ({ currentCounsId, disabled }: SendMessageFormProps): Re
         className="mr-2 text-muted-foreground hover:text-primary"
         aria-label="Voice input"
         title="음성 입력 (구현 예정)"
-        disabled={!isConnected}
+        disabled={disabled || !isConnected}
       >
         <Mic className="h-5 w-5" />
       </Button>
@@ -124,10 +129,10 @@ const SendMessageForm = ({ currentCounsId, disabled }: SendMessageFormProps): Re
         value={newMessageInput}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        placeholder={isConnected ? '메시지를 입력하세요...' : '연결 중입니다...'}
+        placeholder={placeholderText}
         className="flex-1 resize-none border-border focus:ring-1 focus:ring-ring p-2.5 text-sm min-h-[40px] max-h-[120px]"
         rows={1}
-        disabled={!isConnected}
+        disabled={disabled || !isConnected}
         aria-label="Chat message input"
       />
 
