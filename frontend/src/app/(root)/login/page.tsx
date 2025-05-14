@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import { NAVER_LOGIN_URL, KAKAO_LOGIN_URL, GOOGLE_LOGIN_URL } from '@/shared/config';
 
 export default function LoginPage() {
@@ -11,7 +10,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg border border-gray-100 p-8 flex flex-col items-center">
         {/* 로고 및 서비스명 */}
         <div className="flex flex-col items-center mb-8">
-          <Image
+          <img
             src="/damdami.png" // 실제 로고 경로로 교체
             alt="담담 로고"
             width={48}
@@ -33,28 +32,28 @@ export default function LoginPage() {
             href={NAVER_LOGIN_URL}
             className="flex items-center justify-center py-3 rounded-xl font-semibold text-white bg-[#03C75A] hover:bg-[#02b152] transition"
           >
-            <Image src="/naver.png" alt="네이버" width={24} height={24} className="mr-2" />
+            <img src="/naver.png" alt="네이버" width={24} height={24} className="mr-2" />
             네이버로 로그인
           </a>
           <a
             href={KAKAO_LOGIN_URL}
             className="flex items-center justify-center py-3 rounded-xl font-semibold text-gray-900 bg-[#FEE500] hover:bg-yellow-300 transition"
           >
-            <Image src="/kakao.png" alt="카카오" width={24} height={24} className="mr-2" />
+            <img src="/kakao.png" alt="카카오" width={24} height={24} className="mr-2" />
             카카오로 로그인
           </a>
           <a
             href={GOOGLE_LOGIN_URL}
             className="flex items-center justify-center py-3 rounded-xl font-semibold text-white bg-[#EA4335] hover:bg-[#d93025] transition"
           >
-            <Image src="/google.png" alt="구글" width={24} height={24} className="mr-2" />
+            <img src="/google.png" alt="구글" width={24} height={24} className="mr-2" />
             Google로 로그인
           </a>
         </div>
 
         {/* 하단 안내 */}
         <div className="w-full mt-8 text-xs text-center text-gray-400">
-          <a href="http://localhost:3000/signup/profile">소셜 계정으로 로그인하면 자동으로 회원가입이 진행됩니다.</a>
+          <a href="/signup/profile">소셜 계정으로 로그인하면 자동으로 회원가입이 진행됩니다.</a>
         </div>
       </div>
     </div>
