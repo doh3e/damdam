@@ -8,13 +8,13 @@ export default function CallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // 1. URL에서 토큰 추출 (예: http://localhost:3000/callback?token=xxx)
+    // 1. URL에서 토큰 추출 (/callback?token=xxx)
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
 
-    // 2. 토큰 유효성 검사
+    // 2. 토큰 유효성 검사 & 상태 저장
     if (token) {
-      useAuthStore.getState().setToken(token); // localStorage에 자동 저장
+      useAuthStore.getState().setToken(token); // localStorage에 저장
       router.replace('/signup/welcome'); // 3. 실제 환영 페이지로 이동
     } else {
       router.replace('/login?error=invalid_token'); // 4. 에러 처리
