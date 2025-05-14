@@ -1,5 +1,4 @@
 'use client';
-import axios from 'axios';
 import { useRouter, useParams } from 'next/navigation';
 import { surveySections } from '@/shared/consts/surveyQuestions';
 import { useSurveyStore } from '@/app/store/surveyStore';
@@ -7,7 +6,9 @@ import { useState } from 'react';
 import { generateSurveyResult } from '@/shared/types/survey';
 import Modal from '@/shared/ui/modal';
 import { Button } from '@/shared/ui/button';
+import axiosInstance from '@/shared/api/axiosInstance';
 import { API_BASE_URL } from '@/shared/config';
+import { NAVER_LOGIN_URL, KAKAO_LOGIN_URL, GOOGLE_LOGIN_URL } from '@/shared/config';
 
 export default function SurveyStepPage() {
   const router = useRouter(); // 페이지 이동 함수
@@ -39,6 +40,12 @@ export default function SurveyStepPage() {
   const [showExitModal, setShowExitModal] = useState(false);
 
   const handleSurveySubmit = async () => {
+    console.log('API_BASE_URL:', API_BASE_URL);
+    console.log('네이버_URL:', NAVER_LOGIN_URL);
+    console.log('카카오_URL:', KAKAO_LOGIN_URL);
+    console.log('구글_URL:', GOOGLE_LOGIN_URL);
+    // axiosInstance 확인
+    console.log('axiosInstance:', axiosInstance.defaults.baseURL);
     const isAllAnswered = surveySections.every((section, i) => {
       const stepAnswers = answers[i] || [];
       return section.questions.every((_, qIdx) => stepAnswers[qIdx] !== undefined);
@@ -51,7 +58,7 @@ export default function SurveyStepPage() {
     const result = generateSurveyResult(answers, surveySections, stressReason);
     console.log(result);
     try {
-      await axios.post(`${API_BASE_URL}/users/survey`, result);
+      await axiosInstance.post('/users/survey', result);
       setModalMessage('설문에 답해주셔서 감사해요!');
       setModalSubMessage('이제 담담이는 회원님에 대해 더 잘 이해했어요!');
       console.log(result);
