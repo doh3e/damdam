@@ -33,17 +33,9 @@ const StartCounselingButton = ({ onStartSuccess }: StartCounselingButtonProps): 
   const { token } = useAuthStore(); // 인증 토큰 가져오기
   const { mutate: createSession, isPending } = useCreateCounselingSession();
 
-  const {
-    setCurrentSessionId,
-    setIsCurrentSessionClosed,
-    setMessages,
-    // setWebsocketStatus, // 웹소켓 상태는 useWebSocket 훅 내부 또는 페이지 레벨에서 관리하는 것이 더 적절할 수 있음
-  } = useCounselingStore((state) => ({
-    setCurrentSessionId: state.setCurrentSessionId,
-    setIsCurrentSessionClosed: state.setIsCurrentSessionClosed,
-    setMessages: state.setMessages,
-    // setWebsocketStatus: state.setWebsocketStatus,
-  }));
+  const setCurrentSessionId = useCounselingStore((state) => state.setCurrentSessionId);
+  const setIsCurrentSessionClosed = useCounselingStore((state) => state.setIsCurrentSessionClosed);
+  const setMessages = useCounselingStore((state) => state.setMessages);
 
   // const { connect } = useWebSocket({ counsId: null, autoConnect: false }); // 초기에는 특정 세션 ID 없이 준비만
 

@@ -4,7 +4,7 @@
  * 이 함수들은 Tanstack Query의 queryFn 또는 mutationFn으로 사용될 수 있습니다.
  * FSD 아키텍처에 따라 `entities` 레이어의 `counseling` 슬라이스 내 `model`에 위치합니다.
  */
-import { apiClient } from '@/shared/api'; // API 클라이언트 임포트
+import { apiClient } from '@/shared/api/axiosInstance';
 import { CounselingSession, ChatMessage, MessageType } from './types';
 
 // TypeScript 타입 정의로 변경
