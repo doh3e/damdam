@@ -28,27 +28,27 @@ export default function LoginPage() {
 
         {/* 소셜 로그인 버튼 */}
         <div className="w-full flex flex-col gap-3">
-          <a
-            href={NAVER_LOGIN_URL}
+          <button
+            onClick={() => (window.location.href = NAVER_LOGIN_URL)}
             className="flex items-center justify-center py-3 rounded-xl font-semibold text-white bg-[#03C75A] hover:bg-[#02b152] transition"
           >
-            <img src="/naver.png" alt="네이버" width={24} height={24} className="mr-2" />
+            <img src="/naver.png" alt="네이버" width={24} height={24} className="mr-2 pointer-events-none" />
             네이버로 로그인
-          </a>
-          <a
-            href={KAKAO_LOGIN_URL}
+          </button>
+          <button
+            onClick={() => (window.location.href = KAKAO_LOGIN_URL)}
             className="flex items-center justify-center py-3 rounded-xl font-semibold text-gray-900 bg-[#FEE500] hover:bg-yellow-300 transition"
           >
-            <img src="/kakao.png" alt="카카오" width={24} height={24} className="mr-2" />
+            <img src="/kakao.png" alt="카카오" width={24} height={24} className="mr-2 pointer-events-none" />
             카카오로 로그인
-          </a>
-          <a
-            href={GOOGLE_LOGIN_URL}
+          </button>
+          <button
+            onClick={() => (window.location.href = GOOGLE_LOGIN_URL)}
             className="flex items-center justify-center py-3 rounded-xl font-semibold text-white bg-[#EA4335] hover:bg-[#d93025] transition"
           >
-            <img src="/google.png" alt="구글" width={24} height={24} className="mr-2" />
+            <img src="/google.png" alt="구글" width={24} height={24} className="mr-2 pointer-events-none" />
             Google로 로그인
-          </a>
+          </button>
         </div>
 
         {/* 하단 안내 */}
