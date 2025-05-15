@@ -5,8 +5,11 @@ import java.security.Principal;
 import java.util.List;
 
 import com.ssafy.damdam.domain.counsels.service.AiService;
+import com.ssafy.damdam.domain.users.dto.auth.CustomOAuth2User;
 import com.ssafy.damdam.global.aws.s3.S3FileUploadService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import com.ssafy.damdam.domain.counsels.dto.CounselingDto;
@@ -46,16 +49,20 @@ public class CounselController {
 	}
 
 	@PostMapping("/{counsId}/voice")
-	public ResponseEntity<String> uploadAudio(
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void uploadAudio(
 			@PathVariable Long counsId,
 			@RequestParam MultipartFile file,
 			@RequestParam int messageOrder,
-			Principal principal
+			@AuthenticationPrincipal CustomOAuth2User user
 	) {
-		String audioUrl = s3FileUploadService.uploadAudio(file, "audio");
-		Long userId = Long.valueOf(principal.getName());
-		aiService.analyzeAndSave(counsId, userId, messageOrder, audioUrl);
-		return ResponseEntity.ok(audioUrl);
+		chatService.handleVoiceMessage(
+				counsId,
+				user.getUserId(),
+				user.getNickname(),
+				messageOrder,
+				file
+		);
 	}
 
 	// 상담 방 내역 조회 + 이전 상담 내역 S3에서 뽑아오기 (추후 개발)
@@ -89,5 +96,13 @@ public class CounselController {
 
 		return ResponseEntity.noContent().build();
 	}
+
+//	@PostMapping("/{counsId}/reports")
+//	public ResponseEntity<Void> reportCounsel(
+//		@PathVariable Long counsId
+//	) {
+//		counselService.reportCounsel(counsId);
+//		return ResponseEntity.ok(null);
+//	}
 
 }
