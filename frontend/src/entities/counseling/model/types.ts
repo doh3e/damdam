@@ -50,8 +50,8 @@ export enum MessageType {
 export interface ChatMessage {
   /** 메시지의 고유 ID (서버 또는 클라이언트에서 생성) */
   id: string;
-  /** 메시지가 속한 상담 세션의 ID (`couns_id`) */
-  couns_id: string;
+  /** 메시지가 속한 상담 세션의 ID (`counsId`) */
+  counsId: string;
   /** 메시지 발신자 (사용자 또는 AI) */
   sender: SenderType;
   /** 메시지 유형 */
@@ -75,9 +75,9 @@ export interface ChatMessage {
 
 /**
  * 상담 세션의 상태를 UI/로직 레벨에서 명확히 구분하기 위한 열거형입니다.
- * 실제 데이터는 `is_closed` (boolean)으로 관리됩니다.
- * - `ACTIVE`: 진행 중 (is_closed = false)
- * - `ENDED`: 종료됨 (is_closed = true)
+ * 실제 데이터는 `isClosed` (boolean)으로 관리됩니다.
+ * - `ACTIVE`: 진행 중 (isClosed = false)
+ * - `ENDED`: 종료됨 (isClosed = true)
  */
 export enum CounselingDisplayStatus {
   ACTIVE = 'ACTIVE',
@@ -90,22 +90,22 @@ export enum CounselingDisplayStatus {
  */
 export interface CounselingSession {
   /** 상담 세션의 고유 ID (ERD: `couns_id`) */
-  couns_id: string;
+  counsId: string;
   /** 상담을 진행한 사용자의 ID (ERD: `user_id`) */
-  user_id: string;
+  userId: string;
   /** 상담 세션의 제목 (ERD: `couns_title`) */
-  couns_title: string;
+  counsTitle: string;
   /** AI 프로필 정보 (옵션, 필요시 구체화) */
-  ai_profile?: {
+  aiProfile?: {
     name: string;
-    avatar_url?: string;
+    avatarUrl?: string;
   };
   /** 상담 생성 시간 (ERD: `created_at`, ISO 문자열 또는 number 타입으로 통일 필요) */
-  created_at: string | number;
+  createdAt: string | number;
   /** 상담 최종 업데이트 시간 (ERD: `updated_at`, ISO 문자열 또는 number 타입으로 통일 필요) */
-  updated_at: string | number;
+  updatedAt: string | number;
   /** 상담 종료 여부 (ERD: `is_closed`) */
-  is_closed: boolean;
+  isClosed: boolean;
   /** 세션의 마지막 메시지 (옵션, API 응답에 따라 추가/제외) */
   lastMessage?: Pick<ChatMessage, 'content' | 'timestamp' | 'sender'>;
   /** 상담 세션의 요약 (옵션, 필요시 Report 엔티티와 연계) */
