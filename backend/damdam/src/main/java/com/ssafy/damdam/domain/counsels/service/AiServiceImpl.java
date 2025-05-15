@@ -1,9 +1,7 @@
 package com.ssafy.damdam.domain.counsels.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ssafy.damdam.domain.counsels.dto.AudioAiResponse;
-import com.ssafy.damdam.domain.counsels.dto.ChatInputDto;
-import com.ssafy.damdam.domain.counsels.dto.ChatOutputDto;
+import com.ssafy.damdam.domain.counsels.dto.*;
 import com.ssafy.damdam.domain.users.repository.UserInfoRepository;
 import com.ssafy.damdam.domain.users.repository.UserSettingRepository;
 import com.ssafy.damdam.domain.users.repository.UserSurveyRepository;
@@ -11,6 +9,8 @@ import com.ssafy.damdam.global.redis.CounselSession;
 import com.ssafy.damdam.global.redis.CounselSessionRepository;
 import com.ssafy.damdam.global.webclient.client.AudioClient;
 
+import com.ssafy.damdam.global.webclient.client.LlmClient;
+import com.ssafy.damdam.global.webclient.client.SummaryClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 @Slf4j
@@ -34,14 +35,16 @@ public class AiServiceImpl implements AiService {
 	private final UserSurveyRepository surveyRepository;
 	private final ExecutorService virtualThreadExecutor;
 	private final AudioClient audioClient;
+	private final LlmClient llmClient;
+	private final SummaryClient summaryClient;
 	private final RedisTemplate<String, Object> redisTemplate;
 	private final CounselSessionRepository sessionRepository;
 	private final ObjectMapper objectMapper;
 	private final SimpMessagingTemplate messagingTemplate;
 
-	@Override
+    @Override
 	@Transactional
-	public void analyzeAndSave(Long roomId, Long userId, int messageOrder, String audioUrl) {
+	public void analyzeAndSave(Long roomId, Long userId, String nickname, int messageOrder, String audioUrl) {
 		virtualThreadExecutor.submit(() -> {
 			try {
 				AudioAiResponse analysis = audioClient.analyzeAudio(audioUrl);
@@ -50,24 +53,28 @@ public class AiServiceImpl implements AiService {
 						roomId, userId, messageOrder, audioUrl);
 
 				// 전체 리스트 조회
-				List<Object> allMessages =
-						redisTemplate.opsForList().range(listKey, 0, -1);
-
-				// messageOrder가 일치하는 항목 찾기
+				List<Object> allMessages = redisTemplate.opsForList().range(listKey, 0, -1);
 				Object raw = null;
+
 				for (Object item : allMessages) {
-					ChatInputDto dto = objectMapper.convertValue(item, ChatInputDto.class);
-					if (dto.getMessageOrder() == messageOrder) {
+					@SuppressWarnings("unchecked")
+					Map<String,Object> map = (Map<String,Object>) item;
+					String sender = (String) map.get("sender");
+					if ("AI".equals(sender)) continue;
+					Integer order = (Integer) map.get("messageOrder");
+					if (order != null && order == messageOrder) {
 						raw = item;
 						break;
 					}
 				}
+
 				if (raw == null) {
-					log.warn("[AiService] messageOrder {}에 해당하는 Redis 항목이 존재하지 않습니다.", messageOrder);
+					log.warn("[AiService] messageOrder {}에 해당하는 Redis 항목이 없습니다.", messageOrder);
 					return;
 				}
 
 				ChatInputDto input = objectMapper.convertValue(raw, ChatInputDto.class);
+
 
 				// 이하 기존 로직 유지...
 				CounselSession session = sessionRepository.findById(roomId)
@@ -115,5 +122,45 @@ public class AiServiceImpl implements AiService {
 			}
 		});
 	}
+
+	@Override
+	public ChatOutputDto chatWithLlm(
+			Long roomId,
+			Long userId,
+			String nickname,
+			ChatInputDto input
+	) {
+
+		log.info("chatwithllm service 진입 완료");
+
+		CounselSession session = sessionRepository.findById(roomId)
+				.orElseThrow(() -> new IllegalStateException("세션이 없습니다: " + roomId));
+
+		LlmAiChatRequest request = LlmAiChatRequest.builder()
+				.nickname(nickname)
+				.message(input.getMessage())
+				.build();
+
+		log.info("chatwithllm service request: {}", request);
+
+		LlmAiChatResponse response = llmClient.requestChatResponse(request);
+
+		String aiText = response != null
+				? response.getAiResponse()
+				: "죄송합니다, LLM 응답을 받아오는데 실패했습니다.";
+
+		session.decrementToken();
+		sessionRepository.save(session);
+
+		// 4) ChatOutputDto 에 담아서 리턴
+		return ChatOutputDto.builder()
+				.sender("AI")
+				.message(aiText)
+				.timestamp(LocalDateTime.now())
+				.messageOrder(input.getMessageOrder())
+				.tokenCount(session.getTokenCount())
+				.build();
+	}
+
 
 }
