@@ -16,6 +16,9 @@ export const GOOGLE_LOGIN_URL = process.env.NEXT_PUBLIC_GOOGLE_LOGIN_URL!;
 // 실제 배포 환경에서는 'wss://' 프로토콜을 사용하고, 로컬에서는 'ws://'를 사용합니다.
 export const WEBSOCKET_BASE_URL = process.env.NEXT_PUBLIC_WEBSOCKET_URL!;
 
+// STOMP 연결 시 사용할 호스트 (백엔드 명세 기반)
+export const STOMP_HOST = 'k12s202.p.ssafy.io';
+
 // 예시: 기본 페이지 크기 상수
 export const DEFAULT_PAGE_SIZE = 10;
 

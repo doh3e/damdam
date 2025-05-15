@@ -12,7 +12,7 @@ import { useAuthStore } from '@/app/store/authStore'; // 인증 스토어 추가
 import { useFetchCounselingSessionDetail } from '@/entities/counseling/model/queries';
 
 // 웹소켓 커스텀 훅 임포트
-import { useWebSocket } from '@/shared/hooks/useWebSocket';
+import { useWebSocket, StompSendUserMessagePayload } from '@/shared/hooks/useWebSocket'; // StompSendUserMessagePayload 타입 임포트 추가
 
 // 필요한 피처(Feature) 컴포넌트 임포트
 import EditCounselingTitleButton from '@/features/counseling/ui/EditCounselingTitleButton';
@@ -53,8 +53,15 @@ export function CounselingChatWindow() {
   const queryClient = useQueryClient(); // Tanstack Query 클라이언트 인스턴스
   const { token } = useAuthStore(); // 인증 토큰 가져오기
 
-  const { setCurrentSessionId, setMessages, setIsCurrentSessionClosed, currentSessionId, messages, isAiTyping } =
-    useCounselingStore();
+  const {
+    setCurrentSessionId,
+    setMessages,
+    setIsCurrentSessionClosed,
+    currentSessionId,
+    messages,
+    isAiTyping,
+    isCurrentSessionClosed,
+  } = useCounselingStore();
 
   // URL 파라미터에서 상담 ID 추출
   const couns_id_param = params.couns_id;
@@ -100,9 +107,9 @@ export function CounselingChatWindow() {
   // 세션이 종료된 경우에는 웹소켓 연결을 시도하지 않도록 명확하게 설정
   const { isConnected, error: wsError } = useWebSocket({
     counsId: couns_id ? couns_id : null, // couns_id가 undefined일 경우 null로 변환
-    authToken: token,
-    autoConnect: !!token && !sessionDetail?.session?.isClosed, // 세션이 종료되지 않은 경우에만 자동 연결
-    isClosed: sessionDetail?.session?.isClosed || false, // 명시적으로 종료 상태 전달
+    autoConnect: !!token && !(isCurrentSessionClosed === null ? false : isCurrentSessionClosed),
+    isSessionClosed: isCurrentSessionClosed === null ? false : isCurrentSessionClosed, // null일 경우 false로 처리하여 boolean 타입 보장
+    debug: process.env.NODE_ENV === 'development', // 개발 환경에서만 디버그 로그 활성화
   });
 
   // 웹소켓 에러 처리

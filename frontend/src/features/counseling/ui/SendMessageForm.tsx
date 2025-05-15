@@ -5,7 +5,7 @@ import { Textarea } from '@/shared/ui/textarea';
 import { Button } from '@/shared/ui/button';
 import { Paperclip, Mic, SendHorizonal } from 'lucide-react';
 import { useCounselingStore } from '@/features/counseling/model/counselingStore';
-import { useWebSocket } from '@/shared/hooks/useWebSocket';
+import { useWebSocket, type StompSendUserMessagePayload } from '@/shared/hooks/useWebSocket';
 import { type ChatMessage, MessageType, SenderType } from '@/entities/counseling/model/types';
 import type { SendUserMessagePayload } from '@/shared/types/websockets';
 import { useAuthStore } from '@/app/store/authStore'; // 인증 토큰 가져오기 위해 추가
@@ -34,14 +34,13 @@ interface SendMessageFormProps {
 const SendMessageForm = ({ currentCounsId, disabled }: SendMessageFormProps): React.ReactElement => {
   const [newMessageInput, setNewMessageInput] = useState('');
   const addMessageToStore = useCounselingStore((state) => state.addMessage);
-  const { token } = useAuthStore(); // 인증 토큰 가져오기
+  const messages = useCounselingStore((state) => state.messages);
 
-  // useWebSocket 훅에 isClosed(disabled) 전달
   const { sendUserMessage, isConnected } = useWebSocket({
     counsId: currentCounsId,
-    authToken: token, // 인증 토큰 전달
-    autoConnect: !disabled, // 세션이 종료되었으면 자동 연결 안함
-    isClosed: !!disabled, // disabled prop을 isClosed로 사용
+    autoConnect: !disabled,
+    isSessionClosed: !!disabled,
+    debug: process.env.NODE_ENV === 'development',
   });
 
   const handleInputChange = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -55,30 +54,27 @@ const SendMessageForm = ({ currentCounsId, disabled }: SendMessageFormProps): Re
 
       const trimmedMessage = newMessageInput.trim();
 
-      // ChatMessage 타입의 실제 필드명에 맞춰 수정 (예: id, timestamp)
       const userMessage: ChatMessage = {
-        id: Date.now().toString(), // 임시 클라이언트 ID (string 타입 가정)
+        id: Date.now().toString(),
         counsId: currentCounsId,
         sender: SenderType.USER,
-        messageType: MessageType.TEXT, // message_type 대신 messageType 사용 (Linter 제안)
+        messageType: MessageType.TEXT,
         content: trimmedMessage,
-        timestamp: Date.now(), // Unix epoch in milliseconds (number 타입 가정)
-        // created_at 대신 timestamp 사용 가정
+        timestamp: Date.now(),
       };
 
       addMessageToStore(userMessage);
 
-      // SendUserMessagePayload의 실제 필드명에 맞춰 수정 (예: text)
-      // counsId 등은 useWebSocket 훅 내부에서 처리될 수 있음
-      const payload: SendUserMessagePayload = {
-        text: trimmedMessage, // 웹소켓 페이로드에 content 대신 text 사용 가정
-        // messageType, senderType 등은 웹소켓 서버 스펙에 따라 추가될 수 있음
+      const payload: StompSendUserMessagePayload = {
+        text: trimmedMessage,
+        messageOrder: messages.length + 1,
+        isVoice: false,
       };
       sendUserMessage(payload);
 
       setNewMessageInput('');
     },
-    [newMessageInput, currentCounsId, isConnected, addMessageToStore, sendUserMessage]
+    [newMessageInput, currentCounsId, isConnected, addMessageToStore, sendUserMessage, messages]
   );
 
   const handleKeyDown = useCallback(
