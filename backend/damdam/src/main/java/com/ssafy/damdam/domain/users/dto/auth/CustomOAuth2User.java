@@ -43,7 +43,6 @@ public class CustomOAuth2User implements OAuth2User {
 
 	@Override
 	public String getName() {
-		// personalId를 principalName으로 사용
 		return String.valueOf(userDto.getUserId());
 	}
 
