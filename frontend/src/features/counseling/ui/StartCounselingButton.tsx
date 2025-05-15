@@ -7,6 +7,7 @@ import { MessageSquarePlus } from 'lucide-react';
 import { useCreateCounselingSession } from '@/entities/counseling/model/mutations';
 import type { CounselingSession } from '@/entities/counseling/model/types'; // CounselingSession 타입 임포트
 import { useCounselingStore } from '@/features/counseling/model/counselingStore';
+import { useAuthStore } from '@/app/store/authStore'; // 인증 스토어 추가
 // import { useWebSocket } from '@/shared/hooks/useWebSocket'; // 필요시 웹소켓 직접 제어
 
 /**
@@ -15,7 +16,6 @@ import { useCounselingStore } from '@/features/counseling/model/counselingStore'
  */
 interface StartCounselingButtonProps {
   onStartSuccess?: (newSessionId: string) => void;
-  // userId prop 제거 (JWT 사용으로 불필요)
 }
 
 /**
@@ -30,19 +30,12 @@ interface StartCounselingButtonProps {
  */
 const StartCounselingButton = ({ onStartSuccess }: StartCounselingButtonProps): React.ReactElement => {
   const router = useRouter();
+  const { token } = useAuthStore(); // 인증 토큰 가져오기
   const { mutate: createSession, isPending } = useCreateCounselingSession();
 
-  const {
-    setCurrentSessionId,
-    setIsCurrentSessionClosed,
-    setMessages,
-    // setWebsocketStatus, // 웹소켓 상태는 useWebSocket 훅 내부 또는 페이지 레벨에서 관리하는 것이 더 적절할 수 있음
-  } = useCounselingStore((state) => ({
-    setCurrentSessionId: state.setCurrentSessionId,
-    setIsCurrentSessionClosed: state.setIsCurrentSessionClosed,
-    setMessages: state.setMessages,
-    // setWebsocketStatus: state.setWebsocketStatus,
-  }));
+  const setCurrentSessionId = useCounselingStore((state) => state.setCurrentSessionId);
+  const setIsCurrentSessionClosed = useCounselingStore((state) => state.setIsCurrentSessionClosed);
+  const setMessages = useCounselingStore((state) => state.setMessages);
 
   // const { connect } = useWebSocket({ counsId: null, autoConnect: false }); // 초기에는 특정 세션 ID 없이 준비만
 
@@ -50,12 +43,16 @@ const StartCounselingButton = ({ onStartSuccess }: StartCounselingButtonProps): 
    * 새 상담 시작 버튼 클릭 시 실행되는 핸들러입니다.
    */
   const handleStartCounseling = () => {
-    // userId를 포함한 creationPayload 제거. API는 JWT로 사용자를 식별하고, 바디는 선택적이거나 없음.
-    // createCounselingSession은 CreateCounselingSessionPayload | undefined를 받으므로 undefined 전달.
+    // 인증 여부 확인
+    if (!token) {
+      console.log('로그인이 필요합니다.');
+      router.push('/login'); // 로그인 페이지로 리다이렉트
+      return;
+    }
+
     createSession(undefined, {
-      onSuccess: (data: CounselingSession) => {
-        // 응답 데이터 타입을 CounselingSession으로 명시
-        const newSessionId = data?.couns_id; // 실제 응답 객체에서 couns_id (string)를 가져옴
+      onSuccess: (data: any) => {
+        const newSessionId = data?.counsId;
 
         if (newSessionId) {
           console.log('새 상담 세션 생성 성공:', newSessionId);
@@ -84,21 +81,26 @@ const StartCounselingButton = ({ onStartSuccess }: StartCounselingButtonProps): 
       },
       onError: (error) => {
         console.error('새 상담 세션 생성 실패:', error);
-        // 사용자에게 오류 알림 (예: 토스트 메시지)
+        if (error.message?.includes('신뢰할 수 없는 자격증명')) {
+          console.log('로그인이 필요합니다.');
+          router.push('/login'); // 로그인 페이지로 리다이렉트
+        }
       },
     });
   };
 
+  // 인증 상태에 따라 버튼 텍스트 변경
+  const buttonText = !token ? '로그인이 필요합니다' : isPending ? '상담 시작 중...' : '새 상담 시작';
+
   return (
     <Button
       onClick={handleStartCounseling}
-      disabled={isPending}
-      // className 수정: 프로젝트 색상 팔레트 적용
+      disabled={isPending || !token} // 인증 토큰이 없을 경우 버튼 비활성화
       className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-      title="새로운 AI와 상담을 시작합니다."
+      title={!token ? '로그인 후 상담을 시작할 수 있습니다.' : '새로운 AI와 상담을 시작합니다.'}
     >
       <MessageSquarePlus size={20} className="mr-2" />
-      <span>{isPending ? '상담 시작 중...' : '새 대화 시작'}</span>
+      <span>{buttonText}</span>
     </Button>
   );
 };

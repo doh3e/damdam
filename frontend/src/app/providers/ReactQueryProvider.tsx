@@ -33,7 +33,7 @@ const ReactQueryProvider: React.FC<ReactQueryProviderProps> = ({ children }) => 
         defaultOptions: {
           queries: {
             // 기본 쿼리 옵션 설정 (애플리케이션 전역 적용)
-            staleTime: 1000 * 60 * 5, // 5분 (데이터가 stale 상태로 간주되기까지의 시간)
+            staleTime: 1000 * 60 * 10, // 10분 (데이터가 stale 상태로 간주되기까지의 시간)
             refetchOnWindowFocus: false, // 창 포커스 시 자동 refetch 비활성화 (선택적)
             retry: 1, // 쿼리 실패 시 재시도 횟수
           },
