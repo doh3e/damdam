@@ -121,9 +121,6 @@ public class ChatServiceImpl implements ChatService {
 
 		// 저장 및 브로드캐스트
 		redisTemplate.opsForList().rightPush(listKey, voiceInput);
-		messagingTemplate.convertAndSend(
-				"/sub/counsels/" + roomId + "/chat", voiceInput
-		);
 
 		// 3) 감정 분석 스케줄링
 		aiService.analyzeAndSave(
