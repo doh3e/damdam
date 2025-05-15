@@ -1,4 +1,4 @@
-package com.ssafy.damdam.domain.users.dto.user;
+package com.ssafy.damdam.domain.counsels.dto;
 
 import com.ssafy.damdam.domain.users.entity.Age;
 import com.ssafy.damdam.domain.users.entity.Gender;
@@ -13,9 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class UserContextDto {
-    private String botImage;
     private String botCustom;
-    private Boolean isAlarm;
 
     private Gender gender;
     private Age age;
@@ -25,6 +23,6 @@ public class UserContextDto {
     private int depression;
     private int anxiety;
     private int stress;
-    private boolean suicide;
+    private Boolean isSuicidal;
     private String stressReason;
 }
