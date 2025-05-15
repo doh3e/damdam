@@ -18,7 +18,6 @@ public class ChatOutputDto {
 	private String sender;
 	private String message;
 
-	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
 	private LocalDateTime timestamp;
 
 	private int tokenCount;
