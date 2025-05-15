@@ -8,6 +8,9 @@ import { Header } from '@/widgets/Header'; // Header 위젯 가져오기
 import { BottomNavigation } from '@/widgets/BottomNavigation'; // BottomNavigation 위젯 가져오기
 import QueryClientProviders from './providers/QueryClientProviders';
 import { ThemeProvider } from './providers/ThemeProvider';
+import { config } from '@fortawesome/fontawesome-svg-core';
+import '@fortawesome/fontawesome-svg-core/styles.css';
+config.autoAddCss = false;
 
 // Google Fonts에서 Inter 폰트를 사용합니다. (선택 사항, 다른 폰트로 변경 가능)
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
