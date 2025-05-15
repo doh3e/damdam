@@ -78,7 +78,10 @@ export default function RootLayout({
     <html lang="ko" suppressHydrationWarning>
       <head />
       {/* Next.js가 자동으로 head 태그 내용을 관리 (metadata, viewport 객체 활용) */}
-      <body className={cn('min-h-screen bg-muted font-sans antialiased', nonoSans.variable)}>
+      <body
+        className={cn('min-h-screen bg-muted font-sans antialiased', nonoSans.variable)}
+        suppressHydrationWarning={true}
+      >
         {/* === 앱 전체 뷰 컨테이너 === */}
         {/* h-screen으로 높이 고정, overflow-hidden으로 내부 스크롤 제한 */}
         <div className="mx-auto flex h-screen max-w-screen-sm flex-col overflow-hidden bg-background shadow-md">

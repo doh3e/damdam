@@ -3,181 +3,70 @@
  * FSD 아키텍처에 따라 특정 도메인에 종속되지 않는 공유 타입이므로 `shared` 레이어에 위치합니다.
  */
 
-import { ChatMessage, SenderType } from '@/entities/counseling/model/types';
+import { type ChatMessage, SenderType, MessageType, type RecommendedContent } from '@/entities/counseling/model/types';
 
 /**
+ * 서버로부터 수신되는 웹소켓 메시지의 기본 형태입니다.
+ * 백엔드는 현재 type 필드 없이 메시지 내용을 직접 전달합니다.
+ * 이 타입은 서버가 보내는 JSON 구조를 나타냅니다.
+ */
+export interface ReceivedServerMessage {
+  /** 메시지를 보낸 주체 (USER 또는 AI) */
+  sender: SenderType;
+  /** (옵션) 음성 메시지 여부 */
+  isVoice?: boolean;
+  /** (옵션) 메시지 순서 (사용자 메시지 echo 시 포함될 수 있음) */
+  messageOrder?: number;
+  /** 실제 메시지 내용 */
+  message: string; // 서버는 'message' 필드로 내용을 줌
+  /** 메시지 타임스탬프 (ISO 문자열 또는 숫자) */
+  timestamp: string | number;
+  /** (옵션) 메시지 ID (서버에서 생성 시) */
+  id?: string;
+  /** (옵션) 메시지 타입 (서버에서 ChatMessage의 MessageType을 준다면 활용) */
+  messageType?: MessageType;
+  /** (옵션) AI 추천 콘텐츠 (messageType이 RECOMMENDATION일 때) */
+  recommendations?: RecommendedContent[];
+  /** (옵션) 서버에서 에러 발생 시 전달되는 에러 정보 */
+  error?: ErrorPayload;
+  // AI 응답 시 추가될 수 있는 필드들 (예: 감정 분석 결과 등)
+  // sentiment?: any;
+}
+
+/**
+ * @deprecated 실제 프로젝트에서는 type 필드를 사용하지 않으므로, 이 enum은 사용되지 않을 가능성이 높습니다.
  * 웹소켓을 통해 클라이언트와 서버 간에 주고받는 메시지의 주요 유형을 정의하는 열거형입니다.
  */
 export enum WebSocketMessageType {
-  /** 사용자가 서버로 메시지를 전송할 때 사용 */
-  SEND_USER_MESSAGE = 'SEND_USER_MESSAGE',
-  /** 서버가 AI의 응답 메시지를 클라이언트로 전송할 때 사용 */
-  RECEIVE_AI_MESSAGE = 'RECEIVE_AI_MESSAGE',
-  /** 서버가 AI의 추천 콘텐츠 메시지를 클라이언트로 전송할 때 사용 */
-  RECEIVE_AI_RECOMMENDATION = 'RECEIVE_AI_RECOMMENDATION',
-  /** 서버가 AI가 타이핑 중임을 클라이언트로 알릴 때 사용 */
-  AI_TYPING_START = 'AI_TYPING_START',
-  /** 서버가 AI의 타이핑이 끝났음을 클라이언트로 알릴 때 사용 */
-  AI_TYPING_END = 'AI_TYPING_END',
-  /** 상담 세션 시작 요청 시 사용 */
-  START_COUNSELING_SESSION = 'START_COUNSELING_SESSION',
-  /** 상담 세션 성공적으로 시작되었음을 알릴 때 사용 (세션 ID 포함) */
-  COUNSELING_SESSION_STARTED = 'COUNSELING_SESSION_STARTED',
-  /** 상담 세션 종료 요청 시 사용 */
-  END_COUNSELING_SESSION = 'END_COUNSELING_SESSION',
-  /** 상담 세션이 종료되었음을 알릴 때 사용 */
-  COUNSELING_SESSION_ENDED = 'COUNSELING_SESSION_ENDED',
-  /** 웹소켓 연결 또는 메시지 처리 중 오류 발생 시 사용 */
+  // SEND_USER_MESSAGE 등은 STOMP의 destination으로 구분되므로, 메시지 body에 type이 필요 없을 수 있음
+  // 필요한 최소한의 타입만 남기거나, 모두 제거하는 것도 고려.
+  /** 서버가 메시지를 클라이언트로 전송할 때 (일반화된 타입) */
+  RECEIVE_MESSAGE = 'RECEIVE_MESSAGE', // 사용자 echo, AI 응답 모두 포함 가능
+  /** 웹소켓 연결 또는 메시지 처리 중 오류 발생 시 사용 (클라이언트 내부용으로만 사용 가능) */
   ERROR = 'ERROR',
-  /** 연결 확인 또는 keep-alive 목적으로 사용 (옵션) */
-  PING = 'PING',
-  PONG = 'PONG',
 }
 
 /**
+ * @deprecated 실제 프로젝트에서는 type 필드를 사용하지 않으므로, 이 인터페이스는 사용되지 않을 가능성이 높습니다.
  * 모든 웹소켓 메시지가 공통적으로 포함하는 기본 구조입니다.
  */
 export interface BaseWebSocketMessage<T extends WebSocketMessageType, P = Record<string, unknown>> {
-  /** 메시지의 유형 */
   type: T;
-  /** 메시지 발생 타임스탬프 (Unix epoch, milliseconds) */
   timestamp: number;
-  /** 메시지 유형에 따른 실제 데이터 (페이로드) */
   payload: P;
-  /** 메시지 고유 ID (옵션, 디버깅 및 추적용) */
   messageId?: string;
-  /** 메시지가 속한 상담 세션 ID (옵션, 대부분의 메시지에 포함) */
   sessionId?: string;
 }
 
-// --- 페이로드 타입 정의 ---
-
-/** `SEND_USER_MESSAGE` 메시지 타입의 페이로드 */
-export interface SendUserMessagePayload {
-  /** 사용자가 입력한 텍스트 메시지 */
-  text: string;
-}
-
-/** `RECEIVE_AI_MESSAGE` 또는 `RECEIVE_AI_RECOMMENDATION` 메시지 타입의 페이로드 */
-export interface ReceiveAiChatMessagePayload {
-  /** 서버로부터 받은 AI의 채팅 메시지 객체 */
-  chatMessage: ChatMessage;
-}
-
-/** `AI_TYPING_START` 메시지 타입의 페이로드 (특별한 내용 없을 수 있음) */
-export interface AiTypingStartPayload {}
-
-/** `AI_TYPING_END` 메시지 타입의 페이로드 (특별한 내용 없을 수 있음) */
-export interface AiTypingEndPayload {}
-
-/** `START_COUNSELING_SESSION` 메시지 타입의 페이로드 */
-export interface StartCounselingSessionPayload {
-  /** 상담을 시작하는 사용자의 ID */
-  userId: string;
-  /** (옵션) 사용자가 이전에 했던 설문조사 결과 ID 등 초기 컨텍스트 정보 */
-  initialContext?: Record<string, any>;
-}
-
-/** `COUNSELING_SESSION_STARTED` 메시지 타입의 페이로드 */
-export interface CounselingSessionStartedPayload {
-  /** 새로 생성된 상담 세션의 ID */
-  sessionId: string;
-  /** 상담 시작 시간 */
-  startTime: number;
-  /** AI 프로필 정보 (옵션) */
-  aiProfile?: {
-    name: string;
-    avatarUrl?: string;
-  };
-}
-
-/** `END_COUNSELING_SESSION` 메시지 타입의 페이로드 */
-export interface EndCounselingSessionPayload {
-  /** 종료하려는 상담 세션 ID. 명시하지 않으면 현재 활성 세션 종료 시도. */
-  sessionId?: string;
-}
-
-/** `COUNSELING_SESSION_ENDED` 메시지 타입의 페이로드 */
-export interface CounselingSessionEndedPayload {
-  /** 종료된 상담 세션 ID */
-  sessionId: string;
-  /** 상담 종료 시간 */
-  endTime: number;
-  /** (옵션) 간단한 종료 사유 */
-  reason?: string;
-}
-
-/** `ERROR` 메시지 타입의 페이로드 */
+/** `ERROR` 메시지 타입의 페이로드 (클라이언트 내부 오류 표현용으로 사용 가능) */
 export interface ErrorPayload {
-  /** 에러 코드 (애플리케이션에서 정의한 코드 사용) */
   code: string;
-  /** 사용자에게 보여줄 수 있는 에러 메시지 */
   message: string;
-  /** (옵션) 개발자를 위한 상세 에러 정보 */
   details?: Record<string, any>;
 }
 
-// --- 웹소켓 메시지 타입 정의 (페이로드와 결합) ---
-
-/** 사용자가 서버로 메시지를 보낼 때 사용하는 웹소켓 메시지 타입 */
-export type SendUserMessage = BaseWebSocketMessage<WebSocketMessageType.SEND_USER_MESSAGE, SendUserMessagePayload>;
-
-/** 서버가 AI의 일반 텍스트 응답을 클라이언트로 보낼 때 사용하는 웹소켓 메시지 타입 */
-export type ReceiveAiTextMessage = BaseWebSocketMessage<
-  WebSocketMessageType.RECEIVE_AI_MESSAGE,
-  ReceiveAiChatMessagePayload
->;
-
-/** 서버가 AI의 추천 콘텐츠를 클라이언트로 보낼 때 사용하는 웹소켓 메시지 타입 */
-export type ReceiveAiRecommendationMessage = BaseWebSocketMessage<
-  WebSocketMessageType.RECEIVE_AI_RECOMMENDATION,
-  ReceiveAiChatMessagePayload
->;
-
-/** 서버가 AI 타이핑 시작을 알릴 때 사용하는 웹소켓 메시지 타입 */
-export type AiTypingStartMessage = BaseWebSocketMessage<WebSocketMessageType.AI_TYPING_START, AiTypingStartPayload>;
-
-/** 서버가 AI 타이핑 종료를 알릴 때 사용하는 웹소켓 메시지 타입 */
-export type AiTypingEndMessage = BaseWebSocketMessage<WebSocketMessageType.AI_TYPING_END, AiTypingEndPayload>;
-
-/** 클라이언트가 상담 세션 시작을 요청할 때 사용하는 웹소켓 메시지 타입 */
-export type StartCounselingSessionMessage = BaseWebSocketMessage<
-  WebSocketMessageType.START_COUNSELING_SESSION,
-  StartCounselingSessionPayload
->;
-
-/** 서버가 상담 세션이 성공적으로 시작되었음을 알릴 때 사용하는 웹소켓 메시지 타입 */
-export type CounselingSessionStartedMessage = BaseWebSocketMessage<
-  WebSocketMessageType.COUNSELING_SESSION_STARTED,
-  CounselingSessionStartedPayload
->;
-
-/** 클라이언트가 상담 세션 종료를 요청할 때 사용하는 웹소켓 메시지 타입 */
-export type EndCounselingSessionMessage = BaseWebSocketMessage<
-  WebSocketMessageType.END_COUNSELING_SESSION,
-  EndCounselingSessionPayload
->;
-
-/** 서버가 상담 세션이 종료되었음을 알릴 때 사용하는 웹소켓 메시지 타입 */
-export type CounselingSessionEndedMessage = BaseWebSocketMessage<
-  WebSocketMessageType.COUNSELING_SESSION_ENDED,
-  CounselingSessionEndedPayload
->;
-
-/** 오류 발생 시 사용하는 웹소켓 메시지 타입 */
-export type ErrorMessage = BaseWebSocketMessage<WebSocketMessageType.ERROR, ErrorPayload>;
-
-/** 웹소켓을 통해 수신할 수 있는 모든 메시지 타입의 유니온 (클라이언트 측에서 사용) */
-export type ReceivedWebSocketMessage =
-  | ReceiveAiTextMessage
-  | ReceiveAiRecommendationMessage
-  | AiTypingStartMessage
-  | AiTypingEndMessage
-  | CounselingSessionStartedMessage
-  | CounselingSessionEndedMessage
-  | ErrorMessage;
-// | PongMessage; // PING/PONG 구현 시 추가
-
-/** 웹소켓을 통해 전송할 수 있는 모든 메시지 타입의 유니온 (클라이언트 측에서 사용) */
-export type SentWebSocketMessage = SendUserMessage | StartCounselingSessionMessage | EndCounselingSessionMessage;
-// | PingMessage; // PING/PONG 구현 시 추가
+// 기존의 다른 페이로드 및 메시지 타입 정의들은 현재 명세에 맞지 않으므로 제거하거나 주석 처리합니다.
+// 예를 들어, ReceiveAiChatMessagePayload, CounselingSessionStartedPayload 등은
+// 서버가 type 필드를 포함한 구조화된 메시지를 보내지 않으므로 직접 사용되지 않습니다.
+// SendUserMessagePayload는 StompSendUserMessagePayload로 useWebSocket.ts에 이미 정의되어 있고,
+// 이는 STOMP 발행 시 body에 들어가는 내용이므로 유지될 수 있습니다.
