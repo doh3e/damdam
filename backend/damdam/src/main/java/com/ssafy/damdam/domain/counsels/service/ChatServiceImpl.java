@@ -1,9 +1,12 @@
 package com.ssafy.damdam.domain.counsels.service;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.ExecutorService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ssafy.damdam.domain.counsels.dto.ChatOutputDto;
 import com.ssafy.damdam.domain.counsels.dto.RedisUserChatInput;
+import com.ssafy.damdam.global.aws.s3.S3FileUploadService;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -15,6 +18,7 @@ import com.ssafy.damdam.global.redis.CounselSessionRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -25,57 +29,108 @@ public class ChatServiceImpl implements ChatService {
 	private final CounselSessionRepository counselSessionRepository;
 	private final SimpMessagingTemplate messagingTemplate;
 	private final RedisTemplate<String, Object> redisTemplate;
-	private final ObjectMapper objectMapper;
+	private final AiService aiService;
+	private final ExecutorService virtualThreadExecutor;
+	private final S3FileUploadService s3FileUploadService;
 
 	@Override
 	@Transactional
-	public void handleChat(Long roomId, Long userId, ChatInputDto input) {
-		String listKey = "counsel:" + roomId + ":messages";
+	public void handleChat(
+			Long roomId,
+			Long userId,
+			String nickname,
+			ChatInputDto input
+	) {
 
-		// 세션 조회 또는 생성
-		CounselSession session = counselSessionRepository.findById(roomId)
+		if (input.getIsVoice()) {
+			return;
+		}
+
+		counselSessionRepository.findById(roomId)
 				.orElseGet(() -> {
-					log.info("새로운 상담 세션 생성: roomId={}, userId={}", roomId, userId);
+					log.info("[ChatService] 세션 자동 생성 (첫 채팅 유저 정보로): roomId={}, userId={}, nickname={}",
+							roomId, userId, nickname);
 					return counselSessionRepository.save(
 							CounselSession.builder()
 									.counsId(roomId)
 									.userId(userId)
 									.tokenCount(20)
-									.messageOrder(0)
+									.sender(nickname)
+									.isVoice(input.getIsVoice())
+									.message(input.getMessage())
+									.timestamp(LocalDateTime.now())
 									.build()
 					);
 				});
 
-		int tokenBefore = session.getTokenCount();
+		String listKey = "counsel:" + roomId + ":messages";
 
-		// Redis에 저장할 DTO 구성
+		// 1) Redis에 USER 텍스트 메시지 저장
 		RedisUserChatInput redisInput = RedisUserChatInput.builder()
 				.sender("USER")
-				.isVoice(input.getIsVoice())
+				.isVoice(false)
 				.messageOrder(input.getMessageOrder())
 				.message(input.getMessage())
 				.timestamp(LocalDateTime.now())
 				.build();
 
-		try {
-			// 메시지 저장
-			redisTemplate.opsForList().rightPush(listKey, redisInput);
-			log.info("Redis 저장 완료: roomId={}, messageOrder={}, message={}",
-					roomId, input.getMessageOrder(), input.getMessage());
+		redisTemplate.opsForList().rightPush(listKey, redisInput);
 
-			// 웹소켓으로 전송
-			messagingTemplate.convertAndSend("/sub/counsels/" + roomId + "/chat", redisInput);
+		// 텍스트 대화일 시 바로 LLM 호출
+		virtualThreadExecutor.submit(() -> {
+			ChatOutputDto botReply = aiService.chatWithLlm(
+					roomId,
+					userId,
+					nickname,
+					input
+			);
 
-			// 토큰 차감
-			session.decrementToken();
-			counselSessionRepository.save(session);
-			log.info("토큰 감소: roomId={}, 이전 토큰={}, 현재 토큰={}", roomId, tokenBefore, session.getTokenCount());
+			// Redis에 AI 응답 저장
+			redisTemplate.opsForList().rightPush(listKey, botReply);
 
-		} catch (Exception e) {
-			log.error("채팅 처리 중 오류 발생: {}", e.getMessage(), e);
-		}
+			// WebSocket 전송
+			messagingTemplate.convertAndSend(
+					"/sub/counsels/" + roomId + "/chat", botReply);
+		});
 	}
 
+	@Override
+	@Transactional
+	public void handleVoiceMessage(
+			Long roomId,
+			Long userId,
+			String nickname,
+			int messageOrder,
+			MultipartFile file
+	) {
+		String listKey = "counsel:" + roomId + ":messages";
+
+		// 1) S3 업로드
+		String audioUrl = s3FileUploadService.uploadAudio(file, "audio");
+		log.info("S3 업로드 완료: roomId={}, messageOrder={}, url={}",
+				roomId, messageOrder, audioUrl);
+
+		// 2) Redis에 저장할 DTO 구성
+		RedisUserChatInput voiceInput = RedisUserChatInput.builder()
+				.sender(nickname)
+				.isVoice(true)
+				.messageOrder(messageOrder)
+				.message(audioUrl)
+				.timestamp(LocalDateTime.now())
+				.build();
+
+		// 저장 및 브로드캐스트
+		redisTemplate.opsForList().rightPush(listKey, voiceInput);
+
+		// 3) 감정 분석 스케줄링
+		aiService.analyzeAndSave(
+				roomId,
+				userId,
+				nickname,
+				messageOrder,
+				audioUrl
+		);
+	}
 
 	/**
 	 * 상담 종료 시 세션과 대화 이력 삭제
@@ -91,5 +146,6 @@ public class ChatServiceImpl implements ChatService {
 
 		log.info("[Room {}] 상담 종료: Redis 대화 기록 삭제", roomId);
 	}
+
 
 }
