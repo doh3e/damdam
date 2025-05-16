@@ -9,8 +9,8 @@
  * - `AI`: AI 챗봇
  */
 export enum SenderType {
-  USER = 'user',
-  AI = 'ai',
+  USER = 'USER',
+  AI = 'AI',
 }
 
 /**

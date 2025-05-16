@@ -326,7 +326,7 @@ export const useWebSocket = ({
         if (setWebsocketStatus) setWebsocketStatus('connected');
         connectingRef.current = false;
 
-        const destination = `/topic/counsels/${currentCounsIdRef.current}`;
+        const destination = `/sub/counsels/${currentCounsIdRef.current}/chat`;
         log(`구독 시도: ${destination}`);
 
         if (subscriptionRef.current) {
@@ -339,10 +339,12 @@ export const useWebSocket = ({
           subscriptionRef.current = null;
         }
 
+        const subscriptionId = `sub-${currentCounsIdRef.current}`;
         subscriptionRef.current = client.subscribe(destination, onStompMessage, {
-          id: `sub-${currentCounsIdRef.current}-${Date.now()}`,
+          id: subscriptionId,
+          receipt: subscriptionId,
         });
-        log(`구독 완료: ${destination}, 구독 ID: ${subscriptionRef.current.id}`);
+        log(`구독 완료: ${destination}, 구독 ID: ${subscriptionRef.current.id}, Receipt: ${subscriptionId}`);
       },
       onStompError: (frame: Frame) => {
         handleStompError(frame, 'stomp');
@@ -381,7 +383,7 @@ export const useWebSocket = ({
         return;
       }
 
-      const destination = `/app/counsels/${currentCounsIdRef.current}/messages`;
+      const destination = `/pub/counsels/${currentCounsIdRef.current}/chat`;
       const body = JSON.stringify({
         messageOrder: payload.messageOrder,
         message: payload.text,
