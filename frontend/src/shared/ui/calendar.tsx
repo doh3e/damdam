@@ -5,5 +5,5 @@ import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 
 export function Calendar(props: any) {
-  return <DayPicker {...props} />;
+  return <DayPicker {...props} className="rounded border text-center mx-auto p-5" />;
 }
