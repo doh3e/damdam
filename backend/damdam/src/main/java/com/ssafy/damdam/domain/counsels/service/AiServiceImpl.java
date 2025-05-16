@@ -131,6 +131,7 @@ public class AiServiceImpl implements AiService {
 
 	@Override
 	public SessionReportOutputDto getSessionReport(Long counsId) {
+
 		return null;
 	}
 
