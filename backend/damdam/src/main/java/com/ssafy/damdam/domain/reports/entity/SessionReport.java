@@ -42,6 +42,12 @@ public class SessionReport extends BaseTimeEntity {
 	@Column(name = "analyse", columnDefinition = "TEXT")
 	private String analyse;
 
+	@Column(name = "valence", length = 10)
+	private String valence;
+
+	@Column(name = "arousal", length = 10)
+	private String arousal;
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "feeling", nullable = false, length = 20)
 	private Feeling feeling;
