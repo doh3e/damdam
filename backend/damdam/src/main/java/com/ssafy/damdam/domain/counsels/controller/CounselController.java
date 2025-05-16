@@ -110,7 +110,6 @@ public class CounselController {
 	public ResponseEntity<Void> closeCounsel(@PathVariable Long counsId) {
 		// RDB에서 isClosed 플래그 업데이트
 		counselService.closeCounsel(counsId);
-
 		// Redis에 쌓인 대화 이력 삭제
 		chatService.endCounsel(counsId);
 

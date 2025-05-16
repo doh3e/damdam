@@ -17,11 +17,7 @@ import lombok.NoArgsConstructor;
 public class ChatOutputDto {
 	private String sender;
 	private String message;
-
 	private LocalDateTime timestamp;
-
 	private int tokenCount;
-
 	private int messageOrder;
-
 }

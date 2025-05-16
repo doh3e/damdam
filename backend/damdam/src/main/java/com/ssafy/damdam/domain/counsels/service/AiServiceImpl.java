@@ -2,6 +2,7 @@ package com.ssafy.damdam.domain.counsels.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.damdam.domain.counsels.dto.*;
+import com.ssafy.damdam.domain.reports.dto.SessionReportOutputDto;
 import com.ssafy.damdam.domain.users.entity.*;
 import com.ssafy.damdam.domain.users.exception.user.UserException;
 import com.ssafy.damdam.domain.users.repository.UserInfoRepository;
@@ -126,6 +127,11 @@ public class AiServiceImpl implements AiService {
 
 		log.info("chatwithllm service request: {}", request);
 		return llmChatClient.requestChatResponse(request);
+	}
+
+	@Override
+	public SessionReportOutputDto getSessionReport(Long counsId) {
+		return null;
 	}
 
 }
