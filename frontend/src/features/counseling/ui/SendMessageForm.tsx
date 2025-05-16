@@ -5,10 +5,8 @@ import { Textarea } from '@/shared/ui/textarea';
 import { Button } from '@/shared/ui/button';
 import { Paperclip, Mic, SendHorizonal } from 'lucide-react';
 import { useCounselingStore } from '@/features/counseling/model/counselingStore';
-import { useWebSocket, type StompSendUserMessagePayload } from '@/shared/hooks/useWebSocket';
+import { useWebSocket, type StompSendUserMessagePayload } from '@/features/counseling/hooks/useWebSocket';
 import { type ChatMessage, MessageType, SenderType } from '@/entities/counseling/model/types';
-import type { SendUserMessagePayload } from '@/shared/types/websockets';
-import { useAuthStore } from '@/app/store/authStore'; // 인증 토큰 가져오기 위해 추가
 
 /**
  * @interface SendMessageFormProps

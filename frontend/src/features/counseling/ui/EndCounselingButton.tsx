@@ -5,7 +5,7 @@ import { Button } from '@/shared/ui/button';
 import { LogOut } from 'lucide-react'; // 상담 종료에 어울리는 아이콘 (예: LogOut, XCircle, DoorClosed)
 import { useCloseCounselingSession } from '@/entities/counseling/model/mutations';
 import { useCounselingStore } from '@/features/counseling/model/counselingStore';
-import { useWebSocket } from '@/shared/hooks/useWebSocket'; // 웹소켓 연결 해제를 위해 import
+import { useWebSocket } from '@/features/counseling/hooks/useWebSocket'; // 웹소켓 연결 해제를 위해 import
 
 /**
  * @interface EndCounselingButtonProps

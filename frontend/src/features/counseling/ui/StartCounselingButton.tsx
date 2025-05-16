@@ -5,10 +5,9 @@ import { useRouter } from 'next/navigation'; // Next.js 13+ App Router의 useRou
 import { Button } from '@/shared/ui/button';
 import { MessageSquarePlus } from 'lucide-react';
 import { useCreateCounselingSession } from '@/entities/counseling/model/mutations';
-import type { CounselingSession } from '@/entities/counseling/model/types'; // CounselingSession 타입 임포트
 import { useCounselingStore } from '@/features/counseling/model/counselingStore';
 import { useAuthStore } from '@/app/store/authStore'; // 인증 스토어 추가
-// import { useWebSocket } from '@/shared/hooks/useWebSocket'; // 필요시 웹소켓 직접 제어
+// import { useWebSocket } from '@/features/counseling/hooks/useWebSocket'; // 필요시 웹소켓 직접 제어
 
 /**
  * @interface StartCounselingButtonProps

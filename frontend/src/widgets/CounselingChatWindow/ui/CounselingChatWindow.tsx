@@ -12,7 +12,7 @@ import { useAuthStore } from '@/app/store/authStore'; // 인증 스토어 추가
 import { useFetchCounselingSessionDetail } from '@/entities/counseling/model/queries';
 
 // 웹소켓 커스텀 훅 임포트
-import { useWebSocket, StompSendUserMessagePayload } from '@/shared/hooks/useWebSocket'; // StompSendUserMessagePayload 타입 임포트 추가
+import { useWebSocket, type StompSendUserMessagePayload } from '@/features/counseling/hooks/useWebSocket'; // 경로 수정
 
 // 필요한 피처(Feature) 컴포넌트 임포트
 import EditCounselingTitleButton from '@/features/counseling/ui/EditCounselingTitleButton';
@@ -107,6 +107,9 @@ export function CounselingChatWindow() {
   // 세션이 종료된 경우에는 웹소켓 연결을 시도하지 않도록 명확하게 설정
   const { isConnected, error: wsError } = useWebSocket({
     counsId: couns_id ? couns_id : null, // couns_id가 undefined일 경우 null로 변환
+    // autoConnect 조건: 토큰이 있고, 현재 세션이 명시적으로 닫히지 않았거나 아직 상태를 모를 때(null) 연결 시도
+    // isCurrentSessionClosed가 null일 경우 false (세션 열림)로 간주하여 연결을 시도함.
+    // 세션 정보 로딩 전에도 연결을 시도할 수 있으며, 추후 isCurrentSessionClosed가 true로 판명되면 연결 해제됨.
     autoConnect: !!token && !(isCurrentSessionClosed === null ? false : isCurrentSessionClosed),
     isSessionClosed: isCurrentSessionClosed === null ? false : isCurrentSessionClosed, // null일 경우 false로 처리하여 boolean 타입 보장
     debug: process.env.NODE_ENV === 'development', // 개발 환경에서만 디버그 로그 활성화

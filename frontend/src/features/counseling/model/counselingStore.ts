@@ -6,7 +6,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware'; // Zustand 개발자 도구 (선택 사항)
 import { ChatMessage, CounselingDisplayStatus } from '@/entities/counseling/model/types';
-import { WebSocketMessageType } from '@/shared/types/websockets'; // 웹소켓 메시지 타입 임포트
 
 /**
  * 웹소켓 연결 상태를 나타내는 타입
