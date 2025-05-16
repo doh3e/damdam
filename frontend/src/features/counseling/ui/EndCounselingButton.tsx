@@ -5,17 +5,18 @@ import { Button } from '@/shared/ui/button';
 import { LogOut } from 'lucide-react'; // 상담 종료에 어울리는 아이콘 (예: LogOut, XCircle, DoorClosed)
 import { useCloseCounselingSession } from '@/entities/counseling/model/mutations';
 import { useCounselingStore } from '@/features/counseling/model/counselingStore';
-import { useWebSocket } from '@/features/counseling/hooks/useWebSocket'; // 웹소켓 연결 해제를 위해 import
 
 /**
  * @interface EndCounselingButtonProps
  * @property {string} currentCounsId - 현재 진행 중인 상담 세션의 ID.
  * @property {() => void} [onEndSuccess] - 상담 종료 성공 시 호출될 콜백 함수 (옵션).
  *                                          예: 페이지 이동, 다음 행동 안내 UI 표시 등.
+ * @property {() => Promise<void>} [disconnectWebSocket] - 웹소켓 연결을 해제하는 함수.
  */
 interface EndCounselingButtonProps {
   currentCounsId: string;
   onEndSuccess?: () => void; // 성공 시 인자로 sessionId가 필요하다면 (sessionId: string) => void로 변경
+  disconnectWebSocket?: () => Promise<void>; // 추가
 }
 
 /**
@@ -28,34 +29,41 @@ interface EndCounselingButtonProps {
  * @param {EndCounselingButtonProps} props - 컴포넌트 props
  * @returns {React.ReactElement | null} EndCounselingButton 컴포넌트. `currentCounsId`가 없으면 null 반환.
  */
-const EndCounselingButton = ({ currentCounsId, onEndSuccess }: EndCounselingButtonProps): React.ReactElement | null => {
+const EndCounselingButton = ({
+  currentCounsId,
+  onEndSuccess,
+  disconnectWebSocket, // props로 받음
+}: EndCounselingButtonProps): React.ReactElement | null => {
   const { mutate: closeSession, isPending } = useCloseCounselingSession();
   const setIsCurrentSessionClosed = useCounselingStore((state) => state.setIsCurrentSessionClosed);
   const isCurrentSessionClosed = useCounselingStore((state) => state.isCurrentSessionClosed);
 
-  // 웹소켓 연결 해제 함수 가져오기 (useWebSocket 훅의 실제 반환값에 따라 disconnect 또는 다른 이름일 수 있음)
-  const { disconnect } = useWebSocket({ counsId: currentCounsId, autoConnect: false });
-
   /**
    * 상담 종료 버튼 클릭 시 실행되는 핸들러입니다.
    */
-  const handleEndCounseling = () => {
+  const handleEndCounseling = async () => {
+    // async 추가
     if (!currentCounsId) {
       console.warn('Cannot end counseling: currentCounsId is not available.');
       return;
     }
 
     closeSession(currentCounsId, {
-      onSuccess: () => {
+      onSuccess: async () => {
+        // async 추가
         console.log(`Counseling session ${currentCounsId} has been successfully closed.`);
 
         // 1. Zustand 스토어 상태 업데이트: 현재 세션 종료됨으로 표시
         setIsCurrentSessionClosed(true);
 
-        // 2. 웹소켓 연결 해제
-        if (disconnect) {
-          disconnect();
-          console.log(`WebSocket disconnected for session ${currentCounsId}.`);
+        // 2. 웹소켓 연결 해제 (props로 받은 함수 사용)
+        if (disconnectWebSocket) {
+          try {
+            await disconnectWebSocket(); // await 추가
+            console.log(`WebSocket disconnected for session ${currentCounsId}.`);
+          } catch (error) {
+            console.error('Error disconnecting WebSocket:', error);
+          }
         }
 
         // 3. 성공 콜백 호출 (prop으로 전달된 경우)

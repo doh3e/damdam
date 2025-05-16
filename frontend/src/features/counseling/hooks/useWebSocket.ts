@@ -75,18 +75,19 @@ export const useWebSocket = ({
 }: UseWebSocketOptions): UseWebSocketReturn => {
   const stompClientRef = useRef<Client | null>(null);
   const subscriptionRef = useRef<ReturnType<Client['subscribe']> | null>(null);
-  const currentCounsIdRef = useRef<string | null>(counsId); // useEffect에서 이전 counsId 비교용
+  const currentCounsIdRef = useRef<string | null>(counsId);
+  const hookInstanceIdRef = useRef(Math.random().toString(36).substring(2, 12)); // 훅 인스턴스별 ID
 
   const [isConnected, setIsConnected] = useState(false);
   const [lastReceivedStompMessage, setLastReceivedStompMessage] = useState<StompMessage | null>(null);
   const [errorState, setErrorState] = useState<string | null>(null);
 
-  const connectingRef = useRef(false); // 연결 시도 중 상태 플래그
-  const disconnectingRef = useRef(false); // 연결 해제 시도 중 상태 플래그
+  const connectingRef = useRef(false);
+  const disconnectingRef = useRef(false);
+  const prevCounsIdRef = useRef<string | null>(null); // 이전 counsId 추적
 
   const { token } = useAuthStore();
   const {
-    messages: storeMessages,
     addMessage: addMessageToStore,
     setWebsocketStatus,
     setIsAiTyping,
@@ -96,20 +97,20 @@ export const useWebSocket = ({
   const log = useCallback(
     (...args: any[]) => {
       if (debug) {
-        console.log(`[DamDam STOMP WebSocket - ${currentCounsIdRef.current || 'N/A'}]`, ...args);
+        console.log(`[DamDam STOMP - ${currentCounsIdRef.current || 'N/A'} - ${hookInstanceIdRef.current}]`, ...args);
       }
     },
-    [debug] // currentCounsIdRef는 ref이므로 의존성 불필요
+    [debug] // currentCounsIdRef, hookInstanceIdRef는 ref이므로 의존성 배열에 불필요
   );
 
   const parseStompMessageBody = useCallback(
     (stompMessage: StompMessage): ReceivedServerMessage | null => {
       try {
         const body = JSON.parse(stompMessage.body);
-        if (body && typeof body.message === 'string' && body.sender) {
+        if (body && body.sender) {
           return body as ReceivedServerMessage;
         }
-        log('수신된 STOMP 메시지 body가 예상과 다릅니다:', body);
+        log('수신된 STOMP 메시지 body 구조가 예상과 다릅니다:', body);
         return null;
       } catch (e) {
         log('STOMP 메시지 body 파싱 오류:', e, 'Original body:', stompMessage.body);
@@ -142,8 +143,6 @@ export const useWebSocket = ({
 
         const chatMessage: ChatMessage = {
           id: parsedBody.id || `${Date.now()}-${parsedBody.messageOrder || Math.random()}`,
-          // onStompMessage 호출 시점의 currentCounsIdRef.current는 해당 구독이 생성된 counsId를 가리켜야 함.
-          // stompClient가 재사용되거나 counsId가 매우 빠르게 변경되는 극단적인 경우를 대비해 메시지 자체에 counsId가 있다면 그걸 사용.
           counsId: currentCounsIdRef.current!,
           sender: parsedBody.sender as SenderType,
           messageType: parsedBody.messageType || MessageType.TEXT,
@@ -160,6 +159,7 @@ export const useWebSocket = ({
         if (
           parsedBody.sender === SenderType.AI &&
           chatMessage.messageType === MessageType.TEXT &&
+          typeof parsedBody.message === 'string' &&
           parsedBody.message.startsWith('Error:')
         ) {
           chatMessage.messageType = MessageType.ERROR;
@@ -172,8 +172,14 @@ export const useWebSocket = ({
           chatMessage.error = parsedBody.error as ErrorPayload;
         }
 
-        log('ChatMessage 변환 및 스토어 추가:', chatMessage);
-        addMessageToStore(chatMessage);
+        if (chatMessage.sender === SenderType.AI || chatMessage.messageType === MessageType.ERROR) {
+          log('ChatMessage 변환 (AI 또는 에러) 및 스토어 추가:', chatMessage);
+          addMessageToStore(chatMessage);
+        } else if (chatMessage.sender === SenderType.USER) {
+          log('사용자 메시지 수신 (STOMP 구독 통해) - 스토어에 중복 추가 방지:', chatMessage);
+        } else {
+          log('알 수 없는 sender 타입의 메시지 수신:', chatMessage);
+        }
       } else {
         log('STOMP 메시지 본문 파싱 실패 또는 유효하지 않은 메시지 형식');
       }
@@ -186,38 +192,44 @@ export const useWebSocket = ({
       let errorMessage = '알 수 없는 오류';
       if (typeof frameOrError === 'string') {
         errorMessage = frameOrError;
+      } else if (frameOrError instanceof Event) {
+        errorMessage = `WebSocket 오류 (${type}): 연결 실패 또는 소켓 오류`;
+        log(`WebSocket 오류 (${type}):`, frameOrError);
       } else if ('headers' in frameOrError) {
-        // STOMP Frame
         errorMessage = frameOrError.headers?.message || 'STOMP 프로토콜 오류';
         log(`STOMP 프로토콜 에러 (${type}):`, frameOrError.headers, frameOrError.body);
       } else {
-        // WebSocket Event or other error
-        errorMessage = `WebSocket 오류 (${type})`;
-        log(`WebSocket 오류 (${type}):`, frameOrError);
+        errorMessage = `예상치 못한 오류 (${type}): ${String(frameOrError)}`;
+        log(`예상치 못한 오류 (${type}):`, frameOrError);
       }
 
+      log(`에러 발생: ${errorMessage}`);
       setErrorState(errorMessage);
-      setStoreError(errorMessage);
+      if (setStoreError) setStoreError(errorMessage);
       setIsConnected(false);
-      setWebsocketStatus('error');
+      if (setWebsocketStatus) setWebsocketStatus('error');
       connectingRef.current = false;
-      // disconnectingRef는 disconnect 함수에서 관리
     },
-    [log, setStoreError] // setErrorState, setIsConnected, setWebsocketStatus는 상태 변경 함수라 의존성 불필요
+    [log, setStoreError, setWebsocketStatus]
   );
 
   const disconnect = useCallback(async (): Promise<void> => {
-    if (disconnectingRef.current || !stompClientRef.current) {
-      log('이미 연결 해제 중이거나 STOMP 클라이언트가 없습니다.', {
-        isDisconnecting: disconnectingRef.current,
-        hasClient: !!stompClientRef.current,
-      });
-      // 클라이언트가 아예 없으면 상태 강제 업데이트 (이미 해제된 것으로 간주)
-      if (!stompClientRef.current) {
-        setIsConnected(false);
-        setWebsocketStatus('disconnected');
-        connectingRef.current = false; // 연결 시도 중이었다면 그것도 취소
-      }
+    log('disconnect 함수 호출됨', {
+      isDisconnecting: disconnectingRef.current,
+      hasClient: !!stompClientRef.current,
+      isClientActive: stompClientRef.current?.active,
+    });
+
+    if (disconnectingRef.current) {
+      log('이미 연결 해제 작업 진행 중입니다.');
+      return;
+    }
+
+    if (!stompClientRef.current) {
+      log('STOMP 클라이언트가 존재하지 않습니다.');
+      setIsConnected(false);
+      if (setWebsocketStatus) setWebsocketStatus('disconnected');
+      connectingRef.current = false;
       return;
     }
 
@@ -226,12 +238,11 @@ export const useWebSocket = ({
 
     if (subscriptionRef.current) {
       try {
-        // 구독 해제 시 헤더가 필요하다면 추가 (보통은 불필요)
+        log(`구독 해제 시도: ${subscriptionRef.current.id}`);
         subscriptionRef.current.unsubscribe();
         log('STOMP 구독이 성공적으로 해제되었습니다.');
       } catch (subError) {
         log('STOMP 구독 해제 중 오류 발생:', subError);
-        // 구독 해제 실패는 치명적이지 않을 수 있으므로 계속 진행
       }
       subscriptionRef.current = null;
     }
@@ -243,277 +254,247 @@ export const useWebSocket = ({
         log('STOMP 클라이언트가 성공적으로 비활성화되었습니다.');
       } catch (e: any) {
         const errMsg = `STOMP 연결 해제(deactivate) 중 오류: ${e?.message || String(e)}`;
-        handleStompError(errMsg, 'websocket'); // 에러 처리 함수 사용
+        handleStompError(errMsg, 'websocket');
       }
     } else {
       log('STOMP 클라이언트가 활성 상태가 아니므로 deactivate를 건너뛰니다.');
     }
 
-    stompClientRef.current = null; // 클라이언트 참조 완전히 제거
+    stompClientRef.current = null;
     setIsConnected(false);
-    setWebsocketStatus('disconnected');
-    connectingRef.current = false; // 연결 시도 중이었다면 그것도 취소
+    if (setWebsocketStatus) setWebsocketStatus('disconnected');
+    connectingRef.current = false;
     disconnectingRef.current = false;
     log('STOMP 연결 해제 완료됨.');
-  }, [log, handleStompError]); // 의존성 배열에 handleStompError 추가
+  }, [log, handleStompError, setWebsocketStatus]);
 
   const connect = useCallback(async (): Promise<void> => {
-    const currentCid = currentCounsIdRef.current; // 현재 ref 값 (이 함수가 생성될 때의 counsId)
+    log('connect 함수 호출됨', {
+      counsId: currentCounsIdRef.current,
+      isConnecting: connectingRef.current,
+      isClientActive: stompClientRef.current?.active,
+    });
 
-    if (!currentCid) {
-      log('상담 ID가 없어 연결을 시도할 수 없습니다.');
-      return;
-    }
-    if (isSessionClosed) {
-      log('이미 종료된 세션이므로 연결을 시도하지 않습니다.');
-      return;
-    }
-    if (!token) {
-      log('인증 토큰이 없어 연결을 시도할 수 없습니다.');
+    if (!currentCounsIdRef.current) {
+      log('counsId가 없어 연결을 시도할 수 없습니다.');
+      setErrorState('상담 ID가 없어 연결할 수 없습니다.');
       return;
     }
 
     if (connectingRef.current) {
-      log('이미 연결 시도 중입니다. 중복 호출 방지.');
+      log('이미 연결 시도 중입니다.');
       return;
     }
-    if (stompClientRef.current?.active && isConnected) {
-      log('이미 STOMP 클라이언트가 활성화 및 연결되어 있습니다.');
+
+    if (stompClientRef.current && stompClientRef.current.active) {
+      log('이미 STOMP 클라이언트가 활성 상태입니다. 추가 연결 시도를 하지 않습니다.');
+      if (!isConnected) setIsConnected(true);
+      if (useCounselingStore.getState().websocketStatus !== 'connected') {
+        if (setWebsocketStatus) setWebsocketStatus('connected');
+      }
       return;
     }
 
     connectingRef.current = true;
-    log('STOMP 연결 시도 중...', `Target counsId: ${currentCid}`);
-    setWebsocketStatus('connecting');
-    setErrorState(null); // 새 연결 시도 시 이전 에러 초기화
-    setStoreError(null);
+    setErrorState(null);
+    if (setWebsocketStatus) setWebsocketStatus('connecting');
+    log('STOMP 연결 시도 중...', `Target counsId: ${currentCounsIdRef.current}`);
 
-    // 기존 클라이언트가 있다면 확실히 정리 후 진행 (disconnect는 내부적으로 disconnectingRef 사용)
-    if (stompClientRef.current) {
-      log('기존 STOMP 클라이언트 인스턴스가 존재하여 disconnect 먼저 호출');
-      await disconnect(); // 이전 연결 및 상태 완전 정리
-    }
-
-    // disconnect 후에도 여전히 연결 시도 중이라면 (예: disconnect가 빠르게 실패)
-    if (!connectingRef.current) {
-      log('disconnect 과정에서 connectingRef가 false로 변경되어 연결 중단.');
-      return;
-    }
-
-    const newStompClient = new Client({
+    const client = new Client({
       brokerURL: WEBSOCKET_BASE_URL,
-      connectHeaders: { Authorization: `Bearer ${token}`, host: STOMP_HOST },
-      debug: (str) => {
-        if (debug) log('[STOMP LIB DEBUG]', str);
+      connectHeaders: {
+        Authorization: `Bearer ${token}`,
+        ...(STOMP_HOST && { host: STOMP_HOST }),
       },
-      reconnectDelay, // 생성자 옵션 (기본값 0으로 설정됨)
-      heartbeatIncoming: 10000,
-      heartbeatOutgoing: 10000,
+      reconnectDelay,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+      debug: (str) => {
+        log('[STOMP LIB DEBUG]', str);
+      },
+      beforeConnect: () => {
+        log('STOMP 연결 직전 (beforeConnect).');
+        if (stompClientRef.current && !stompClientRef.current.active) {
+          log('beforeConnect: 이전 비활성 클라이언트 참조 제거.');
+          stompClientRef.current = null;
+        }
+      },
       onConnect: (frame: Frame) => {
+        log('STOMP 연결 성공!', frame);
+        stompClientRef.current = client;
         setIsConnected(true);
-        setWebsocketStatus('connected');
+        if (setWebsocketStatus) setWebsocketStatus('connected');
         connectingRef.current = false;
-        log(`STOMP 연결 성공! Session ID: ${currentCid}`, 'Frame:', frame);
+
+        const destination = `/topic/counsels/${currentCounsIdRef.current}`;
+        log(`구독 시도: ${destination}`);
 
         if (subscriptionRef.current) {
+          log(`기존 구독 (${subscriptionRef.current.id}) 해제 시도`);
           try {
             subscriptionRef.current.unsubscribe();
-            log('onConnect: 중복 방지 - 기존 STOMP 구독 해제됨.');
-          } catch (e) {
-            log('onConnect: 기존 STOMP 구독 해제 중 오류:', e);
+          } catch (unsubError) {
+            log('기존 구독 해제 중 오류:', unsubError);
           }
           subscriptionRef.current = null;
         }
 
-        // onConnect 시점의 currentCounsIdRef.current가 구독 대상 ID가 되어야 함.
-        const актуальныйCounsId = currentCounsIdRef.current;
-        if (!актуальныйCounsId) {
-          log('onConnect: 구독 시점에 counsId가 없습니다. 구독하지 않습니다.');
-          // 연결은 되었으나 구독 실패. 이 경우 disconnect 처리 필요할 수 있음.
-          disconnect(); // 구독 실패 시 연결 유지 의미 없음
-          return;
-        }
-
-        const subscriptionId = `sub-${актуальныйCounsId}-${Date.now()}`;
-        const destination = `/sub/counsels/${актуальныйCounsId}/chat`;
-        log(`STOMP 구독 시도. Dest: ${destination}, ID: ${subscriptionId}`);
-
-        if (newStompClient.active) {
-          subscriptionRef.current = newStompClient.subscribe(destination, onStompMessage, {
-            id: subscriptionId,
-            Authorization: `Bearer ${token}`,
-          });
-          log('STOMP 구독 성공.', `Sub ID: ${subscriptionRef.current?.id}`);
-        } else {
-          log('onConnect: STOMP 클라이언트가 활성 상태가 아니어서 구독할 수 없습니다.');
-          connectingRef.current = false; // 확실히
-          // 구독 실패시 연결 해제
-          disconnect();
-        }
+        subscriptionRef.current = client.subscribe(destination, onStompMessage, {
+          id: `sub-${currentCounsIdRef.current}-${Date.now()}`,
+        });
+        log(`구독 완료: ${destination}, 구독 ID: ${subscriptionRef.current.id}`);
       },
-      onStompError: (frame: Frame) => handleStompError(frame, 'stomp'),
-      onWebSocketError: (event: Event) => handleStompError(event, 'websocket'),
+      onStompError: (frame: Frame) => {
+        handleStompError(frame, 'stomp');
+      },
+      onWebSocketError: (event: Event) => {
+        handleStompError(event, 'websocket');
+      },
       onWebSocketClose: (event: CloseEvent) => {
-        log('WebSocket 연결이 닫혔습니다.', `Code: ${event.code}, Reason: ${event.reason}, Clean: ${event.wasClean}`);
-        setIsConnected(false);
-        setWebsocketStatus('disconnected');
-        connectingRef.current = false; // 연결 시도 중이었다면 해제
-
-        if (!event.wasClean && !disconnectingRef.current) {
-          // 비정상 종료이고, 우리가 직접 disconnect한 게 아니라면
-          log('비정상적인 WebSocket 연결 종료. 외부 요인 가능성.');
-          // reconnectDelay가 0이므로 라이브러리가 자동 재연결 시도 안함.
-          // 필요시 여기서 에러 상태를 설정하거나, 상위 useEffect가 재연결을 결정하도록 함.
-          setErrorState('WebSocket 연결이 비정상적으로 종료되었습니다.');
-          setStoreError('WebSocket 연결이 비정상적으로 종료되었습니다.');
-        }
-      },
-      beforeConnect: () => {
-        log('STOMP 연결 직전 (beforeConnect).');
-        if (!token) {
-          log('토큰이 없어 연결을 중단합니다 (beforeConnect).');
-          throw new Error('No token for STOMP connection'); // 연결 시도 중단
+        log('WebSocket 연결이 닫혔습니다.', event);
+        if (!disconnectingRef.current) {
+          const errorMessage = `WebSocket 연결이 예기치 않게 종료되었습니다. (코드: ${event.code}, 사유: ${event.reason || 'N/A'})`;
+          handleStompError(errorMessage, 'websocket');
         }
       },
     });
 
-    stompClientRef.current = newStompClient;
     try {
-      newStompClient.activate();
-    } catch (activationError: any) {
-      const errMsg = `STOMP 클라이언트 활성화 중 즉각적인 오류 발생: ${activationError?.message || activationError}`;
-      handleStompError(errMsg, 'activation');
-      stompClientRef.current = null; // 실패 시 참조 제거
+      log('client.activate() 호출 시도');
+      client.activate();
+    } catch (activationError) {
+      log('STOMP 클라이언트 활성화 중 즉각적인 오류 발생:', activationError);
+      handleStompError(String(activationError), 'activation');
     }
-  }, [
-    // currentCounsIdRef는 ref이므로 의존성 배열에 넣지 않음. 대신 함수 내부에서 사용.
-    // props로 받는 counsId, isSessionClosed, token 등은 useEffect에서 관리하며,
-    // 이 함수(connect)는 해당 값들이 변경될 때 재생성되므로 최신 값을 사용.
-    token,
-    isSessionClosed,
-    debug,
-    reconnectDelay, // 이 값들은 거의 변경되지 않거나 고정값
-    log,
-    onStompMessage,
-    handleStompError,
-    disconnect, // 내부 콜백 및 함수들
-  ]);
-
-  useEffect(() => {
-    const prevCounsId = currentCounsIdRef.current;
-    currentCounsIdRef.current = counsId; // 현재 counsId prop 값을 ref에 업데이트
-
-    const clientCurrentlyActive = stompClientRef.current?.active || false;
-    const shouldConnect = autoConnect && counsId && token && !isSessionClosed;
-
-    log('useEffect 실행:', {
-      counsId,
-      prevCounsId,
-      shouldConnect,
-      clientCurrentlyActive,
-      isConnected,
-      isConnecting: connectingRef.current,
-      isDisconnecting: disconnectingRef.current,
-    });
-
-    if (shouldConnect) {
-      // 상담 ID가 실제로 변경되었을 때 (이전 ID가 있었고 현재 ID와 다름)
-      if (prevCounsId && prevCounsId !== counsId) {
-        log(`useEffect: 상담 ID 변경 (${prevCounsId} -> ${counsId}). 재연결 로직 실행.`);
-        // disconnect는 async 함수, connect도 async 함수
-        // disconnect().then(() => {
-        //   // disconnect 후에도 여전히 현재 counsId에 대한 연결이 필요하면 connect
-        //   if (currentCounsIdRef.current === counsId && !connectingRef.current && !disconnectingRef.current) {
-        //     log('useEffect: ID 변경 후 connect 호출');
-        //     connect();
-        //   }
-        // });
-        // 위의 then 체인보다, connect 함수 내부에서 이전 연결을 정리하도록 위임하는 것이 더 깔끔할 수 있음.
-        // connect 함수는 이미 시작 부분에서 기존 연결(stompClientRef.current)이 있으면 disconnect하도록 수정됨.
-        if (!connectingRef.current && !disconnectingRef.current) {
-          connect();
-        } else {
-          log('useEffect: ID 변경, 그러나 현재 연결/해제 작업 중이므로 connect 호출 보류.');
-        }
-      }
-      // 연결되어야 하는데, 현재 연결되어 있지 않고, 시도 중도 아닐 때
-      else if (!clientCurrentlyActive && !isConnected && !connectingRef.current && !disconnectingRef.current) {
-        log('useEffect: 조건 충족, 연결 안됨 -> connect() 호출');
-        connect();
-      } else {
-        log('useEffect: 이미 연결/해제 작업 중이거나, 이미 연결되어 있거나, ID 변경 없음. 추가 connect 호출 안함.');
-      }
-    } else {
-      // 연결되면 안 되는 경우
-      if ((clientCurrentlyActive || isConnected) && !disconnectingRef.current) {
-        log('useEffect: 연결 조건 미충족 및 현재 연결됨 -> disconnect() 호출');
-        disconnect();
-      } else {
-        log('useEffect: 연결 조건 미충족, 이미 연결 해제 중이거나 연결되지 않음. 추가 disconnect 호출 안함.');
-      }
-    }
-
-    // 컴포넌트 언마운트 시 또는 주요 의존성 변경 전 cleanup
-    return () => {
-      log(`useEffect cleanup 실행 ( 당시 counsId: ${counsId} )`);
-      // 이미 해제 중이 아니라면, 그리고 클라이언트가 존재한다면 해제 시도
-      if (stompClientRef.current && !disconnectingRef.current) {
-        log('useEffect cleanup: 연결된 클라이언트가 있어 disconnect() 호출');
-        disconnect(); // 이 disconnect는 disconnectingRef.current를 true로 설정
-      } else {
-        log('useEffect cleanup: 해제할 클라이언트 없거나 이미 해제 중.');
-      }
-    };
-    // autoConnect, token, debug, reconnectDelay는 거의 변하지 않으므로, 주 의존성은 counsId, isSessionClosed.
-    // connect, disconnect, log, handleStompError는 useCallback으로 메모이즈 되었으므로, 내부 의존성이 변경될 때만 바뀜.
-  }, [counsId, isSessionClosed, autoConnect, token, debug, reconnectDelay, connect, disconnect, log, isConnected]);
-  // isConnected를 의존성에 추가하여, isConnected 상태 변경 시에도 useEffect가 재평가되도록 함.
+  }, [token, reconnectDelay, log, onStompMessage, handleStompError, setWebsocketStatus]);
 
   const sendUserMessage = useCallback(
     (payload: StompSendUserMessagePayload) => {
-      if (!stompClientRef.current?.active || !currentCounsIdRef.current || isSessionClosed) {
-        const errorMessage = `STOMP 클라이언트가 활성화되지 않았거나 상담 ID가 없거나 세션이 종료되어 메시지를 보낼 수 없습니다. 연결 상태: ${
-          stompClientRef.current?.active
-        }, 상담 ID: ${currentCounsIdRef.current}, 세션 종료: ${isSessionClosed}`;
-        setErrorState(errorMessage);
-        setStoreError(errorMessage);
-        log(`sendUserMessage 호출 실패: ${errorMessage}`);
+      if (!stompClientRef.current || !stompClientRef.current.active || !isConnected) {
+        log('STOMP 클라이언트가 연결되지 않았거나 활성 상태가 아닙니다. 메시지 전송 불가.');
+        setErrorState('연결되지 않아 메시지를 보낼 수 없습니다.');
+        return;
+      }
+      if (!currentCounsIdRef.current) {
+        log('counsId가 없어 메시지를 전송할 수 없습니다.');
+        setErrorState('상담 ID가 없어 메시지를 보낼 수 없습니다.');
         return;
       }
 
-      const currentUserMessagesCount = storeMessages.filter((msg) => msg.sender === SenderType.USER).length;
-      const nextMessageOrder = currentUserMessagesCount + 1;
-
-      const messageToSend = {
-        isVoice: payload.isVoice,
+      const destination = `/app/counsels/${currentCounsIdRef.current}/messages`;
+      const body = JSON.stringify({
+        messageOrder: payload.messageOrder,
         message: payload.text,
-        messageOrder: nextMessageOrder, // messageOrder 사용 유지
-      };
-
-      const destination = `/pub/counsels/${currentCounsIdRef.current}/chat`;
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        'content-type': 'application/json',
-      };
+        isVoice: payload.isVoice,
+      });
 
       try {
+        log(`STOMP 메시지 발행 시도: ${destination}, body: ${body}`);
         stompClientRef.current.publish({
           destination,
-          headers,
-          body: JSON.stringify(messageToSend),
+          body,
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
         });
-        log(`STOMP 메시지 발행:`, { destination, body: messageToSend });
+        log('STOMP 메시지 발행 성공.');
+
+        const optimisticMessage: ChatMessage = {
+          id: `local-${Date.now()}-${payload.messageOrder}`,
+          counsId: currentCounsIdRef.current,
+          sender: SenderType.USER,
+          messageType: payload.isVoice ? MessageType.VOICE : MessageType.TEXT,
+          content: payload.text,
+          timestamp: Date.now(),
+          isLoading: true,
+        };
+        addMessageToStore(optimisticMessage);
+        log('사용자 메시지 (Optimistic) 스토어 추가:', optimisticMessage);
       } catch (e: any) {
-        const errorMessage = `STOMP 메시지 발행 중 오류: ${e?.message || String(e)}`;
-        setErrorState(errorMessage);
-        setStoreError(errorMessage);
-        log(`STOMP 메시지 발행 중 오류:`, e);
+        const errMsg = `메시지 전송 중 오류: ${e?.message || String(e)}`;
+        log(errMsg);
+        setErrorState(errMsg);
       }
     },
-    [token, debug, isSessionClosed, storeMessages, setStoreError, log] // currentCounsIdRef는 ref
+    [isConnected, token, log, addMessageToStore]
   );
 
-  log(`[useWebSocket TOP LEVEL EXEC] counsId: ${counsId}, HookInstanceID: ${Math.random().toString(36).substring(2)}`);
+  useEffect(() => {
+    if (counsId !== currentCounsIdRef.current) {
+      log(
+        `useEffect: counsId prop 변경 감지. 이전 Ref: ${currentCounsIdRef.current}, 새 prop: ${counsId}. Ref 업데이트.`
+      );
+      currentCounsIdRef.current = counsId;
+    }
+
+    const shouldConnect = autoConnect && !!currentCounsIdRef.current && !isSessionClosed;
+
+    log('useEffect 실행 (의존성 변경 또는 초기 마운트):', {
+      counsId: currentCounsIdRef.current,
+      prevCounsId: prevCounsIdRef.current,
+      shouldConnect,
+      isConnecting: connectingRef.current,
+      isDisconnecting: disconnectingRef.current,
+      actualIsConnected: isConnected,
+      isClientActive: stompClientRef.current?.active,
+      isSessionClosed,
+      tokenExists: !!token,
+    });
+
+    if (shouldConnect) {
+      if (currentCounsIdRef.current !== prevCounsIdRef.current || !isConnected) {
+        if (connectingRef.current || disconnectingRef.current) {
+          log('useEffect: 이미 연결 또는 해제 작업 진행 중. 추가 작업 안 함.');
+        } else {
+          log('useEffect: 조건 충족 (ID 변경 또는 미연결) -> 이전 연결 해제 후 새 연결 시도');
+          (async () => {
+            if (
+              prevCounsIdRef.current &&
+              prevCounsIdRef.current !== currentCounsIdRef.current &&
+              stompClientRef.current?.active
+            ) {
+              log(
+                `useEffect: counsId 변경(${prevCounsIdRef.current} -> ${currentCounsIdRef.current})으로 인한 기존 연결 해제 시도.`
+              );
+              await disconnect();
+            }
+            log('useEffect: connect() 호출 준비.');
+            await connect();
+          })();
+        }
+      } else {
+        log('useEffect: ID 변경 없고 이미 연결된 상태. 추가 connect 호출 안 함.');
+      }
+    } else {
+      if (isConnected || (stompClientRef.current && stompClientRef.current.active)) {
+        if (!disconnectingRef.current) {
+          log('useEffect: 연결 조건 false인데 연결되어 있음 -> disconnect() 호출');
+          disconnect();
+        } else {
+          log('useEffect: 연결 조건 false, 이미 연결 해제 작업 중.');
+        }
+      } else {
+        log('useEffect: 연결 조건 false, 연결되어 있지도 않음. 별도 작업 없음.');
+      }
+    }
+
+    if (prevCounsIdRef.current !== currentCounsIdRef.current) {
+      prevCounsIdRef.current = currentCounsIdRef.current;
+      log(`useEffect: prevCounsIdRef 업데이트됨 -> ${prevCounsIdRef.current}`);
+    }
+
+    return () => {
+      const counsIdAtCleanup = currentCounsIdRef.current;
+      log(`useEffect cleanup 실행 (캡처된 counsId: ${counsIdAtCleanup}, HookInstanceId: ${hookInstanceIdRef.current})`);
+      if (!connectingRef.current && !disconnectingRef.current && stompClientRef.current?.active) {
+        log('useEffect cleanup: 활성 클라이언트 존재 및 특정 작업 중 아님 -> disconnect() 호출');
+        disconnect();
+      } else {
+        log('useEffect cleanup: 연결/해제 작업 중이거나, 클라이언트 없거나 비활성. disconnect 호출 안 함.');
+      }
+    };
+  }, [counsId, autoConnect, isSessionClosed, token, connect, disconnect]);
 
   return {
     sendUserMessage,
@@ -522,6 +503,6 @@ export const useWebSocket = ({
     error: errorState,
     connect,
     disconnect,
-    isSessionClosed, // prop으로 받은 isSessionClosed 상태 반환
+    isSessionClosed,
   };
 };

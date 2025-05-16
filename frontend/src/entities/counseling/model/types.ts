@@ -71,6 +71,8 @@ export interface ChatMessage {
   feedback?: 'like' | 'dislike';
   /** AI 응답에 대한 추가 메타데이터 (옵션) */
   metadata?: Record<string, any>;
+  /** 메시지 로딩 상태 (클라이언트에서 낙관적 업데이트 시 사용) */
+  isLoading?: boolean;
 }
 
 /**

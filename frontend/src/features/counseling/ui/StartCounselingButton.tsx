@@ -7,7 +7,6 @@ import { MessageSquarePlus } from 'lucide-react';
 import { useCreateCounselingSession } from '@/entities/counseling/model/mutations';
 import { useCounselingStore } from '@/features/counseling/model/counselingStore';
 import { useAuthStore } from '@/app/store/authStore'; // 인증 스토어 추가
-// import { useWebSocket } from '@/features/counseling/hooks/useWebSocket'; // 필요시 웹소켓 직접 제어
 
 /**
  * @interface StartCounselingButtonProps
@@ -35,8 +34,6 @@ const StartCounselingButton = ({ onStartSuccess }: StartCounselingButtonProps): 
   const setCurrentSessionId = useCounselingStore((state) => state.setCurrentSessionId);
   const setIsCurrentSessionClosed = useCounselingStore((state) => state.setIsCurrentSessionClosed);
   const setMessages = useCounselingStore((state) => state.setMessages);
-
-  // const { connect } = useWebSocket({ counsId: null, autoConnect: false }); // 초기에는 특정 세션 ID 없이 준비만
 
   /**
    * 새 상담 시작 버튼 클릭 시 실행되는 핸들러입니다.
