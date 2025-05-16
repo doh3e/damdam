@@ -1,6 +1,7 @@
 package com.ssafy.damdam.domain.counsels.controller;
 
 import java.security.Principal;
+import java.util.concurrent.ExecutionException;
 
 import com.ssafy.damdam.domain.users.dto.auth.CustomOAuth2User;
 import lombok.extern.slf4j.Slf4j;
@@ -31,11 +32,9 @@ public class CounselChatController {
 			@DestinationVariable Long roomId,
 			Principal principal,
 			@Payload ChatInputDto input
-	) {
+	) throws ExecutionException, InterruptedException {
 
 		Long userId = Long.valueOf(principal.getName());
-		log.info("받아온 customUser: userId: {}", userId);
-		String nickname = "내담이";
-		chatService.handleChat(roomId, userId, nickname, input);
+		chatService.handleChat(roomId, userId, input);
 	}
 }

@@ -7,6 +7,6 @@ import java.util.Optional;
 
 public interface UserSurveyRepository extends JpaRepository<UserSurvey, Long> {
 
-    Optional<UserSurvey> findByUsers_UserId(Long userId);
+    Optional<UserSurvey>  findByUsers_UserId(Long userId);
 
 }

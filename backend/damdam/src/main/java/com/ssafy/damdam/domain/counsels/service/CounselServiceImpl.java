@@ -6,6 +6,7 @@ import static com.ssafy.damdam.domain.users.exception.auth.AuthExceptionCode.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.ssafy.damdam.domain.reports.dto.SessionReportOutputDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -115,5 +116,10 @@ public class CounselServiceImpl implements CounselService {
 		counseling.updateCounsel(counseling.getCounsTitle());
 		counseling.setClosed(true);
 
+	}
+
+	@Override
+	public SessionReportOutputDto reportCounsel(Long counsId) {
+		return null;
 	}
 }

@@ -9,7 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 서버 처리 후 구독자(클라이언트)에게 전송할 메시지 정보
+// 서버 처리 후 서버 → 프론트에 전송할 정보들
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,12 +21,6 @@ public class ChatOutputDto {
 	private LocalDateTime timestamp;
 
 	private int tokenCount;
-
-	private int happiness;
-	private int angry;
-	private int neutral;
-	private int sadness;
-	private int other;
 
 	private int messageOrder;
 
