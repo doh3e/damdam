@@ -1,11 +1,14 @@
 package com.ssafy.damdam.domain.counsels.service;
 
 import static com.ssafy.damdam.domain.counsels.exception.CounsExceptionCode.*;
+import static com.ssafy.damdam.domain.reports.exception.ReportExceptionCode.REPORT_ALREADY_EXIST;
 import static com.ssafy.damdam.domain.users.exception.auth.AuthExceptionCode.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.ssafy.damdam.domain.reports.dto.SessionReportOutputDto;
+import com.ssafy.damdam.domain.reports.exception.ReportException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +31,7 @@ public class CounselServiceImpl implements CounselService {
 
 	private final CounselingRepository counselingRepository;
 	private final UserUtil userUtil;
+	private final AiService aiService;
 
 	// 유저 검증 메서드
 	private Users validateUser() {
@@ -114,6 +118,25 @@ public class CounselServiceImpl implements CounselService {
 
 		counseling.updateCounsel(counseling.getCounsTitle());
 		counseling.setClosed(true);
+
+	}
+
+	@Override
+	public SessionReportOutputDto reportCounsel(Long counsId) {
+
+		// RDB에 세션별레포트가 있는지 여부를 확인 후 존재 시 예외 반환
+		Counseling counseling = counselingRepository.findById(counsId)
+			.orElse(null);
+
+
+
+		// 존재하지 않을 시 llm에 report 요청
+		if (counseling != null) {
+			return aiService.getSessionReport(counsId);
+		}
+		else {
+			throw new ReportException(REPORT_ALREADY_EXIST);
+		}
 
 	}
 }
