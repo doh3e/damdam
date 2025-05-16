@@ -8,6 +8,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Setter
 @ConfigurationProperties(prefix = "fastapi.llm")
 public class LlmApiProperties {
-    private String baseUrl;
+    private String chatUrl;
     private String summaryUrl;
 }
