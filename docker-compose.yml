@@ -130,7 +130,7 @@ services:
 
   ai-audio:
     image: hashicorp/http-echo:latest
-    container_name: ai-audio
+    container_name: ai-analyze
     command: ["-text={\"status\":\"up\"}", "-status-code=200", "-listen=:8002"]
     ports:
       - "8002:8002"
