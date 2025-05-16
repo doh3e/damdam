@@ -8,7 +8,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class SummaryClient {
+public class LlmSummaryClient {
 
     private final WebClient summaryWebClient;
 

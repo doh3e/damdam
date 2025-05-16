@@ -7,10 +7,10 @@ import com.ssafy.damdam.domain.users.repository.UserSettingRepository;
 import com.ssafy.damdam.domain.users.repository.UserSurveyRepository;
 import com.ssafy.damdam.global.redis.CounselSession;
 import com.ssafy.damdam.global.redis.CounselSessionRepository;
-import com.ssafy.damdam.global.webclient.client.AudioClient;
+import com.ssafy.damdam.global.webclient.client.AnalyzeAudioClient;
 
-import com.ssafy.damdam.global.webclient.client.LlmClient;
-import com.ssafy.damdam.global.webclient.client.SummaryClient;
+import com.ssafy.damdam.global.webclient.client.LlmChatClient;
+import com.ssafy.damdam.global.webclient.client.LlmSummaryClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,9 +34,9 @@ public class AiServiceImpl implements AiService {
 	private final UserInfoRepository infoRepository;
 	private final UserSurveyRepository surveyRepository;
 	private final ExecutorService virtualThreadExecutor;
-	private final AudioClient audioClient;
-	private final LlmClient llmClient;
-	private final SummaryClient summaryClient;
+	private final AnalyzeAudioClient analyzeAudioClient;
+	private final LlmChatClient llmChatClient;
+	private final LlmSummaryClient llmSummaryClient;
 	private final RedisTemplate<String, Object> redisTemplate;
 	private final CounselSessionRepository sessionRepository;
 	private final ObjectMapper objectMapper;
@@ -47,7 +47,7 @@ public class AiServiceImpl implements AiService {
 	public void analyzeAndSave(Long roomId, Long userId, String nickname, int messageOrder, String audioUrl) {
 		virtualThreadExecutor.submit(() -> {
 			try {
-				AudioAiResponse analysis = audioClient.analyzeAudio(audioUrl);
+				AudioAiResponse analysis = analyzeAudioClient.analyzeAudio(audioUrl);
 				String listKey = "counsel:" + roomId + ":messages";
 				log.info("AI로 받아온 roomId: {}, userId: {}, messageOrder: {}, audioUrl: {}",
 						roomId, userId, messageOrder, audioUrl);
@@ -143,7 +143,7 @@ public class AiServiceImpl implements AiService {
 
 		log.info("chatwithllm service request: {}", request);
 
-		LlmAiChatResponse response = llmClient.requestChatResponse(request);
+		LlmAiChatResponse response = llmChatClient.requestChatResponse(request);
 
 		String aiText = response != null
 				? response.getAiResponse()
