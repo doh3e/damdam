@@ -12,7 +12,7 @@ import { useAuthStore } from '@/app/store/authStore'; // 인증 스토어 추가
 import { useFetchCounselingSessionDetail } from '@/entities/counseling/model/queries';
 
 // 웹소켓 커스텀 훅 임포트
-import { useWebSocket, StompSendUserMessagePayload } from '@/shared/hooks/useWebSocket'; // StompSendUserMessagePayload 타입 임포트 추가
+import { useWebSocket, type StompSendUserMessagePayload } from '@/features/counseling/hooks/useWebSocket'; // 경로 수정
 
 // 필요한 피처(Feature) 컴포넌트 임포트
 import EditCounselingTitleButton from '@/features/counseling/ui/EditCounselingTitleButton';
@@ -105,8 +105,16 @@ export function CounselingChatWindow() {
   // --- 웹소켓 연결 ---
   // useWebSocket 훅 사용법에 맞게 수정
   // 세션이 종료된 경우에는 웹소켓 연결을 시도하지 않도록 명확하게 설정
-  const { isConnected, error: wsError } = useWebSocket({
+  const {
+    isConnected,
+    error: wsError,
+    sendUserMessage, // 추가: 메시지 전송 함수
+    disconnect, // 추가: 연결 해제 함수
+  } = useWebSocket({
     counsId: couns_id ? couns_id : null, // couns_id가 undefined일 경우 null로 변환
+    // autoConnect 조건: 토큰이 있고, 현재 세션이 명시적으로 닫히지 않았거나 아직 상태를 모를 때(null) 연결 시도
+    // isCurrentSessionClosed가 null일 경우 false (세션 열림)로 간주하여 연결을 시도함.
+    // 세션 정보 로딩 전에도 연결을 시도할 수 있으며, 추후 isCurrentSessionClosed가 true로 판명되면 연결 해제됨.
     autoConnect: !!token && !(isCurrentSessionClosed === null ? false : isCurrentSessionClosed),
     isSessionClosed: isCurrentSessionClosed === null ? false : isCurrentSessionClosed, // null일 경우 false로 처리하여 boolean 타입 보장
     debug: process.env.NODE_ENV === 'development', // 개발 환경에서만 디버그 로그 활성화
@@ -245,7 +253,8 @@ export function CounselingChatWindow() {
           {couns_id && <EditCounselingTitleButton counsId={couns_id} currentTitle={counselingTitle} />}
           {/* 상담 종료 버튼 */}
           {/* 실제 EndCounselingButton 컴포넌트의 props 확인 필요 */}
-          {couns_id && !isClosed && <EndCounselingButton currentCounsId={couns_id} />}
+          {/* disconnect 함수를 prop으로 전달 */}
+          {couns_id && !isClosed && <EndCounselingButton currentCounsId={couns_id} disconnectWebSocket={disconnect} />}
           {/* 보고서 생성 버튼 */}
           {/* isSessionClosed prop 추가 */}
           {/* 실제 CreateReportButton 컴포넌트의 props 확인 필요 */}
@@ -272,7 +281,13 @@ export function CounselingChatWindow() {
       <CardFooter className="p-3 border-t bg-white dark:bg-gray-800">
         {/* SendMessageForm 피처 컴포넌트에 정확한 정보 전달 */}
         {/* isClosed 상태에 따라 입력 폼 비활성화 */}
-        <SendMessageForm currentCounsId={couns_id} disabled={sessionDetail?.session?.isClosed || false} />
+        {/* sendUserMessage 함수와 isConnected 상태를 props로 전달 */}
+        <SendMessageForm
+          currentCounsId={couns_id}
+          disabled={sessionDetail?.session?.isClosed || false}
+          sendUserMessage={sendUserMessage}
+          isWebSocketConnected={isConnected}
+        />
       </CardFooter>
     </Card>
   );
