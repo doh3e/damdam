@@ -9,21 +9,13 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 
 @Configuration
-@EnableConfigurationProperties({LlmApiProperties.class, AudioApiProperties.class})
+@EnableConfigurationProperties({LlmApiProperties.class, AnalyzeApiProperties.class})
 public class WebClientConfig {
 
     @Bean
-    public WebClient llmWebClient(LlmApiProperties props) {
+    public WebClient chatWebClient(LlmApiProperties props) {
         return WebClient.builder()
-                .baseUrl(props.getBaseUrl())
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .build();
-    }
-
-    @Bean
-    public WebClient audioWebClient(AudioApiProperties props) {
-        return WebClient.builder()
-                .baseUrl(props.getBaseUrl())
+                .baseUrl(props.getChatUrl())
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
     }
@@ -32,6 +24,21 @@ public class WebClientConfig {
     public WebClient summaryWebClient(LlmApiProperties props) {
         return WebClient.builder()
                 .baseUrl(props.getSummaryUrl())
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+    }
+
+    @Bean
+    public WebClient audioWebClient(AnalyzeApiProperties props) {
+        return WebClient.builder()
+                .baseUrl(props.getAudioUrl())
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+    }
+
+    public WebClient textWebClient(AnalyzeApiProperties props) {
+        return WebClient.builder()
+                .baseUrl(props.getTextUrl())
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
     }

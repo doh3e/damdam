@@ -13,7 +13,7 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AudioClient {
+public class AnalyzeAudioClient {
 
     private final WebClient audioWebClient;
 

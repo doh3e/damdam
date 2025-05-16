@@ -6,7 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Getter
 @Setter
-@ConfigurationProperties(prefix = "fastapi.audio")
-public class AudioApiProperties {
-    private String baseUrl;
+@ConfigurationProperties(prefix = "fastapi.analyze")
+public class AnalyzeApiProperties {
+    private String audioUrl;
+    private String textUrl;
 }
