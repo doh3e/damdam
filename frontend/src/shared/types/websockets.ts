@@ -3,7 +3,7 @@
  * FSD 아키텍처에 따라 특정 도메인에 종속되지 않는 공유 타입이므로 `shared` 레이어에 위치합니다.
  */
 
-import { type ChatMessage, SenderType, MessageType, type RecommendedContent } from '@/entities/counseling/model/types';
+import { type MessageType, type RecommendedContent, SenderType } from '@/entities/counseling/model/types';
 
 /**
  * 서버로부터 수신되는 웹소켓 메시지의 기본 형태입니다.
@@ -31,31 +31,6 @@ export interface ReceivedServerMessage {
   error?: ErrorPayload;
   // AI 응답 시 추가될 수 있는 필드들 (예: 감정 분석 결과 등)
   // sentiment?: any;
-}
-
-/**
- * @deprecated 실제 프로젝트에서는 type 필드를 사용하지 않으므로, 이 enum은 사용되지 않을 가능성이 높습니다.
- * 웹소켓을 통해 클라이언트와 서버 간에 주고받는 메시지의 주요 유형을 정의하는 열거형입니다.
- */
-export enum WebSocketMessageType {
-  // SEND_USER_MESSAGE 등은 STOMP의 destination으로 구분되므로, 메시지 body에 type이 필요 없을 수 있음
-  // 필요한 최소한의 타입만 남기거나, 모두 제거하는 것도 고려.
-  /** 서버가 메시지를 클라이언트로 전송할 때 (일반화된 타입) */
-  RECEIVE_MESSAGE = 'RECEIVE_MESSAGE', // 사용자 echo, AI 응답 모두 포함 가능
-  /** 웹소켓 연결 또는 메시지 처리 중 오류 발생 시 사용 (클라이언트 내부용으로만 사용 가능) */
-  ERROR = 'ERROR',
-}
-
-/**
- * @deprecated 실제 프로젝트에서는 type 필드를 사용하지 않으므로, 이 인터페이스는 사용되지 않을 가능성이 높습니다.
- * 모든 웹소켓 메시지가 공통적으로 포함하는 기본 구조입니다.
- */
-export interface BaseWebSocketMessage<T extends WebSocketMessageType, P = Record<string, unknown>> {
-  type: T;
-  timestamp: number;
-  payload: P;
-  messageId?: string;
-  sessionId?: string;
 }
 
 /** `ERROR` 메시지 타입의 페이로드 (클라이언트 내부 오류 표현용으로 사용 가능) */
