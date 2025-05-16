@@ -1,22 +1,46 @@
 'use client';
 import Image from 'next/image';
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
+import axiosInstance from '@/shared/api/axiosInstance';
+import { useSettingsStore } from '@/app/store/settingStore';
+import { Switch } from '@radix-ui/react-switch';
+
 const personalityOptions = [
-  { key: 'friendly', label: '상냥함', description: '부드럽고 따뜻한 말투로 대화합니다.' },
+  { key: 'kind', label: '상냥함', description: '부드럽고 따뜻한 말투로 대화합니다.' },
   { key: 'polite', label: '정중함', description: '매너 바르고 공손한 말투로 대화합니다.' },
   { key: 'strict', label: '엄격함', description: '명확하고 직설적인 말투로 대화합니다.' },
-  { key: 'friendly2', label: '친근함', description: '친구처럼 편안하고 친근한 말투로 대화합니다.' },
+  { key: 'friendly', label: '친근함', description: '친구처럼 편안하고 친근한 말투로 대화합니다.' },
 ];
 
 export default function AppSettingsPage() {
-  const [darkMode, setDarkMode] = useState(false);
-  const [alarmOn, setAlarmOn] = useState(true);
-  const [botPersonality, setBotPersonality] = useState('friendly');
-  const handleBotPersonalityChange = (key: string) => {
-    setBotPersonality(key);
+  const { darkMode, alarmOn, botImage, botPersonality, setDarkMode, setAlarmOn, setBotImage, setBotPersonality } =
+    useSettingsStore();
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await axiosInstance.get('/users/setting');
+        const data = res.data;
+        setDarkMode(data.isDarkmode);
+        setAlarmOn(data.isAlarm);
+        setBotImage(data.botImage);
+        setBotPersonality(data.botCustom);
+      } catch (err) {
+        console.error('설정 불러오기 실패:', err);
+      }
+    };
+    fetchSettings();
+  }, [setDarkMode, setAlarmOn, setBotPersonality, setBotImage]);
+
+  const updateSettings = async (updatedFields: Partial<any>) => {
+    try {
+      await axiosInstance.patch('/users/setting', updatedFields);
+    } catch (err) {
+      console.error('설정 저장 실패', err);
+    }
   };
+
   return (
     <div className="p-4 space-y-6 flex flex-col items-center">
       {/* 앱 설정 */}
@@ -31,18 +55,22 @@ export default function AppSettingsPage() {
         <div className="space-y-4 max-w-xl">
           <div className="flex items-center justify-between">
             <span>다크 모드</span>
-            <label className="switch">
-              <input type="checkbox" />
-              <span className="slider"></span>
-            </label>
+            <Switch
+              checked={darkMode}
+              onCheckedChange={async (checked) => {
+                setDarkMode(checked);
+                await updateSettings({ isDarkmode: checked });
+              }}
+            />
           </div>
           <div className="flex items-center justify-between">
             <span>알림 수신</span>
-            <input
-              type="checkbox"
+            <Switch
               checked={alarmOn}
-              onChange={() => setAlarmOn(!alarmOn)}
-              className="toggle toggle-primary"
+              onCheckedChange={async (checked) => {
+                setAlarmOn(checked);
+                await updateSettings({ isAlarm: checked });
+              }}
             />
           </div>
           <div>
@@ -64,7 +92,10 @@ export default function AppSettingsPage() {
               {personalityOptions.map(({ key, label, description }) => (
                 <button
                   key={key}
-                  onClick={() => handleBotPersonalityChange(key)}
+                  onClick={async () => {
+                    setBotPersonality(key);
+                    await updateSettings({ botCustom: key });
+                  }}
                   className={`border rounded p-4 text-left ${
                     botPersonality === key ? 'border-orange-500 bg-orange-50' : 'border-gray-300'
                   }`}
