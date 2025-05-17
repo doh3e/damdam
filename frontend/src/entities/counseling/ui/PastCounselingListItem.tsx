@@ -42,7 +42,7 @@ const PastCounselingListItem: React.FC<PastCounselingListItemProps> = ({
   aiProfile, // 임시 AI 프로필
 }) => {
   // 마지막 메시지 텍스트 (간결하게 표시하기 위해 길이 제한 등 필요할 수 있음)
-  const lastMessageText = session.lastMessage?.content || '대화 내용이 없습니다.';
+  const lastMessageText = session.lastMessage?.message || '대화 내용이 없습니다.';
   const lastMessageSender = session.lastMessage?.sender;
 
   // TODO: 실제 날짜 포맷팅 유틸리티 함수로 교체 필요 (예: shared/lib/formatDate.ts)
@@ -79,7 +79,7 @@ const PastCounselingListItem: React.FC<PastCounselingListItemProps> = ({
           </div>
         )}
         <div className="flex justify-between items-center mb-0.5">
-          <h3 className="text-sm font-semibold text-foreground truncate">{aiDisplayName} 와의 상담</h3>
+          <h3 className="text-sm font-semibold text-foreground truncate">상담사 프로필: {aiDisplayName}</h3>
           {formattedTime && <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">{formattedTime}</span>}
         </div>
         <p className="text-xs text-muted-foreground truncate">

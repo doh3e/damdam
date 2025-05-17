@@ -41,7 +41,7 @@ export const useCreateCounselingSession = (
     mutationFn: (payload) => createCounselingSession(payload),
     onSuccess: (newSession, variables, context) => {
       // 새 세션 생성 성공 시, 상담 목록 및 해당 세션 상세 쿼리를 무효화하여 최신 데이터 반영
-      queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
+      // queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() }); // 라우팅 후 StartCounselingButton에서 처리하도록 주석 처리
       // queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(newSession.couns_id) }); // 생성 응답에 couns_id가 있다면 사용
       options?.onSuccess?.(newSession, variables, context);
     },

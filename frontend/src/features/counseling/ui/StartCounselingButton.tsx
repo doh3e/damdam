@@ -1,12 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useTransition } from 'react';
 import { useRouter } from 'next/navigation'; // Next.js 13+ App Router의 useRouter
 import { Button } from '@/shared/ui/button';
 import { MessageSquarePlus } from 'lucide-react';
 import { useCreateCounselingSession } from '@/entities/counseling/model/mutations';
 import { useCounselingStore } from '@/features/counseling/model/counselingStore';
 import { useAuthStore } from '@/app/store/authStore'; // 인증 스토어 추가
+import { counselingQueryKeys } from '@/entities/counseling/model/queries'; // 추가
 
 /**
  * @interface StartCounselingButtonProps
@@ -29,7 +30,8 @@ interface StartCounselingButtonProps {
 const StartCounselingButton = ({ onStartSuccess }: StartCounselingButtonProps): React.ReactElement => {
   const router = useRouter();
   const { token } = useAuthStore(); // 인증 토큰 가져오기
-  const { mutate: createSession, isPending } = useCreateCounselingSession();
+  const { mutate: createSession, isPending: isMutationPending } = useCreateCounselingSession();
+  const [isTransitionPending, startTransition] = useTransition(); // useTransition 사용
 
   const setCurrentSessionId = useCounselingStore((state) => state.setCurrentSessionId);
   const setIsCurrentSessionClosed = useCounselingStore((state) => state.setIsCurrentSessionClosed);
@@ -51,7 +53,7 @@ const StartCounselingButton = ({ onStartSuccess }: StartCounselingButtonProps): 
         const newSessionId = data?.counsId;
 
         if (newSessionId) {
-          console.log('새 상담 세션 생성 성공:', newSessionId);
+          console.log('새 상담 세션 생성 성공 (버튼):', newSessionId);
 
           // 1. Zustand 스토어 상태 초기화
           setCurrentSessionId(newSessionId);
@@ -59,14 +61,20 @@ const StartCounselingButton = ({ onStartSuccess }: StartCounselingButtonProps): 
           setMessages([]); // 새 상담이므로 메시지 목록 초기화
           // setWebsocketStatus('idle'); // 또는 'connecting', 페이지 이동 후 연결 시도
 
-          // 2. 새 상담 채팅 페이지로 라우팅
-          router.push(`/counseling/${newSessionId}`);
+          // 2. 새 상담 채팅 페이지로 라우팅 (useTransition 사용)
+          startTransition(() => {
+            // URL에 isNew=true 쿼리 파라미터 추가
+            router.push(`/counseling/${newSessionId}?isNew=true`);
+          });
 
           // 3. (옵션) 웹소켓 즉시 연결 시도
           // connect(newSessionId, authToken); // authToken 필요시 전달. connect 함수 시그니처 확인.
           // 이 부분은 페이지 컴포넌트나 CounselingChatWindow에서 처리하는 것이 더 적절할 수 있음.
 
-          // 4. 성공 콜백 호출 (prop으로 전달된 경우)
+          // 4. 라우팅 후 목록 캐시 무효화 로직 제거 또는 주석 처리
+          // queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
+
+          // 5. 성공 콜백 호출 (prop으로 전달된 경우)
           if (onStartSuccess) {
             onStartSuccess(newSessionId);
           }
@@ -86,12 +94,16 @@ const StartCounselingButton = ({ onStartSuccess }: StartCounselingButtonProps): 
   };
 
   // 인증 상태에 따라 버튼 텍스트 변경
-  const buttonText = !token ? '로그인이 필요합니다' : isPending ? '상담 시작 중...' : '새 상담 시작';
+  const buttonText = !token
+    ? '로그인이 필요합니다'
+    : isMutationPending || isTransitionPending
+      ? '상담 시작 중...'
+      : '새 상담 시작';
 
   return (
     <Button
       onClick={handleStartCounseling}
-      disabled={isPending || !token} // 인증 토큰이 없을 경우 버튼 비활성화
+      disabled={isMutationPending || isTransitionPending || !token} // isTransitionPending 추가 및 인증 토큰 없을 시 비활성화
       className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
       title={!token ? '로그인 후 상담을 시작할 수 있습니다.' : '새로운 AI와 상담을 시작합니다.'}
     >

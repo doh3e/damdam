@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { useCounselingStore } from '@/features/counseling/model/counselingStore';
@@ -49,6 +49,7 @@ export function CounselingChatWindow() {
   const couns_id = Array.isArray(couns_id_param) ? couns_id_param[0] : couns_id_param;
 
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { token } = useAuthStore(); // Zustand 스토어에서 사용자 인증 토큰을 가져옵니다.
 
@@ -306,6 +307,39 @@ export function CounselingChatWindow() {
     queryClient,
     setIsCurrentSessionClosed,
   ]);
+
+  // --- Effects ---
+  /**
+   * @effect URL의 isNew 파라미터를 확인하여 새 세션인 경우 목록 캐시를 무효화합니다.
+   * 또한, 웹소켓 연결을 시도하고, 세션 상세 정보를 가져옵니다.
+   * couns_id가 변경될 때마다 실행됩니다.
+   */
+  useEffect(() => {
+    if (couns_id) {
+      console.log(`[ChatWindow] couns_id 변경됨: ${couns_id}. 웹소켓 연결 및 데이터 로드 시도.`);
+      // ... (기존 웹소켓 연결 및 세션 상세 정보 로드 로직) ...
+
+      // 새 세션으로 인해 페이지가 로드된 경우 목록 캐시 무효화
+      const isNewSession = searchParams.get('isNew');
+      if (isNewSession === 'true') {
+        console.log('[ChatWindow] 새 세션으로 감지됨. 상담 목록 캐시를 무효화합니다.');
+        queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
+
+        // URL에서 isNew 파라미터를 제거하여 중복 실행 방지 (현재 경로에서 쿼리만 변경)
+        // window.history.replaceState(null, '', `/counseling/${couns_id}`); // 브라우저 API 직접 사용 방식
+        // Next.js App Router에서는 router.replace를 사용하되, searchParams를 조작해야 합니다.
+        // 현재 URL에서 'isNew' 파라미터만 제거하고 나머지 유지
+        const newSearchParams = new URLSearchParams(searchParams.toString());
+        newSearchParams.delete('isNew');
+        router.replace(`/counseling/${couns_id}?${newSearchParams.toString()}`, { scroll: false });
+      }
+
+      // 자동 세션 종료 타이머 설정 또는 클리어 로직 (기존 로직 유지)
+      // ...
+    } else {
+      console.log('[ChatWindow] 유효한 couns_id가 없습니다. 웹소켓 연결 및 데이터 로드를 건너뛰고 종료합니다.');
+    }
+  }, [couns_id, searchParams, router, queryClient]);
 
   // --- Conditional Rendering Logic ---
 
