@@ -54,9 +54,12 @@ const SendMessageForm = ({
 
       const trimmedMessage = newMessageInput.trim();
 
+      // USER가 보낸 메시지만 필터링하여 카운트
+      const userMessagesCount = messages.filter((message) => message.sender === SenderType.USER).length;
+
       const payload: StompSendUserMessagePayload = {
         text: trimmedMessage,
-        messageOrder: messages.length + 1,
+        messageOrder: userMessagesCount + 1,
         isVoice: false,
       };
       sendUserMessage(payload);
