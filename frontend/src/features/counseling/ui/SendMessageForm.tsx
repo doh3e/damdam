@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from 'react';
 import { Textarea } from '@/shared/ui/textarea';
 import { Button } from '@/shared/ui/button';
-import { Paperclip, Mic, SendHorizonal } from 'lucide-react';
+import { Mic, SendHorizonal } from 'lucide-react';
 import { useCounselingStore } from '@/features/counseling/model/counselingStore';
 import { type StompSendUserMessagePayload } from '@/features/counseling/hooks/useWebSocket';
 import { type ChatMessage, MessageType, SenderType } from '@/entities/counseling/model/types';
@@ -15,6 +15,7 @@ import { type ChatMessage, MessageType, SenderType } from '@/entities/counseling
  * @property {boolean} disabled - 폼을 비활성화할지 여부 (옵션, 예: 상담 종료 시)
  * @property {(payload: StompSendUserMessagePayload) => void} [sendUserMessage] - 웹소켓을 통해 메시지를 전송하는 함수.
  * @property {boolean} [isWebSocketConnected] - 웹소켓 연결 상태.
+ * @property {() => void} [onUserActivity] - 사용자 활동(예: 입력) 시 호출될 콜백.
  */
 interface SendMessageFormProps {
   currentCounsId: string | null;
@@ -22,6 +23,7 @@ interface SendMessageFormProps {
   disabled?: boolean;
   sendUserMessage?: (payload: StompSendUserMessagePayload) => void;
   isWebSocketConnected?: boolean;
+  onUserActivity?: () => void;
 }
 
 /**
@@ -38,14 +40,21 @@ const SendMessageForm = ({
   disabled,
   sendUserMessage,
   isWebSocketConnected,
+  onUserActivity,
 }: SendMessageFormProps): React.ReactElement => {
   const [newMessageInput, setNewMessageInput] = useState('');
   const addMessageToStore = useCounselingStore((state) => state.addMessage);
   const messages = useCounselingStore((state) => state.messages);
 
-  const handleInputChange = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setNewMessageInput(event.target.value);
-  }, []);
+  const handleInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setNewMessageInput(event.target.value);
+      if (onUserActivity) {
+        onUserActivity();
+      }
+    },
+    [onUserActivity]
+  );
 
   const handleSubmit = useCallback(
     (event?: React.FormEvent<HTMLFormElement>) => {
@@ -65,21 +74,27 @@ const SendMessageForm = ({
       sendUserMessage(payload);
 
       setNewMessageInput('');
+      if (onUserActivity) {
+        onUserActivity();
+      }
     },
-    [newMessageInput, currentCounsId, isWebSocketConnected, sendUserMessage, messages]
+    [newMessageInput, currentCounsId, isWebSocketConnected, sendUserMessage, messages, onUserActivity]
   );
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (onUserActivity) {
+        onUserActivity();
+      }
       if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
         event.preventDefault();
         handleSubmit();
       }
     },
-    [handleSubmit]
+    [handleSubmit, onUserActivity]
   );
 
-  const isSendDisabled = !newMessageInput.trim() || !isWebSocketConnected || disabled;
+  const actualDisabled = disabled || !isWebSocketConnected;
 
   const placeholderText = disabled
     ? '종료된 상담입니다'
@@ -94,21 +109,9 @@ const SendMessageForm = ({
         variant="ghost"
         size="icon"
         className="mr-2 text-muted-foreground hover:text-primary"
-        aria-label="Attach file"
-        title="파일 첨부 (구현 예정)"
-        disabled={disabled || !isWebSocketConnected}
-      >
-        <Paperclip className="h-5 w-5" />
-      </Button>
-
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="mr-2 text-muted-foreground hover:text-primary"
         aria-label="Voice input"
         title="음성 입력 (구현 예정)"
-        disabled={disabled || !isWebSocketConnected}
+        disabled={actualDisabled}
       >
         <Mic className="h-5 w-5" />
       </Button>
@@ -120,13 +123,13 @@ const SendMessageForm = ({
         placeholder={placeholderText}
         className="flex-1 resize-none border-border focus:ring-1 focus:ring-ring p-2.5 text-sm min-h-[40px] max-h-[120px]"
         rows={1}
-        disabled={disabled || !isWebSocketConnected}
+        disabled={actualDisabled}
         aria-label="Chat message input"
       />
 
       <Button
         type="submit"
-        disabled={isSendDisabled}
+        disabled={actualDisabled || !newMessageInput.trim()}
         className="ml-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full p-2.5 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed"
         aria-label="Send message"
         title="메시지 전송"

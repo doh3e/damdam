@@ -6,6 +6,7 @@
  */
 import { apiClient } from '@/shared/api/axiosInstance';
 import { CounselingSession, ChatMessage, MessageType } from './types';
+import { type ApiResponse } from '@/shared/types/api'; // ApiResponse 타입 임포트
 
 // TypeScript 타입 정의로 변경
 export type FetchPastCounselingSessionsParams = {
@@ -50,25 +51,23 @@ export interface CounselingSessionWithMessages {
  * @returns {Promise<CounselingSessionWithMessages>} 해당 상담 세션 정보 및 메시지 목록
  */
 export const fetchCounselingSessionDetails = async (
-  counsId: string,
-  messageParams?: { page?: number; limit?: number }
-): Promise<CounselingSessionWithMessages> => {
+  counsId: string
+  // messageParams?: { page?: number; limit?: number } // 현재 API에서는 사용되지 않음
+): Promise<CounselingSession> => {
   if (!counsId) throw new Error('Counseling ID (counsId) is required to fetch session details.');
 
-  const queryParams = new URLSearchParams();
-  if (messageParams?.page) queryParams.append('page', messageParams.page.toString());
-  if (messageParams?.limit) queryParams.append('limit', messageParams.limit.toString());
+  const endpoint = `/counsels/${counsId}`;
+  // API는 CounselingDto (CounselingSession과 유사)를 직접 반환
+  const sessionData = await apiClient.get<CounselingSession>(endpoint);
 
-  const endpoint = `/counsels/${counsId}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-  // API 응답이 세션 정보와 메시지를 함께 포함한다고 가정합니다.
-  // 실제 API 응답 구조에 따라 TResponse 타입을 정확히 명시해야 합니다.
-  // 예를 들어, 백엔드가 { counselingSession: {...}, messages: [...] } 형태로 반환한다면 그에 맞게 수정합니다.
-  // 우선은 CounselingSession 타입 내에 messages 필드가 있거나, 별도 필드로 온다고 가정하고 아래와 같이 구성합니다.
-  // 여기서는 API 명세서의 설명을 바탕으로 세션 정보와 메시지 목록을 함께 받는다고 가정합니다.
-  return apiClient.get<CounselingSessionWithMessages>(endpoint);
-  // 만약 API가 CounselingSession 객체 안에 messages: ChatMessage[]를 포함하여 반환한다면,
-  // 반환 타입을 Promise<CounselingSession>으로 하고, CounselingSession 인터페이스에 messages?: ChatMessage[] 를 추가해야 합니다.
-  // 현재는 명확한 분리를 위해 CounselingSessionWithMessages 타입을 사용합니다.
+  // 작업 예정인 chat 필드가 없을 경우를 대비하여 기본값 제공
+  if (sessionData && typeof sessionData.chat === 'undefined') {
+    // sessionData가 null이 아닌지도 확인
+    sessionData.chat = [];
+  }
+
+  console.log('fetchCounselingSessionDetails API responseData (processed):', sessionData);
+  return sessionData;
 };
 
 // 사용자 ID는 JWT 토큰에서 추출하므로 요청 바디에서 userId 제거
@@ -164,6 +163,42 @@ export const createSessionReport = async (counsId: string): Promise<CreateSessio
   // 이 API는 요청 바디가 필요 없을 수 있습니다 (서버에서 해당 세션 정보로 자동 생성).
   // 응답 타입도 실제 백엔드 명세에 따라 달라질 수 있습니다 (예: 생성된 Report 객체 전체 또는 reportId만).
   return apiClient.post<undefined, CreateSessionReportResponse>(endpoint, undefined);
+};
+
+/**
+ * @function createReportAndEndSession
+ * @description 특정 상담 세션에 대한 레포트를 생성하고 세션을 종료합니다.
+ * (백엔드에서 POST /counsels/{counsId}/reports 요청 시 레포트 생성과 세션 종료를 함께 처리한다고 가정)
+ * @param {string} counsId - 레포트를 생성하고 종료할 상담 세션의 ID.
+ * @returns {Promise<{ success: boolean; message?: string }>} 작업 성공 여부 및 메시지.
+ * @throws {Error} API 요청 실패 시 에러 발생.
+ */
+export const createReportAndEndSession = async (counsId: string): Promise<{ success: boolean; message?: string }> => {
+  try {
+    const responseData = await apiClient.post<undefined, ApiResponse<null | { message: string }>>(
+      `/counsels/${counsId}/reports`,
+      undefined // 요청 본문 없음
+    );
+
+    // ApiResponse 타입에 따라 responseData.success로 성공 여부 판단
+    if (responseData.success) {
+      // responseData.data가 null일 수 있으므로, 실제 메시지는 responseData.message 또는 기본 메시지 사용
+      return {
+        success: true,
+        message: responseData.message || responseData.data?.message || '레포트가 생성되고 세션이 종료되었습니다.',
+      };
+    }
+    // API 응답이 성공적이지 않은 경우 (responseData.success === false)
+    throw new Error(responseData.message || '레포트 생성 및 세션 종료에 실패했습니다.');
+  } catch (error: any) {
+    console.error('Error creating report and ending session for ' + counsId + ':', error);
+    const errorMessage =
+      error?.response?.data?.message ||
+      error?.data?.message || // 인터셉터에서 가공된 에러 데이터의 메시지
+      error?.message ||
+      '레포트 생성 및 세션 종료 중 오류가 발생했습니다.';
+    throw new Error(errorMessage);
+  }
 };
 
 // sendChatMessageToServer 함수는 웹소켓으로 대체되므로 여기서는 주석 처리 또는 삭제합니다.

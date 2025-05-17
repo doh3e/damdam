@@ -8,7 +8,6 @@ import {
   fetchPastCounselingSessions,
   fetchCounselingSessionDetails,
   type FetchPastCounselingSessionsParams,
-  type CounselingSessionWithMessages,
 } from './api'; // 정의된 API 함수 및 타입을 가져옵니다.
 import type { CounselingSession } from './types';
 
@@ -52,33 +51,22 @@ export const useFetchPastCounselingSessions = (
 };
 
 /**
- * 특정 상담 세션의 상세 정보 (메시지 포함)를 조회하는 Tanstack Query 훅입니다.
+ * 특정 상담 세션의 상세 정보 (메시지 포함 가능성 있음)를 조회하는 Tanstack Query 훅입니다.
  *
  * @param {string} counsId - 조회할 상담 세션의 ID.
- * @param {Omit<UseQueryOptions<CounselingSessionWithMessages, Error, CounselingSessionWithMessages, unknown[]>, 'queryKey' | 'queryFn' | 'enabled'>} [options] - Tanstack Query `useQuery` 훅에 전달될 추가 옵션들.
- * @returns {import('@tanstack/react-query').UseQueryResult<CounselingSessionWithMessages, Error>} useQuery의 반환 값
+ * @param {Omit<UseQueryOptions<CounselingSession, Error, CounselingSession, unknown[]>, 'queryKey' | 'queryFn'>} [options] - Tanstack Query `useQuery` 훅에 전달될 추가 옵션들.
+ * @returns {import('@tanstack/react-query').UseQueryResult<CounselingSession, Error>} useQuery의 반환 값
  */
 export const useFetchCounselingSessionDetail = (
   counsId: string,
   options?: Omit<
-    UseQueryOptions<
-      CounselingSessionWithMessages, // 반환 타입 수정: CounselingSession -> CounselingSessionWithMessages
-      Error,
-      CounselingSessionWithMessages, // select 사용 시 반환될 데이터 타입 수정
-      readonly (string | Record<string, unknown>)[]
-    >,
-    'queryKey' | 'queryFn' | 'enabled'
+    UseQueryOptions<CounselingSession, Error, CounselingSession, readonly (string | Record<string, unknown>)[]>,
+    'queryKey' | 'queryFn'
   >
 ) => {
-  return useQuery<
-    CounselingSessionWithMessages, // 내부 타입 수정
-    Error,
-    CounselingSessionWithMessages, // 내부 타입 수정
-    readonly (string | Record<string, unknown>)[]
-  >({
+  return useQuery<CounselingSession, Error, CounselingSession, readonly (string | Record<string, unknown>)[]>({
     queryKey: counselingQueryKeys.detail(counsId),
-    queryFn: () => fetchCounselingSessionDetails(counsId), // 함수명 수정
-    enabled: !!counsId,
+    queryFn: () => fetchCounselingSessionDetails(counsId),
     ...options,
   });
 };
