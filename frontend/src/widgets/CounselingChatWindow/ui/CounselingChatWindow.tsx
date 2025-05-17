@@ -10,6 +10,7 @@ import { useFetchCounselingSessionDetail, counselingQueryKeys } from '@/entities
 import { useWebSocket, type StompSendUserMessagePayload } from '@/features/counseling/hooks/useWebSocket';
 import { useCloseCounselingSession } from '@/entities/counseling/model/mutations';
 import type { ChatMessage } from '@/entities/counseling/model/types';
+import type { CounselingSession } from '@/entities/counseling/model/types';
 
 import EditCounselingTitleButton from '@/features/counseling/ui/EditCounselingTitleButton';
 import EndCounselingButton from '@/features/counseling/ui/EndCounselingButton';
@@ -249,42 +250,77 @@ export function CounselingChatWindow() {
         console.log(`[AutoEnd] Session ${couns_id} automatically ended due to inactivity (already expired).`);
         closeSessionMutation(couns_id, {
           onSuccess: async () => {
-            setIsCurrentSessionClosed(true);
-            if (disconnectWebSocket) await disconnectWebSocket();
-            // 상담 상세 정보 및 목록 캐시 무효화
-            queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(couns_id) });
-            queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
-            console.log(`[AutoEnd] Session ${couns_id} successfully closed and queries invalidated (already expired).`);
+            console.log(`[AutoEnd] Session ${couns_id} successfully closed via mutation.`);
+            if (disconnectWebSocket) {
+              await disconnectWebSocket();
+            }
+            setIsCurrentSessionClosed(true); // Zustand 스토어 업데이트
+
+            // Tanstack Query 캐시 직접 업데이트
+            queryClient.setQueryData<CounselingSession[]>(
+              counselingQueryKeys.lists(),
+              (oldData: CounselingSession[] | undefined) => {
+                if (!oldData) return undefined;
+                return oldData.map((session) =>
+                  session.counsId === couns_id ? { ...session, isClosed: true } : session
+                );
+              }
+            );
+            queryClient.setQueryData<CounselingSession>(
+              counselingQueryKeys.detail(couns_id),
+              (oldData: CounselingSession | undefined) => {
+                if (!oldData) return undefined;
+                return { ...oldData, isClosed: true };
+              }
+            );
+
+            // 캐시 무효화
+            await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(couns_id) });
+            await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
           },
-          onError: (err) => console.error(`[AutoEnd] Error auto-closing session ${couns_id} (already expired):`, err),
+          onError: (error) => {
+            console.error(`[AutoEnd] Failed to close session ${couns_id} automatically:`, error);
+          },
         });
       } else {
-        // 남은 시간만큼 타이머 설정
-        autoEndTimerRef.current = setTimeout(() => {
-          // 타이머 실행 시점에도 조건 재확인 (중간에 세션이 수동으로 종료되었을 수 있음)
-          if (
-            couns_id &&
-            token &&
-            (useCounselingStore.getState().isCurrentSessionClosed === null ||
-              useCounselingStore.getState().isCurrentSessionClosed === false)
-          ) {
-            console.log(
-              `[AutoEnd] Session ${couns_id} automatically ended due to ${AUTO_SESSION_END_TIMEOUT / 60000} minutes of inactivity.`
-            );
-            closeSessionMutation(couns_id, {
-              onSuccess: async () => {
-                setIsCurrentSessionClosed(true); // 스토어 상태 업데이트
-                if (disconnectWebSocket) await disconnectWebSocket(); // 웹소켓 연결 해제
-                queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(couns_id) });
-                queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
-                console.log(`[AutoEnd] Session ${couns_id} successfully closed and queries invalidated.`);
-                // 필요한 경우 사용자에게 알림 (예: "세션이 자동으로 종료되었습니다.")
-              },
-              onError: (err) => console.error(`[AutoEnd] Error automatically closing session ${couns_id}:`, err),
-            });
-          }
+        // 시간 남음, 타이머 설정
+        autoEndTimerRef.current = setTimeout(async () => {
+          console.log(`[AutoEnd] Session ${couns_id} automatically ended due to inactivity (timer expired).`);
+          closeSessionMutation(couns_id, {
+            onSuccess: async () => {
+              console.log(`[AutoEnd] Session ${couns_id} successfully closed via mutation (timer).`);
+              if (disconnectWebSocket) {
+                await disconnectWebSocket();
+              }
+              setIsCurrentSessionClosed(true); // Zustand 스토어 업데이트
+
+              // Tanstack Query 캐시 직접 업데이트
+              queryClient.setQueryData<CounselingSession[]>(
+                counselingQueryKeys.lists(),
+                (oldData: CounselingSession[] | undefined) => {
+                  if (!oldData) return undefined;
+                  return oldData.map((session) =>
+                    session.counsId === couns_id ? { ...session, isClosed: true } : session
+                  );
+                }
+              );
+              queryClient.setQueryData<CounselingSession>(
+                counselingQueryKeys.detail(couns_id),
+                (oldData: CounselingSession | undefined) => {
+                  if (!oldData) return undefined;
+                  return { ...oldData, isClosed: true };
+                }
+              );
+
+              // 캐시 무효화
+              await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(couns_id) });
+              await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
+            },
+            onError: (error) => {
+              console.error(`[AutoEnd] Failed to close session ${couns_id} automatically (timer):`, error);
+            },
+          });
         }, remainingTime);
-        console.log(`[AutoEnd] Timer set for session ${couns_id}, remaining time: ${remainingTime / 1000}s`);
       }
     } else {
       // 자동 종료 조건 미충족 시 (예: 세션이 이미 닫혔거나, 로그아웃 등) 타이머 해제

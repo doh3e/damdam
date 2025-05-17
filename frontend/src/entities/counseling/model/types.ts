@@ -120,8 +120,8 @@ export interface CounselingSession {
   summary?: string;
   /** 사용자가 매긴 평점 (옵션, 1~5점, 별도 테이블/필드 필요시 추가) */
   rating?: number;
-  /** 세션 관련 태그 또는 카테고리 (옵션) */
-  tags?: string[];
+  /** 세션 관련 키워드 또는 카테고리 (옵션) */
+  keywords?: string[];
   /**
    * 채팅 메시지 목록 (작업 예정인 응답 형식에 포함될 필드).
    * 현재 API 응답에는 없으므로 옵셔널.

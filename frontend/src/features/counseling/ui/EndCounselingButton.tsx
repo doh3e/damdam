@@ -6,6 +6,7 @@ import { LogOut } from 'lucide-react'; // 상담 종료에 어울리는 아이�
 import { useCloseCounselingSession } from '@/entities/counseling/model/mutations';
 import { useCounselingStore } from '@/features/counseling/model/counselingStore';
 import { useQueryClient } from '@tanstack/react-query';
+import { CounselingSession } from '@/entities/counseling/model/types'; // CounselingSession 타입 임포트
 
 /**
  * @interface EndCounselingButtonProps
@@ -69,12 +70,29 @@ const EndCounselingButton = ({
           }
         }
 
-        // 3. Tanstack Query 캐시 무효화: 서버로부터 최신 세션 상태를 가져오기 위함
+        // 3. Tanstack Query 캐시 직접 업데이트 및 무효화
+        // 3.1. 상담 목록 캐시 업데이트 (isClosed: true로 설정)
+        queryClient.setQueryData<CounselingSession[]>(
+          ['counselingSessions', 'list'], // 실제 사용하는 상담 목록 쿼리 키 확인 필요
+          (oldData) => {
+            if (!oldData) return undefined;
+            return oldData.map((session) =>
+              session.counsId === currentCounsId ? { ...session, isClosed: true } : session
+            );
+          }
+        );
+
+        // 3.2. 현재 세션 상세 정보 캐시 업데이트 (isClosed: true로 설정)
+        queryClient.setQueryData<CounselingSession>(['counselingSessionDetail', currentCounsId], (oldData) => {
+          if (!oldData) return undefined;
+          return { ...oldData, isClosed: true };
+        });
+
+        // 3.3. 기존 캐시 무효화 (서버와 최종 동기화를 위해 유지하거나, setQueryData만으로 충분하다면 제거 고려)
         await queryClient.invalidateQueries({
           queryKey: ['counselingSessionDetail', currentCounsId],
         });
-        // 필요하다면 상담 목록 등의 다른 관련 쿼리도 무효화 할 수 있습니다.
-        // await queryClient.invalidateQueries({ queryKey: ['counselingSessions'] });
+        await queryClient.invalidateQueries({ queryKey: ['counselingSessions', 'list'] });
 
         // 4. 성공 콜백 호출
         if (onEndSuccess) {

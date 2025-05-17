@@ -179,7 +179,21 @@ export const useCreateReportAndEndSession = () => {
       if (counsId === currentCounsIdFromStore) {
         setIsCurrentSessionClosed(true);
       }
-      // 관련 쿼리 무효화
+
+      // Tanstack Query 캐시 직접 업데이트
+      // 1. 상담 목록 캐시 업데이트 (isClosed: true로 설정)
+      queryClient.setQueryData<CounselingSession[]>(counselingQueryKeys.lists(), (oldData) => {
+        if (!oldData) return undefined;
+        return oldData.map((session) => (session.counsId === counsId ? { ...session, isClosed: true } : session));
+      });
+
+      // 2. 현재 세션 상세 정보 캐시 업데이트 (isClosed: true로 설정)
+      queryClient.setQueryData<CounselingSession>(counselingQueryKeys.detail(counsId), (oldData) => {
+        if (!oldData) return undefined;
+        return { ...oldData, isClosed: true };
+      });
+
+      // 관련 쿼리 무효화 (서버와 최종 동기화를 위해 유지)
       queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(counsId) });
       queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
       // TODO: 레포트 관련 쿼리도 무효화 필요 (예: reportQueryKeys.list(), reportQueryKeys.detailByCounselId(counsId))
