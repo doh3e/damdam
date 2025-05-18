@@ -1,10 +1,13 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useProfileStore } from '@/app/store/userProfileStore';
+import { getUserProfile, updateUserProfile } from '@/entities/user/model/api';
 import { Gender, Age, MBTI } from '@/shared/consts/enum';
+import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
+import { UserProfile } from '@/entities/user/model/types';
 
-export default function ProfileInputPage() {
+export default function UserProfileForm() {
   const {
     nickname,
     setNickname,
@@ -18,55 +21,81 @@ export default function ProfileInputPage() {
     setMbti,
     profileImage,
     setProfileImage,
+    profileImageUrl,
+    setProfileImageUrl,
   } = useProfileStore();
 
-  const genderOptions = [
-    { value: Gender.UNKOWN, label: '선택 안함' },
-    { value: Gender.MALE, label: '남성' },
-    { value: Gender.FEMALE, label: '여성' },
-    { value: Gender.OTHER, label: '기타' },
-  ];
+  const [preview, setPreview] = useState<string | null>(null);
 
-  const ageOptions = [
-    { value: Age.UNKNOWN, label: '선택 안함' },
-    { value: Age.UNDER_TEN, label: '10세 미만' },
-    { value: Age.TEENS, label: '10대' },
-    { value: Age.TWENTIES, label: '20대' },
-    { value: Age.THIRTIES, label: '30대' },
-    { value: Age.FORTIES, label: '40대' },
-    { value: Age.FIFTIES, label: '50대' },
-    { value: Age.SIXTIES, label: '60대' },
-    { value: Age.SEVENTIES, label: '70대' },
-    { value: Age.EIGHTIES, label: '80대' },
-    { value: Age.NINETIES, label: '90대' },
-    { value: Age.HUNDRED_UP, label: '100세 이상' },
-  ];
-
-  const mbtiOptions = Object.values(MBTI)
-    .filter((v) => v !== MBTI.UNKNOWN)
-    .map((v) => ({ value: v, label: v }));
-
-  // 프로필 이미지 미리보기
-  const [profilePreview, setProfilePreview] = React.useState<string | null>(null);
-
-  // 이미지 URL 메모리 해제
-  React.useEffect(() => {
+  // 이미지 미리보기 URL 처리
+  useEffect(() => {
     if (profileImage) {
       const url = URL.createObjectURL(profileImage);
-      setProfilePreview(url);
+      setPreview(url);
       return () => URL.revokeObjectURL(url);
     } else {
-      setProfilePreview(null);
+      setPreview(profileImageUrl || null);
     }
-  }, [profileImage]);
+  }, [profileImage, profileImageUrl]);
 
-  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 초기 유저 정보 불러오기
+  const { data } = useQuery<UserProfile, Error>({
+    queryKey: ['userProfile'],
+    queryFn: getUserProfile,
+  });
+
+  useEffect(() => {
+    if (data) {
+      setNickname(data.nickname);
+      setAge(data.age);
+      setGender(data.gender);
+      setCareer(data.career);
+      setMbti(data.mbti);
+      setProfileImageUrl(data.profileImage);
+    }
+  }, [data]);
+
+  // 저장 요청
+  const handleSave = async () => {
+    const formData = new FormData();
+    if (profileImage) formData.append('profileImage', profileImage);
+    formData.append('nickname', nickname);
+    formData.append('age', age);
+    formData.append('gender', gender);
+    formData.append('career', career);
+    formData.append('mbti', mbti);
+
+    try {
+      await updateUserProfile(formData);
+      alert('프로필이 성공적으로 저장되었습니다!');
+    } catch (error) {
+      alert('저장에 실패했습니다.');
+    }
+  };
+
+  // 이미지 변경
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     setProfileImage(file || null);
   };
 
   return (
-    <form className="w-full max-w-md p-6 flex flex-col gap-4">
+    <form className="w-full flex flex-col gap-4">
+      {/* 프로필 이미지 */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">프로필 이미지</label>
+        <div className="flex items-center gap-4">
+          <div className="relative w-20 h-20 rounded-full overflow-hidden border border-gray-300">
+            {preview ? (
+              <img src={preview} alt="프로필 이미지" className="object-cover w-full h-full" />
+            ) : (
+              <Image src="/profile.png" alt="기본 이미지" fill className="object-cover" />
+            )}
+          </div>
+          <input type="file" accept="image/*" onChange={handleImageChange} />
+        </div>
+      </div>
+
       {/* 닉네임 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">닉네임</label>
@@ -74,42 +103,43 @@ export default function ProfileInputPage() {
           type="text"
           value={nickname}
           onChange={(e) => setNickname(e.target.value)}
-          placeholder="닉네임을 설정해볼까요?"
-          className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-200"
+          className="w-full border rounded-md px-3 py-2"
           maxLength={10}
         />
       </div>
+
       {/* 나이 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">나이</label>
         <select
           value={age}
-          onChange={(a) => setAge(a.target.value as Age)}
-          className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-200"
+          onChange={(e) => setAge(e.target.value as Age)}
+          className="w-full border rounded-md px-3 py-2"
         >
-          {ageOptions.map((a) => (
-            <option key={a.value} value={a.value}>
-              {a.label}
+          {Object.entries(Age).map(([key, val]) => (
+            <option key={key} value={val}>
+              {val}
             </option>
           ))}
         </select>
       </div>
+
       {/* 성별 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">성별</label>
-        <div className="flex gap-2">
-          {genderOptions.map((g) => (
-            <button
-              type="button"
-              key={g.value}
-              className={`px-4 py-2 rounded-full border ${gender === g.value ? 'bg-orange-100 border-orange-400' : 'bg-gray-50 border-gray-200'}`}
-              onClick={() => setGender(g.value)}
-            >
-              {g.label}
-            </button>
+        <select
+          value={gender}
+          onChange={(e) => setGender(e.target.value as Gender)}
+          className="w-full border rounded-md px-3 py-2"
+        >
+          {Object.entries(Gender).map(([key, val]) => (
+            <option key={key} value={val}>
+              {val}
+            </option>
           ))}
-        </div>
+        </select>
       </div>
+
       {/* 직업 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">직업</label>
@@ -117,39 +147,36 @@ export default function ProfileInputPage() {
           type="text"
           value={career}
           onChange={(e) => setCareer(e.target.value)}
-          placeholder="직업(군)을 입력해주세요!"
-          className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-200"
-          maxLength={10}
+          className="w-full border rounded-md px-3 py-2"
         />
       </div>
+
       {/* MBTI */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">MBTI</label>
         <select
           value={mbti}
           onChange={(e) => setMbti(e.target.value as MBTI)}
-          className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-200"
+          className="w-full border rounded-md px-3 py-2"
         >
-          <option value="UNKOWN">선택안함</option>
-          {mbtiOptions.map((m) => (
-            <option key={m.value} value={m.value}>
-              {m.value}
-            </option>
-          ))}
+          {Object.entries(MBTI)
+            .filter(([_, val]) => val !== MBTI.UNKNOWN)
+            .map(([key, val]) => (
+              <option key={key} value={val}>
+                {val}
+              </option>
+            ))}
         </select>
       </div>
-      {/* 프로필이미지 */}
-      <div className="flex flex-col gap-2">
-        <label className="block text-sm font-medium text-gray-700 mb-1">프로필 이미지</label>
-        {profilePreview ? (
-          <img src={profilePreview} alt="프로필 미리보기" className="w-20 h-20 rounded-full object-cover" />
-        ) : (
-          <div className="relative w-20 h-20">
-            <Image src="/profile.png" alt="기본 프로필 이미지" fill sizes="200px" priority className="object-contain" />
-          </div>
-        )}
-        <input type="file" accept="image/*" onChange={handleProfileImageChange} className="mt-1" />
-      </div>
+
+      {/* 저장 버튼 */}
+      <button
+        type="button"
+        onClick={handleSave}
+        className="w-full mt-4 py-3 bg-orange-500 text-white rounded font-semibold hover:bg-orange-600"
+      >
+        저장하기
+      </button>
     </form>
   );
 }

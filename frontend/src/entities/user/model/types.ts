@@ -1,3 +1,4 @@
+import { Gender, Age, MBTI } from '@/shared/consts/enum';
 /**
  * @file 사용자(User) 엔티티와 관련된 주요 데이터 구조를 정의합니다.
  * FSD 아키텍처에 따라 `entities` 레이어의 `user` 슬라이스 내 `model`에 위치합니다.
@@ -45,8 +46,8 @@ export interface UserProfile {
   nickname: string;
   email: string;
   profileImage: string;
-  gender: 'MALE' | 'FEMALE' | 'OTHER' | 'UNKNOWN';
-  age: string;
+  gender: Gender;
+  age: Age;
   career: string;
-  mbti: string;
+  mbti: MBTI;
 }

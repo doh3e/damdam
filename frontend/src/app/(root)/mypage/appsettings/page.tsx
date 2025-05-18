@@ -4,7 +4,6 @@ import React, { useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import axiosInstance from '@/shared/api/axiosInstance';
-import { useSettingsStore } from '@/app/store/settingStore';
 import { Switch } from '@radix-ui/react-switch';
 
 const personalityOptions = [

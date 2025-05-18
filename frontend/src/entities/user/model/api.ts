@@ -1,20 +1,9 @@
 import axiosInstance from '@/shared/api/axiosInstance';
-import { Gender, Age, MBTI } from '@/shared/consts/enum';
-
-export interface UserProfile {
-  provider: string;
-  nickname: string;
-  email: string;
-  profileImage: string;
-  gender: Gender;
-  age: Age;
-  career: string;
-  mbti: MBTI;
-}
+import type { UserProfile } from './types';
 
 // GET: 프로필 정보 불러오기
 export async function getUserProfile(): Promise<UserProfile> {
-  const res = await axiosInstance.get('/users/profile');
+  const res = await axiosInstance.get<UserProfile>('/users/profile');
   return res.data;
 }
 
