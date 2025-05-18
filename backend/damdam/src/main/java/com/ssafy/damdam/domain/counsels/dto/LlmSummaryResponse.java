@@ -5,13 +5,13 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 백엔드 → llm 채팅으로 전송할 정보들
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Builder
-public class LlmAiChatRequestDto {
-    private ChatInputDto chatInputDto;
-    private UserContextDto userContextDto;
-    private EmotionDto emotionDto;
+public class LlmSummaryResponse {
+	private String summary;
+	private String analyse;
+	private String arousal;
+	private String valence;
 }

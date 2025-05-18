@@ -1,23 +1,33 @@
 package com.ssafy.damdam.domain.counsels.service;
 
 import static com.ssafy.damdam.domain.counsels.exception.CounsExceptionCode.*;
-import static com.ssafy.damdam.domain.reports.exception.ReportExceptionCode.REPORT_ALREADY_EXIST;
 import static com.ssafy.damdam.domain.users.exception.auth.AuthExceptionCode.*;
+import static com.ssafy.damdam.global.redis.exception.RedisExceptionCode.*;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
-import com.ssafy.damdam.domain.reports.dto.SessionReportOutputDto;
-import com.ssafy.damdam.domain.reports.exception.ReportException;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ssafy.damdam.domain.counsels.dto.ChatOutputDto;
+import com.ssafy.damdam.domain.counsels.dto.ChatRecordDto;
+import com.ssafy.damdam.domain.counsels.dto.CounselingChatListDto;
 import com.ssafy.damdam.domain.counsels.dto.CounselingDto;
+import com.ssafy.damdam.domain.counsels.dto.LlmSummaryResponse;
 import com.ssafy.damdam.domain.counsels.entity.Counseling;
 import com.ssafy.damdam.domain.counsels.exception.CounsException;
 import com.ssafy.damdam.domain.counsels.repository.CounselingRepository;
+import com.ssafy.damdam.domain.reports.entity.SessionReport;
+import com.ssafy.damdam.domain.reports.repository.SessionReportRepository;
 import com.ssafy.damdam.domain.users.entity.Users;
 import com.ssafy.damdam.domain.users.exception.auth.AuthException;
+import com.ssafy.damdam.global.redis.CounselSession;
+import com.ssafy.damdam.global.redis.CounselSessionRepository;
+import com.ssafy.damdam.global.redis.exception.RedisException;
 import com.ssafy.damdam.global.util.user.UserUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -30,8 +40,11 @@ import lombok.extern.slf4j.Slf4j;
 public class CounselServiceImpl implements CounselService {
 
 	private final CounselingRepository counselingRepository;
+	private final CounselSessionRepository sessionRepository;
+	private final RedisTemplate<String, Object> redisTemplate;
 	private final UserUtil userUtil;
 	private final AiService aiService;
+	private final SessionReportRepository sessionReportRepository;
 
 	// 유저 검증 메서드
 	private Users validateUser() {
@@ -64,16 +77,56 @@ public class CounselServiceImpl implements CounselService {
 	}
 
 	@Override
-	public CounselingDto getCounsel(Long id) {
+	public CounselingChatListDto getCounsel(Long counsId) {
 		Users user = validateUser();
-		Counseling counseling = counselingRepository.findById(id)
+		Counseling counseling = counselingRepository.findById(counsId)
 			.orElseThrow(() -> new CounsException(COUNSEL_NOT_FOUND));
 
 		if (!counseling.getUsers().getUserId().equals(user.getUserId())) {
 			throw new CounsException(NOT_YOUR_COUNSEL);
 		}
 
-		return CounselingDto.fromEntity(counseling);
+		List<ChatOutputDto> messageList;
+		CounselingChatListDto counselingChatListDto = null;
+
+		// 세션이 닫혔는지 여부에 따라 대화내역 불러올 곳이 달라짐
+		if (counseling.getIsClosed()) {
+			// 닫혀있다면 S3에서 꺼내옴
+			counselingChatListDto = null;
+
+		} else {
+			// 열려있다면 레디스에서 꺼내옴
+			CounselSession session = sessionRepository.findById(counsId)
+				.orElseThrow(() -> new RedisException(REDIS_SESSION_NOT_FOUND));
+			String listKey = "counsel:" + counsId + ":messages";
+			List<Object> raw = redisTemplate.opsForList().range(listKey, 0, -1);
+			List<ChatRecordDto> records = Objects.requireNonNull(redisTemplate.opsForList()
+					.range(listKey, 0, -1))
+				.stream()
+				.map(o -> (ChatRecordDto)o)
+				.toList();
+
+			messageList = records.stream()
+				.map(r -> ChatOutputDto.builder()
+					.sender(r.getSender())
+					.message(r.getMessage())
+					.timestamp(r.getTimestamp())
+					.tokenCount(r.getTokenCount())      // 기록된 토큰 수
+					.messageOrder(r.getMessageOrder())
+					.build()
+				).toList();
+
+			counselingChatListDto = CounselingChatListDto.builder()
+				.counsId(counsId)
+				.counsTitle(counseling.getCounsTitle())
+				.createdAt(counseling.getCreatedAt())
+				.updatedAt(counseling.getUpdatedAt())
+				.isClosed(counseling.getIsClosed())
+				.messageList(messageList)
+				.build();
+		}
+
+		return counselingChatListDto;
 	}
 
 	@Override
@@ -122,21 +175,36 @@ public class CounselServiceImpl implements CounselService {
 	}
 
 	@Override
-	public SessionReportOutputDto reportCounsel(Long counsId) {
+	@Transactional
+	public Long reportCounsel(Long counsId) throws JsonProcessingException {
 
 		// RDB에 세션별레포트가 있는지 여부를 확인 후 존재 시 예외 반환
-		Counseling counseling = counselingRepository.findById(counsId)
+		SessionReport sReport = sessionReportRepository.findByCounseling_CounsId(counsId)
 			.orElse(null);
 
-
-
-		// 존재하지 않을 시 llm에 report 요청
-		if (counseling != null) {
-			return aiService.getSessionReport(counsId);
+		// 기존재하는 레포트가 있을 시 해당 아이디 반환
+		if (sReport != null) {
+			return sReport.getSReportId();
 		}
-		else {
-			throw new ReportException(REPORT_ALREADY_EXIST);
-		}
+
+		// LLM을 통한 레포트 데이터 생성
+		LlmSummaryResponse response = aiService.getSessionReport(counsId);
+
+		// 세션 레포트 생성
+		Counseling counseling = counselingRepository.findById(counsId)
+			.orElseThrow(() -> new CounsException(COUNSEL_NOT_FOUND));
+
+		SessionReport sessionReport = SessionReport.of(
+			counseling,
+			response.getSummary(),
+			response.getAnalyse(),
+			response.getArousal(),
+			response.getValence()
+		);
+
+		sessionReportRepository.save(sessionReport);
+
+		return sessionReport.getSReportId();
 
 	}
 }
