@@ -264,7 +264,7 @@ export function PastCounselingList() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute top-1/2 right-8 transform -translate-y-1/2 h-6 w-6 rounded-full opacity-70 hover:opacity-100 hover:bg-blue-100 hover:text-blue-600 z-10"
+                        className="absolute top-1/2 right-14 transform -translate-y-1/2 h-6 w-6 rounded-full opacity-70 hover:opacity-100 hover:bg-blue-100 hover:text-blue-600 z-10"
                         onClick={(e) => handleOpenTitleEditModal(e, session)}
                         title="상담 제목 수정하기"
                       >

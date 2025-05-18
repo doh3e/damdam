@@ -7,7 +7,6 @@ import React from 'react';
 import { CounselingSession } from '@/entities/counseling/model/types';
 import UserAvatar from '@/entities/user/ui/UserAvatar';
 import { cn } from '@/shared/lib/utils';
-import { ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 
 /**
@@ -34,15 +33,7 @@ const PastCounselingListItem: React.FC<PastCounselingListItemProps> = ({
   isActive = false,
   showTitle = false,
 }) => {
-  // TODO: 실제 날짜 포맷팅 유틸리티 함수로 교체 필요 (예: shared/lib/formatDate.ts)
-  const formattedTime = session.lastMessage?.timestamp
-    ? new Date(session.lastMessage.timestamp).toLocaleDateString('ko-KR', {
-        month: 'short',
-        day: 'numeric',
-      })
-    : '';
-
-  // 세션 생성 시각 포맷팅 (YYYY년 M월 D일 HH시 mm분)
+  // 세션 생성 시각 포맷팅 (YYYY년 M월 D일)
   const formattedCreationTime = session.createdAt ? format(new Date(session.createdAt), 'yyyy년 M월 d일') : '';
 
   return (
@@ -67,11 +58,6 @@ const PastCounselingListItem: React.FC<PastCounselingListItemProps> = ({
             </h3>
           </div>
         )}
-        <div className="flex justify-between items-center mb-0.5">
-          {formattedTime && (
-            <span className="text-xs text-muted-foreground flex-shrink-0 ml-auto">{formattedTime}</span>
-          )}
-        </div>
         {/* 세션 종료 상태 표시 */}
         {session.isClosed ? (
           <p className="text-xs text-muted-foreground truncate">종료된 상담입니다.</p>
@@ -83,7 +69,6 @@ const PastCounselingListItem: React.FC<PastCounselingListItemProps> = ({
           <p className="text-xs text-muted-foreground mt-0.5 truncate">{formattedCreationTime}</p>
         )}
       </div>
-      <ChevronRight className="h-5 w-5 text-muted-foreground ml-2 flex-shrink-0 opacity-70 group-hover:opacity-100" />
     </div>
   );
 };

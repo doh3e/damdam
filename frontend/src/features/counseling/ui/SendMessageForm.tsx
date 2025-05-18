@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Textarea } from '@/shared/ui/textarea';
 import { Button } from '@/shared/ui/button';
-import { Mic, SendHorizonal } from 'lucide-react';
+import { Mic, SendHorizonal, StopCircle, Loader2 } from 'lucide-react';
 import { useCounselingStore } from '@/features/counseling/model/counselingStore';
 import { type StompSendUserMessagePayload } from '@/features/counseling/hooks/useWebSocket';
 import { type ChatMessage, MessageType, SenderType } from '@/entities/counseling/model/types';
+import { useSTTStore, RecordingState } from '@/features/counseling/model/sttStore';
+import { useAudioRecording } from '@/features/counseling/hooks/useAudioRecording';
+import { useRequestSTTMutation } from '@/features/counseling/model/mutations';
 
 /**
  * @interface SendMessageFormProps
@@ -45,6 +48,24 @@ const SendMessageForm = ({
   const [newMessageInput, setNewMessageInput] = useState('');
   const addMessageToStore = useCounselingStore((state) => state.addMessage);
   const messages = useCounselingStore((state) => state.messages);
+
+  const {
+    recordingState,
+    audioBlob,
+    sttResultText,
+    errorMessage: sttErrorMessage,
+    setRecordingState,
+    setAudioBlob,
+    setSttResultText,
+    setErrorMessage: setSttErrorMessage,
+    resetSTTState,
+    messageOrderForAudio,
+    setMessageOrderForAudio,
+  } = useSTTStore();
+
+  const { startRecording, stopRecording, requestMicrophonePermission } = useAudioRecording();
+
+  const sttMutation = useRequestSTTMutation();
 
   const handleInputChange = useCallback(
     (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -99,8 +120,80 @@ const SendMessageForm = ({
   const placeholderText = disabled
     ? '종료된 상담입니다'
     : isWebSocketConnected
-      ? '메시지를 입력하세요...'
+      ? recordingState === RecordingState.RECORDING
+        ? '녹음 중입니다... 중지하려면 버튼을 누르세요.'
+        : recordingState === RecordingState.PROCESSING_STT
+          ? '음성을 텍스트로 변환 중입니다...'
+          : '메시지를 입력하세요...'
       : '연결 중입니다...';
+
+  const handleMicButtonClick = async () => {
+    if (actualDisabled) return;
+
+    if (recordingState === RecordingState.RECORDING) {
+      stopRecording();
+    } else if (
+      recordingState === RecordingState.IDLE ||
+      recordingState === RecordingState.ERROR ||
+      recordingState === RecordingState.STOPPED
+    ) {
+      const permissionGranted = await requestMicrophonePermission();
+      if (permissionGranted) {
+        const userMessagesCount = messages.filter((msg) => msg.sender === SenderType.USER).length;
+        setMessageOrderForAudio(userMessagesCount + 1);
+        await startRecording();
+      }
+    } else if (
+      recordingState === RecordingState.REQUESTING_PERMISSION ||
+      recordingState === RecordingState.PROCESSING_STT
+    ) {
+      console.log('Currently requesting permission or processing STT. Please wait.');
+    }
+  };
+
+  useEffect(() => {
+    if (sttResultText) {
+      setNewMessageInput(sttResultText);
+    }
+  }, [sttResultText]);
+
+  useEffect(() => {
+    if (audioBlob && recordingState === RecordingState.STOPPED) {
+      setRecordingState(RecordingState.PROCESSING_STT);
+      sttMutation.mutate(
+        { audioFile: audioBlob },
+        {
+          onSuccess: (data) => {
+            setSttResultText(data.text);
+            setRecordingState(RecordingState.IDLE);
+            setAudioBlob(null);
+          },
+          onError: (error) => {
+            console.error('STT Mutation Error:', error);
+            setSttErrorMessage(error.message || '음성 변환에 실패했습니다.');
+            setRecordingState(RecordingState.ERROR);
+            setAudioBlob(null);
+          },
+        }
+      );
+    }
+  }, [audioBlob, recordingState, sttMutation, setSttResultText, setRecordingState, setAudioBlob, setSttErrorMessage]);
+
+  useEffect(() => {
+    if (sttErrorMessage) {
+      console.error('STT Error Message:', sttErrorMessage);
+    }
+  }, [sttErrorMessage]);
+
+  const getMicButtonIcon = () => {
+    if (recordingState === RecordingState.RECORDING) {
+      return <StopCircle className="h-5 w-5" />;
+    }
+    if (recordingState === RecordingState.PROCESSING_STT || sttMutation.isPending) {
+      return <Loader2 className="h-5 w-5 animate-spin" />;
+    }
+    return <Mic className="h-5 w-5" />;
+  };
 
   return (
     <form onSubmit={handleSubmit} className="flex items-end p-4 border-t border-border bg-background shadow-sm">
@@ -109,11 +202,17 @@ const SendMessageForm = ({
         variant="ghost"
         size="icon"
         className="mr-2 text-muted-foreground hover:text-primary"
-        aria-label="Voice input"
-        title="음성 입력 (구현 예정)"
-        disabled={actualDisabled}
+        aria-label={recordingState === RecordingState.RECORDING ? 'Stop recording' : 'Start voice input'}
+        title={recordingState === RecordingState.RECORDING ? '녹음 중지' : '음성 입력'}
+        onClick={handleMicButtonClick}
+        disabled={
+          actualDisabled ||
+          recordingState === RecordingState.REQUESTING_PERMISSION ||
+          recordingState === RecordingState.PROCESSING_STT ||
+          sttMutation.isPending
+        }
       >
-        <Mic className="h-5 w-5" />
+        {getMicButtonIcon()}
       </Button>
 
       <Textarea
