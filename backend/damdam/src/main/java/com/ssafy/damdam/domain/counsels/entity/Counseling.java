@@ -39,12 +39,16 @@ public class Counseling extends BaseTimeEntityWithUpdatedAt {
 	@Column(name = "is_closed", nullable = false)
 	private Boolean isClosed = false;
 
+	@Column(name = "s3_link", nullable = false)
+	private String s3Link;
+
 	protected Counseling() {
 	}
 
 	public Counseling(Users user) {
 		this.users = user;
 		this.isClosed = false;
+		this.s3Link = "";
 	}
 
 	@PrePersist
@@ -56,6 +60,10 @@ public class Counseling extends BaseTimeEntityWithUpdatedAt {
 
 	public void updateCounsel(String counsTitle) {
 		this.counsTitle = counsTitle;
+	}
+
+	public void updateS3Link(String s3Link) {
+		this.s3Link = s3Link;
 	}
 
 	public void setClosed(boolean b) {
