@@ -4,6 +4,7 @@ import static com.ssafy.damdam.domain.counsels.exception.CounsExceptionCode.*;
 import static com.ssafy.damdam.domain.users.exception.auth.AuthExceptionCode.*;
 import static com.ssafy.damdam.global.redis.exception.RedisExceptionCode.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -86,47 +87,40 @@ public class CounselServiceImpl implements CounselService {
 			throw new CounsException(NOT_YOUR_COUNSEL);
 		}
 
-		List<ChatOutputDto> messageList;
-		CounselingChatListDto counselingChatListDto = null;
-
-		// 세션이 닫혔는지 여부에 따라 대화내역 불러올 곳이 달라짐
-		if (counseling.getIsClosed()) {
-			// 닫혀있다면 S3에서 꺼내옴
-			counselingChatListDto = null;
-
-		} else {
-			// 열려있다면 레디스에서 꺼내옴
-			CounselSession session = sessionRepository.findById(counsId)
-				.orElseThrow(() -> new RedisException(REDIS_SESSION_NOT_FOUND));
-			String listKey = "counsel:" + counsId + ":messages";
-			List<Object> raw = redisTemplate.opsForList().range(listKey, 0, -1);
-			List<ChatRecordDto> records = Objects.requireNonNull(redisTemplate.opsForList()
-					.range(listKey, 0, -1))
-				.stream()
-				.map(o -> (ChatRecordDto)o)
-				.toList();
-
-			messageList = records.stream()
-				.map(r -> ChatOutputDto.builder()
-					.sender(r.getSender())
-					.message(r.getMessage())
-					.timestamp(r.getTimestamp())
-					.tokenCount(r.getTokenCount())      // 기록된 토큰 수
-					.messageOrder(r.getMessageOrder())
-					.build()
-				).toList();
-
-			counselingChatListDto = CounselingChatListDto.builder()
+		CounselingChatListDto.CounselingChatListDtoBuilder dtoBuilder = CounselingChatListDto.builder()
 				.counsId(counsId)
 				.counsTitle(counseling.getCounsTitle())
 				.createdAt(counseling.getCreatedAt())
 				.updatedAt(counseling.getUpdatedAt())
-				.isClosed(counseling.getIsClosed())
-				.messageList(messageList)
-				.build();
+				.isClosed(counseling.getIsClosed());
+
+		List<ChatOutputDto> messageList = Collections.emptyList();
+
+		// 세션이 닫혔는지 여부에 따라 대화내역 불러올 곳이 달라짐
+		if (counseling.getIsClosed()) {
+			// 닫혀있다면 S3에서 꺼내옴
+
+		} else {
+			// 열려있다면 레디스에서 꺼내옴
+			String listKey = "counsel:" + counsId + ":messages";
+			List<Object> raw = redisTemplate.opsForList().range(listKey, 0, -1);
+			if (raw != null && !raw.isEmpty()) {
+				messageList = raw.stream()
+						.map(o -> (ChatRecordDto) o)
+						.map(r -> ChatOutputDto.builder()
+								.sender(r.getSender())
+								.message(r.getMessage())
+								.timestamp(r.getTimestamp())
+								.tokenCount(r.getTokenCount())
+								.messageOrder(r.getMessageOrder())
+								.build())
+						.toList();
+			}
 		}
 
-		return counselingChatListDto;
+		return dtoBuilder
+				.messageList(messageList)
+				.build();
 	}
 
 	@Override
