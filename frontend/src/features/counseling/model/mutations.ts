@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CounselingSession } from '@/entities/counseling/model/types';
 import { counselingQueryKeys } from '@/entities/counseling/model/queries'; // 경로 수정: queryKeys -> queries
 import { useCounselingStore } from '@/features/counseling/model/counselingStore';
+import { apiClient } from '@/shared/api';
 
 // ... (기존 뮤테이션 코드들) ...
 
@@ -69,15 +70,99 @@ export const useRequestSTTMutation = () => {
 
   return useMutation<STTResponseData, Error, STTRequestData, unknown>({
     mutationFn: requestSTT, // 실제 API 호출을 수행하는 함수
-    // onSuccess: (data, variables, context) => {
-    //   // STT 성공 시 수행할 작업 (예: 특정 쿼리 무효화, 상태 업데이트 등)
-    //   console.log('STT 변환 성공:', data.text);
-    // },
-    // onError: (error, variables, context) => {
-    //   // STT 실패 시 수행할 작업
-    //   console.error('STT 변환 실패:', error.message);
-    // },
+    onSuccess: (data, variables, context) => {
+      // STT 성공 시 수행할 작업 (예: 특정 쿼리 무효화, 상태 업데이트 등)
+      console.log('STT API Success:', data);
+      // 기존 로직: 스토어 업데이트 등은 SendMessageForm.tsx의 .then() 블록에서 처리될 수 있음
+      // 또는 여기서 직접 스토어 액션을 호출할 수도 있습니다.
+    },
+    onError: (error, variables, context) => {
+      // STT 실패 시 수행할 작업
+      console.error('STT API Error:', error.message, error);
+    },
   });
 };
 
-// ... (다른 기존 뮤테이션들이 있다면 여기에 유지) ...
+/**
+ * @typedef UploadVoiceFilePayload
+ * @property {string} counsId - 상담 세션 ID
+ * @property {Blob} audioFile - 업로드할 오디오 파일 (Blob)
+ * @property {number} messageOrder - 해당 음성 메시지의 순서
+ * @property {string} [filename] - (선택사항) 서버에 저장될 파일명
+ */
+interface UploadVoiceFilePayload {
+  counsId: string;
+  audioFile: Blob;
+  messageOrder: number;
+  filename?: string; // .wav 또는 .webm 등 확장자 포함
+}
+
+/**
+ * @typedef UploadVoiceFileResponse
+ * @description 음성 파일 업로드 API의 예상 응답 타입입니다.
+ * 실제 API 응답에 따라 수정해야 합니다. (예: { success: boolean, filePath?: string })
+ */
+interface UploadVoiceFileResponse {
+  // 예시: 성공 여부 및 저장된 파일 경로 등
+  success: boolean;
+  message?: string;
+  filePath?: string; // 서버에서 저장된 경로를 반환한다면
+  // 혹은 백엔드가 저장된 ChatMessage 객체를 반환할 수도 있습니다.
+}
+
+/**
+ * 음성 파일을 서버의 /counsels/{counsId}/voice 엔드포인트로 업로드합니다.
+ * @async
+ * @function uploadVoiceFile
+ * @param {UploadVoiceFilePayload} payload - counsId, audioFile, messageOrder 포함
+ * @returns {Promise<UploadVoiceFileResponse>} 업로드 결과
+ * @throws {Error} API 요청 실패 시 에러 발생
+ */
+const uploadVoiceFile = async (payload: UploadVoiceFilePayload): Promise<UploadVoiceFileResponse> => {
+  const { counsId, audioFile, messageOrder, filename } = payload;
+
+  if (!counsId) throw new Error('Counseling ID (counsId) is required for voice upload.');
+  if (!audioFile) throw new Error('Audio file (audioFile) is required for voice upload.');
+  if (typeof messageOrder !== 'number') throw new Error('Message order (messageOrder) is required for voice upload.');
+
+  const formData = new FormData();
+  // Swagger 스펙에 따라 필드명을 'file'로 변경
+  // filename이 제공되면 사용하고, 아니면 기본 파일명 사용
+  const finalFilename = filename || 'voice_message.webm';
+  formData.append('file', audioFile, finalFilename);
+
+  // Swagger 스펙에 따라 messageOrder를 쿼리 파라미터로 전달
+  const endpoint = `/counsels/${counsId}/voice?messageOrder=${messageOrder}`;
+
+  // apiClient.post 호출 시 config 객체를 통해 Content-Type을 undefined로 설정
+  // 이렇게 하면 axios가 FormData를 기반으로 Content-Type을 'multipart/form-data'로 자동 설정합니다.
+  // axiosInstance.ts 에서 FormData인 경우 Content-Type 헤더를 삭제하도록 수정했으므로,
+  // 여기서는 별도의 headers 설정을 전달할 필요가 없습니다.
+  // config 인자가 옵셔널이므로 전달하지 않아도 됩니다.
+  return apiClient.post<FormData, UploadVoiceFileResponse>(endpoint, formData);
+};
+
+/**
+ * 음성 파일을 업로드하는 Tanstack Query 뮤테이션 훅입니다.
+ * @returns {import('@tanstack/react-query').UseMutationResult<UploadVoiceFileResponse, Error, UploadVoiceFilePayload, unknown>}
+ */
+export const useUploadVoiceFileMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<UploadVoiceFileResponse, Error, UploadVoiceFilePayload, unknown>({
+    mutationFn: uploadVoiceFile,
+    onSuccess: (data, variables) => {
+      console.log('음성 파일 업로드 성공:', data);
+      // 성공 시 특정 쿼리 무효화 또는 다른 액션 수행 가능
+      // if (variables.counsId) {
+      //   queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(variables.counsId) });
+      // }
+    },
+    onError: (error, variables) => {
+      console.error(
+        `음성 파일 업로드 실패 (counsId: ${variables.counsId}, order: ${variables.messageOrder}):`,
+        error.message
+      );
+    },
+  });
+};

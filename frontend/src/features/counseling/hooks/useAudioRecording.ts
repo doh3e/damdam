@@ -36,6 +36,7 @@ export const useAudioRecording = (): UseAudioRecordingResult => {
     setAudioBlob,
     setErrorMessage,
     resetSTTState, // 오류 발생 또는 초기화 시 사용
+    recordingState, // recordingState를 스토어에서 가져옵니다.
   } = useSTTStore();
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -155,23 +156,52 @@ export const useAudioRecording = (): UseAudioRecordingResult => {
    * 진행 중인 녹음을 중지합니다.
    * MediaRecorder의 state가 'recording' 또는 'paused'일 경우 stop() 메소드를 호출합니다.
    */
-  const stopRecording = (): void => {
-    if (
-      mediaRecorderRef.current &&
-      (mediaRecorderRef.current.state === 'recording' || mediaRecorderRef.current.state === 'paused')
-    ) {
-      mediaRecorderRef.current.stop(); // 이 호출로 onstop 이벤트 핸들러가 트리거됨
-      // 타이머도 cleanupRecorder 또는 onstop 내부에서 정리됨
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      console.log('[useAudioRecording] stopRecording called. Current state: recording');
+      mediaRecorderRef.current.onstop = () => {
+        console.log('[useAudioRecording] mediaRecorder.onstop event triggered.');
+        if (!audioChunksRef.current || audioChunksRef.current.length === 0) {
+          console.warn('[useAudioRecording] No audio chunks recorded.');
+          setErrorMessage('녹음된 오디오 데이터가 없습니다.');
+          setRecordingState(RecordingState.ERROR);
+          return;
+        }
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm;codecs=opus' });
+        console.log('[useAudioRecording] Audio blob created:', audioBlob, 'size:', audioBlob.size);
+
+        if (audioBlob.size === 0) {
+          console.warn('[useAudioRecording] Audio blob size is 0.');
+          setErrorMessage('녹음된 오디오 파일의 크기가 0입니다. 마이크 접근 권한이나 다른 문제를 확인해주세요.');
+          setRecordingState(RecordingState.ERROR);
+          return;
+        }
+
+        setAudioBlob(audioBlob);
+        setRecordingState(RecordingState.STOPPED);
+        console.log(
+          '[useAudioRecording] Recording stopped. Store updated: audioBlob set, recordingState set to STOPPED.'
+        );
+
+        audioChunksRef.current = [];
+      };
+
+      mediaRecorderRef.current.onerror = (event) => {
+        console.error('[useAudioRecording] MediaRecorder error:', event);
+        setErrorMessage('녹음 중 오류가 발생했습니다.');
+        setRecordingState(RecordingState.ERROR);
+        setAudioBlob(null);
+      };
+
+      mediaRecorderRef.current.stop();
+      console.log('[useAudioRecording] mediaRecorder.stop() called.');
     } else {
-      console.warn('녹음기가 활성 상태가 아니거나 이미 중지되었습니다.');
-      // 필요하다면 IDLE 상태로 강제 전환
-      // setRecordingState(RecordingState.IDLE);
+      console.warn(
+        '[useAudioRecording] stopRecording called but not in recording state or mediaRecorder not ready. State:',
+        mediaRecorderRef.current?.state
+      );
     }
-    if (recordingTimerRef.current) {
-      clearTimeout(recordingTimerRef.current);
-      recordingTimerRef.current = null;
-    }
-  };
+  }, [setAudioBlob, setRecordingState, setErrorMessage, recordingState]);
 
   return { startRecording, stopRecording, requestMicrophonePermission };
 };

@@ -183,7 +183,8 @@ export const useWebSocket = ({
 
   const onStompMessage = useCallback(
     (stompMessage: StompMessage) => {
-      log('STOMP 메시지 수신:', stompMessage.body);
+      log('STOMP 메세지 수신 Headers:', stompMessage.headers);
+      log('STOMP 메시지 수신 Body:', stompMessage.body);
       setLastReceivedStompMessage(stompMessage);
 
       const parsedBody = parseStompMessageBody(stompMessage);
@@ -239,15 +240,20 @@ export const useWebSocket = ({
       }
 
       if (chatMessage.sender === SenderType.AI || chatMessage.messageType === MessageType.ERROR) {
-        log('ChatMessage 변환 (AI 또는 에러) 및 스토어 추가:', chatMessage);
+        log('[onStompMessage] ChatMessage 변환 (AI 또는 에러) 및 스토어 추가:', chatMessage);
         addMessageToStore(chatMessage);
         if (onMessageReceived) {
+          log(
+            '[onStompMessage] onMessageReceived 콜백 호출 시작, 전달 데이터:',
+            parsedBody.sender === SenderType.USER ? parsedBody : chatMessage
+          );
           onMessageReceived(parsedBody.sender === SenderType.USER ? parsedBody : chatMessage);
+          log('[onStompMessage] onMessageReceived 콜백 호출 완료.');
         }
       } else if (chatMessage.sender === SenderType.USER) {
-        log('사용자 메시지 STOMP 구독 통해 수신 (스토어 중복 추가 방지 필요):', chatMessage);
+        log('[onStompMessage] 사용자 메시지 STOMP 구독 통해 수신 (스토어 중복 추가 방지 필요):', chatMessage);
       } else {
-        log('알 수 없는 sender 타입 또는 처리되지 않은 메시지:', chatMessage);
+        log('[onStompMessage] 알 수 없는 sender 타입 또는 처리되지 않은 메시지:', chatMessage);
       }
     },
     [log, parseStompMessageBody, addMessageToStore, setIsAiTyping, onMessageReceived]

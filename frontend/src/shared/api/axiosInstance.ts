@@ -3,7 +3,8 @@ import { useAuthStore } from '@/app/store/authStore';
 import { API_BASE_URL } from '../config';
 
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  // baseURL: API_BASE_URL,
+  baseURL: 'http://localhost:3002/api/v1/damdam', // Mockoon 테스트용 임시 URL
   timeout: 10000, // 요청 타임아웃 10초
   headers: {
     'Content-Type': 'application/json',
@@ -100,10 +101,11 @@ export const apiClient = {
    * @template T 응답 데이터의 타입
    * @param endpoint API 엔드포인트 경로 (예: '/users')
    * @param params URL 쿼리 파라미터 (선택사항)
+   * @param config Axios 요청 설정 (선택사항)
    * @returns Promise<T> 응답 데이터
    */
-  get: <T>(endpoint: string, params?: Record<string, any>): Promise<T> => {
-    return axiosInstance.get(endpoint, { params });
+  get: <T>(endpoint: string, params?: Record<string, any>, config?: InternalAxiosRequestConfig): Promise<T> => {
+    return axiosInstance.get(endpoint, { params, ...config });
   },
 
   /**
@@ -112,10 +114,20 @@ export const apiClient = {
    * @template TResponse 응답 데이터의 타입
    * @param endpoint API 엔드포인트 경로
    * @param data 요청 바디 데이터
+   * @param config Axios 요청 설정 (선택사항)
    * @returns Promise<TResponse> 응답 데이터
    */
-  post: <TRequest, TResponse>(endpoint: string, data: TRequest): Promise<TResponse> => {
-    return axiosInstance.post(endpoint, data);
+  post: <TRequest, TResponse>(
+    endpoint: string,
+    data: TRequest,
+    config?: InternalAxiosRequestConfig
+  ): Promise<TResponse> => {
+    if (data instanceof FormData) {
+      const { headers, ...restConfig } = config || {};
+      const newHeaders = { ...headers, 'Content-Type': undefined };
+      return axiosInstance.post(endpoint, data, { ...restConfig, headers: newHeaders });
+    }
+    return axiosInstance.post(endpoint, data, config);
   },
 
   /**
@@ -124,12 +136,29 @@ export const apiClient = {
    * @template TResponse 응답 데이터의 타입
    * @param endpoint API 엔드포인트 경로
    * @param data 요청 바디 데이터
+   * @param config Axios 요청 설정 (선택사항)
    * @returns Promise<TResponse> 응답 데이터
    */
-  patch: <TRequest, TResponse>(endpoint: string, data: TRequest): Promise<TResponse> => {
+  patch: <TRequest, TResponse>(
+    endpoint: string,
+    data: TRequest,
+    config?: InternalAxiosRequestConfig
+  ): Promise<TResponse> => {
+    if (data instanceof FormData) {
+      const { headers, ...restConfig } = config || {};
+      const newHeaders = { ...headers, 'Content-Type': undefined };
+      try {
+        console.log(`[PATCH Request] ${endpoint}`, { data, config: { ...restConfig, headers: newHeaders } });
+        return axiosInstance.patch(endpoint, data, { ...restConfig, headers: newHeaders });
+      } catch (error) {
+        console.error(`[PATCH Error] ${endpoint}`, error);
+        throw error;
+      }
+    }
+    // FormData가 아닐 때의 원래 로직
     try {
-      console.log(`[PATCH Request] ${endpoint}`, { data });
-      return axiosInstance.patch(endpoint, data);
+      console.log(`[PATCH Request] ${endpoint}`, { data, config });
+      return axiosInstance.patch(endpoint, data, config);
     } catch (error) {
       console.error(`[PATCH Error] ${endpoint}`, error);
       throw error;
@@ -142,10 +171,20 @@ export const apiClient = {
    * @template TResponse 응답 데이터의 타입
    * @param endpoint API 엔드포인트 경로
    * @param data 요청 바디 데이터
+   * @param config Axios 요청 설정 (선택사항)
    * @returns Promise<TResponse> 응답 데이터
    */
-  put: <TRequest, TResponse>(endpoint: string, data: TRequest): Promise<TResponse> => {
-    return axiosInstance.put(endpoint, data);
+  put: <TRequest, TResponse>(
+    endpoint: string,
+    data: TRequest,
+    config?: InternalAxiosRequestConfig
+  ): Promise<TResponse> => {
+    if (data instanceof FormData) {
+      const { headers, ...restConfig } = config || {};
+      const newHeaders = { ...headers, 'Content-Type': undefined };
+      return axiosInstance.put(endpoint, data, { ...restConfig, headers: newHeaders });
+    }
+    return axiosInstance.put(endpoint, data, config);
   },
 
   /**
@@ -153,12 +192,17 @@ export const apiClient = {
    * @template T 응답 데이터의 타입 (응답이 있는 경우)
    * @param endpoint API 엔드포인트 경로
    * @param params URL 쿼리 파라미터 (선택사항)
+   * @param config Axios 요청 설정 (선택사항)
    * @returns Promise<T | void> 응답 데이터 또는 void
    */
-  delete: <T = void>(endpoint: string, params?: Record<string, any>): Promise<T> => {
+  delete: <T = void>(
+    endpoint: string,
+    params?: Record<string, any>,
+    config?: InternalAxiosRequestConfig
+  ): Promise<T> => {
     try {
-      console.log(`[DELETE Request] ${endpoint}`, { params });
-      return axiosInstance.delete(endpoint, { params });
+      console.log(`[DELETE Request] ${endpoint}`, { params, config });
+      return axiosInstance.delete(endpoint, { params, ...config });
     } catch (error) {
       console.error(`[DELETE Error] ${endpoint}`, error);
       throw error;
