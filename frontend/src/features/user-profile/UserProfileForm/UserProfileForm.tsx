@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { useProfileStore } from '@/app/store/profileStore';
+import { useProfileStore } from '@/app/store/userProfileStore';
 import { Gender, Age, MBTI } from '@/shared/consts/enum';
 import Image from 'next/image';
 

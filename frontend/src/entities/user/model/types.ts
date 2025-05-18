@@ -38,3 +38,15 @@ export interface AiProfile {
 // 참고: 프로젝트에 이미 User 타입이 존재하고, 해당 타입에 AI를 구분하는 필드
 // (예: userType: 'human' | 'ai')를 추가하는 방식도 고려할 수 있습니다.
 // 이 경우, AiProfile은 User 타입의 일부 속성을 확장하거나 특정화하는 형태로 정의될 수 있습니다.
+
+// entities/user/model/types.ts
+export interface UserProfile {
+  provider: string;
+  nickname: string;
+  email: string;
+  profileImage: string;
+  gender: 'MALE' | 'FEMALE' | 'OTHER' | 'UNKNOWN';
+  age: string;
+  career: string;
+  mbti: string;
+}
