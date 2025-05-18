@@ -31,6 +31,7 @@ export enum RecordingState {
  * @property {string} sttResultText - STT 변환 결과 텍스트.
  * @property {string | null} errorMessage - 오류 발생 시 오류 메시지.
  * @property {number | null} messageOrderForAudio - 현재 녹음/STT 중인 메시지의 순서 (음성 파일 저장 시 필요).
+ * @property {boolean} isCurrentMessageFromVoice - 현재 메시지가 음성인지 여부.
  */
 interface STTState {
   recordingState: RecordingState;
@@ -38,6 +39,7 @@ interface STTState {
   sttResultText: string;
   errorMessage: string | null;
   messageOrderForAudio: number | null;
+  isCurrentMessageFromVoice: boolean;
 }
 
 /**
@@ -49,6 +51,7 @@ interface STTState {
  * @property {(message: string | null) => void} setErrorMessage - 오류 메시지를 설정합니다.
  * @property {(order: number | null) => void} setMessageOrderForAudio - 현재 오디오의 메시지 순서를 설정합니다.
  * @property {() => void} resetSTTState - STT 관련 모든 상태를 초기값으로 리셋합니다.
+ * @property {(isVoice: boolean) => void} setIsCurrentMessageFromVoice - 현재 메시지가 음성인지 여부를 설정합니다.
  */
 interface STTActions {
   setRecordingState: (state: RecordingState) => void;
@@ -57,6 +60,7 @@ interface STTActions {
   setErrorMessage: (message: string | null) => void;
   setMessageOrderForAudio: (order: number | null) => void;
   resetSTTState: () => void;
+  setIsCurrentMessageFromVoice: (isVoice: boolean) => void;
 }
 
 // 초기 상태 값
@@ -66,6 +70,7 @@ const initialState: STTState = {
   sttResultText: '',
   errorMessage: null,
   messageOrderForAudio: null,
+  isCurrentMessageFromVoice: false,
 };
 
 /**
@@ -81,4 +86,5 @@ export const useSTTStore = create<STTState & STTActions>((set) => ({
   setErrorMessage: (message) => set({ errorMessage: message }),
   setMessageOrderForAudio: (order) => set({ messageOrderForAudio: order }),
   resetSTTState: () => set(initialState),
+  setIsCurrentMessageFromVoice: (isVoice) => set({ isCurrentMessageFromVoice: isVoice }),
 }));
