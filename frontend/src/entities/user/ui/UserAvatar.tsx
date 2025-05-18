@@ -14,7 +14,7 @@ interface UserAvatarProps {
   /** 표시할 이미지의 URL */
   imageUrl?: string;
   /** 이미지가 없을 경우 표시될 텍스트 (예: 사용자 이름의 이니셜) */
-  fallbackText: string;
+  fallbackText?: string;
   /** 이미지의 alt 속성 텍스트 (접근성용) */
   altText?: string;
   /** 아바타의 크기 */
@@ -32,7 +32,7 @@ interface UserAvatarProps {
  */
 const UserAvatar: React.FC<UserAvatarProps> = ({
   imageUrl,
-  fallbackText,
+  fallbackText = '담담이',
   altText = 'User avatar', // 기본 alt 텍스트
   size = 'md', // 기본 크기
   className,
@@ -47,7 +47,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   return (
     <Avatar className={cn(sizeClasses[size], className)}>
       {/* AvatarImage는 src가 유효할 경우 이미지를 렌더링합니다. */}
-      <AvatarImage src={imageUrl} alt={altText} />
+      <AvatarImage src={imageUrl || '/damdami.png'} alt={altText} />
       {/* AvatarFallback은 이미지를 로드할 수 없거나 src가 없을 경우 표시됩니다. */}
       <AvatarFallback>{fallbackText.substring(0, 2)}</AvatarFallback>
     </Avatar>

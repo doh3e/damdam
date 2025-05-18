@@ -6,9 +6,9 @@
 import React from 'react';
 import { CounselingSession } from '@/entities/counseling/model/types';
 import UserAvatar from '@/entities/user/ui/UserAvatar';
-import { AiProfile } from '@/entities/user/model/types'; // AI 프로필 타입 임포트 (실제로는 세션 정보에서 AI 이름/아바타 가져와야 함)
 import { cn } from '@/shared/lib/utils';
 import { ChevronRight } from 'lucide-react';
+import { format } from 'date-fns';
 
 /**
  * PastCounselingListItem 컴포넌트의 Props 인터페이스
@@ -20,11 +20,6 @@ interface PastCounselingListItemProps {
   isActive?: boolean;
   /** 제목을 표시할지 여부 */
   showTitle?: boolean;
-  /** AI 프로필 정보 (실제로는 session 객체 내에서 AI 정보를 가져오거나, 별도 prop으로 받을 수 있음) */
-  // 현재 CounselingSession 타입에는 aiId만 있으므로, AI의 구체적인 프로필(이름, 아바타)은
-  // 이 컴포넌트를 사용하는 상위 컴포넌트에서 조회하여 전달하거나, session 객체 자체에 포함되어야 합니다.
-  // 여기서는 임시로 aiProfile prop을 추가하지만, 데이터 흐름에 따라 수정될 수 있습니다.
-  aiProfile?: Pick<AiProfile, 'name' | 'avatarUrl'>;
 }
 
 /**
@@ -38,12 +33,7 @@ const PastCounselingListItem: React.FC<PastCounselingListItemProps> = ({
   session,
   isActive = false,
   showTitle = false,
-  aiProfile, // 임시 AI 프로필
 }) => {
-  // 마지막 메시지 관련 로직 제거
-  // const lastMessageText = session.lastMessage?.message || '대화 내용이 없습니다.';
-  // const lastMessageSender = session.lastMessage?.sender;
-
   // TODO: 실제 날짜 포맷팅 유틸리티 함수로 교체 필요 (예: shared/lib/formatDate.ts)
   const formattedTime = session.lastMessage?.timestamp
     ? new Date(session.lastMessage.timestamp).toLocaleDateString('ko-KR', {
@@ -51,9 +41,9 @@ const PastCounselingListItem: React.FC<PastCounselingListItemProps> = ({
         day: 'numeric',
       })
     : '';
-  // AI 이름은 session.aiProfile를 기반으로 조회하거나, aiProfile prop을 통해 받아야 합니다.
-  const aiDisplayName = aiProfile?.name || session.aiProfile?.name || '담담이'; // session 객체 내 aiProfile도 확인
-  const aiAvatarFallback = aiDisplayName.substring(0, 1);
+
+  // 세션 생성 시각 포맷팅 (YYYY년 M월 D일 HH시 mm분)
+  const formattedCreationTime = session.createdAt ? format(new Date(session.createdAt), 'yyyy년 M월 d일') : '';
 
   return (
     <div
@@ -63,9 +53,9 @@ const PastCounselingListItem: React.FC<PastCounselingListItemProps> = ({
       )}
     >
       <UserAvatar
-        imageUrl={aiProfile?.avatarUrl || session.aiProfile?.avatarUrl}
-        fallbackText={aiAvatarFallback}
-        altText={`${aiDisplayName} avatar`}
+        imageUrl={session.aiProfile?.avatarUrl} // session.aiProfile?.avatarUrl 사용, 없으면 UserAvatar 내부에서 기본 이미지 처리
+        fallbackText="담담이" // fallbackText를 "담담이"로 명시적 설정 (UserAvatar 기본값과 동일하지만 명시)
+        altText="AI avatar"
         size="md"
         className="mr-3 flex-shrink-0"
       />
@@ -78,16 +68,19 @@ const PastCounselingListItem: React.FC<PastCounselingListItemProps> = ({
           </div>
         )}
         <div className="flex justify-between items-center mb-0.5">
-          <h3 className="text-sm font-semibold text-foreground truncate" title={`상담사: ${aiDisplayName}`}>
-            상담사: {aiDisplayName}
-          </h3>
-          {formattedTime && <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">{formattedTime}</span>}
+          {formattedTime && (
+            <span className="text-xs text-muted-foreground flex-shrink-0 ml-auto">{formattedTime}</span>
+          )}
         </div>
         {/* 세션 종료 상태 표시 */}
         {session.isClosed ? (
           <p className="text-xs text-muted-foreground truncate">종료된 상담입니다.</p>
         ) : (
           <p className="text-xs text-green-600 dark:text-green-500 truncate">진행 중인 상담입니다.</p>
+        )}
+        {/* 세션 생성 시각 표시 */}
+        {formattedCreationTime && (
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">{formattedCreationTime}</p>
         )}
       </div>
       <ChevronRight className="h-5 w-5 text-muted-foreground ml-2 flex-shrink-0 opacity-70 group-hover:opacity-100" />

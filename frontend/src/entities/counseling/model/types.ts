@@ -103,9 +103,8 @@ export interface CounselingSession {
   userId?: string;
   /** 상담 세션의 제목 (ERD: `couns_title`) */
   counsTitle: string;
-  /** AI 프로필 정보 (옵션, 필요시 구체화) */
+  /** AI 프로필 정보 (옵션, AI 이름 기능 제거로 name 속성 제거) */
   aiProfile?: {
-    name: string;
     avatarUrl?: string;
   };
   /** 상담 생성 시간 (ERD: `created_at`, ISO 문자열) */
