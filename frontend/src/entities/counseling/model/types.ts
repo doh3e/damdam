@@ -56,12 +56,12 @@ export interface ChatMessage {
   sender: SenderType | string;
   /** 메시지 내용 (텍스트 또는 음성 파일 경로/데이터) */
   message: string;
-  /** 메시지 생성 타임스탬프 (Unix epoch, milliseconds 또는 ISO 문자열) */
-  timestamp: string | number;
-  /** AI 답변 토큰 수 카운터 (int, 작업 예정) */
-  tokenCount?: number;
-  /** 유저의 채팅 순서 카운트(int, 작업 예정) */
-  messageOrder?: number;
+  /** 메시지 생성 타임스탬프 (ISO 문자열) */
+  timestamp: string;
+  /** AI 답변 토큰 수 카운터 */
+  tokenCount: number;
+  /** 유저의 채팅 순서 카운트 */
+  messageOrder: number;
   /** 메시지 유형 (옵션, 작업 예정 형식에서는 message 내용으로 구분 가능성) */
   messageType?: MessageType;
   /** 추천 콘텐츠 목록 (AI 추천 메시지인 경우) */
@@ -98,7 +98,7 @@ export enum CounselingDisplayStatus {
  */
 export interface CounselingSession {
   /** 상담 세션의 고유 ID (ERD: `couns_id`) */
-  counsId: string | number;
+  counsId: number;
   /** 상담을 진행한 사용자의 ID (ERD: `user_id`) - 현재 API 응답에는 없으므로 옵셔널 처리 또는 기본값 설정 */
   userId?: string;
   /** 상담 세션의 제목 (ERD: `couns_title`) */
@@ -108,9 +108,9 @@ export interface CounselingSession {
     avatarUrl?: string;
   };
   /** 상담 생성 시간 (ERD: `created_at`, ISO 문자열) */
-  createdAt: string | number;
+  createdAt: string;
   /** 상담 최종 업데이트 시간 (ERD: `updated_at`, ISO 문자열) */
-  updatedAt: string | number;
+  updatedAt: string;
   /** 상담 종료 여부 (ERD: `is_closed`) */
   isClosed: boolean;
   /** 세션의 마지막 메시지 (옵션, API 응답에 따라 추가/제외) */
@@ -122,10 +122,9 @@ export interface CounselingSession {
   /** 세션 관련 키워드 또는 카테고리 (옵션) */
   keywords?: string[];
   /**
-   * 채팅 메시지 목록 (작업 예정인 응답 형식에 포함될 필드).
-   * 현재 API 응답에는 없으므로 옵셔널.
+   * 채팅 메시지 목록.
    */
-  chat?: ChatMessage[];
+  messageList: ChatMessage[];
 }
 
 /*

@@ -76,8 +76,9 @@ const EndCounselingButton = ({
           ['counselingSessions', 'list'], // 실제 사용하는 상담 목록 쿼리 키 확인 필요
           (oldData) => {
             if (!oldData) return undefined;
+            const numericCurrentCounsId = Number(currentCounsId); // 문자열 currentCounsId를 숫자로 변환
             return oldData.map((session) =>
-              session.counsId === currentCounsId ? { ...session, isClosed: true } : session
+              session.counsId === numericCurrentCounsId ? { ...session, isClosed: true } : session
             );
           }
         );

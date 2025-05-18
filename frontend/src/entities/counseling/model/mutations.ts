@@ -184,7 +184,10 @@ export const useCreateReportAndEndSession = () => {
       // 1. 상담 목록 캐시 업데이트 (isClosed: true로 설정)
       queryClient.setQueryData<CounselingSession[]>(counselingQueryKeys.lists(), (oldData) => {
         if (!oldData) return undefined;
-        return oldData.map((session) => (session.counsId === counsId ? { ...session, isClosed: true } : session));
+        const numericCounsId = Number(counsId); // 문자열 counsId를 숫자로 변환
+        return oldData.map((session) =>
+          session.counsId === numericCounsId ? { ...session, isClosed: true } : session
+        );
       });
 
       // 2. 현재 세션 상세 정보 캐시 업데이트 (isClosed: true로 설정)

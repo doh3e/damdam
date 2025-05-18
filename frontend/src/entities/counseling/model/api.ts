@@ -60,10 +60,10 @@ export const fetchCounselingSessionDetails = async (
   // API는 CounselingDto (CounselingSession과 유사)를 직접 반환
   const sessionData = await apiClient.get<CounselingSession>(endpoint);
 
-  // 작업 예정인 chat 필드가 없을 경우를 대비하여 기본값 제공
-  if (sessionData && typeof sessionData.chat === 'undefined') {
+  // messageList 필드가 없을 경우를 대비하여 기본값 제공 (타입상으로는 필수 필드임)
+  if (sessionData && typeof sessionData.messageList === 'undefined') {
     // sessionData가 null이 아닌지도 확인
-    sessionData.chat = [];
+    sessionData.messageList = [];
   }
 
   console.log('fetchCounselingSessionDetails API responseData (processed):', sessionData);

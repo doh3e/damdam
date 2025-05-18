@@ -132,7 +132,7 @@ export function CounselingChatWindow() {
    */
   useEffect(() => {
     if (sessionDetail) {
-      const messagesFromServer = sessionDetail.chat || [];
+      const messagesFromServer = sessionDetail.messageList || [];
       const isClosedFromServer = sessionDetail.isClosed || false;
 
       setMessages(
@@ -261,8 +261,9 @@ export function CounselingChatWindow() {
               counselingQueryKeys.lists(),
               (oldData: CounselingSession[] | undefined) => {
                 if (!oldData) return undefined;
+                const numericCounsId = couns_id ? Number(couns_id) : NaN;
                 return oldData.map((session) =>
-                  session.counsId === couns_id ? { ...session, isClosed: true } : session
+                  session.counsId === numericCounsId ? { ...session, isClosed: true } : session
                 );
               }
             );
@@ -299,8 +300,9 @@ export function CounselingChatWindow() {
                 counselingQueryKeys.lists(),
                 (oldData: CounselingSession[] | undefined) => {
                   if (!oldData) return undefined;
+                  const numericCounsId = couns_id ? Number(couns_id) : NaN;
                   return oldData.map((session) =>
-                    session.counsId === couns_id ? { ...session, isClosed: true } : session
+                    session.counsId === numericCounsId ? { ...session, isClosed: true } : session
                   );
                 }
               );

@@ -215,7 +215,11 @@ export const useWebSocket = ({
         messageType: parsedBody.messageType || MessageType.TEXT,
         message: parsedBody.message,
         timestamp:
-          typeof parsedBody.timestamp === 'string' ? new Date(parsedBody.timestamp).getTime() : parsedBody.timestamp,
+          typeof parsedBody.timestamp === 'string'
+            ? parsedBody.timestamp
+            : new Date(parsedBody.timestamp).toISOString(),
+        tokenCount: parsedBody.tokenCount || 0,
+        messageOrder: parsedBody.messageOrder || 0,
         recommendations:
           parsedBody.sender === SenderType.AI && parsedBody.messageType === MessageType.RECOMMENDATION
             ? (parsedBody as any).recommendations || []
@@ -516,7 +520,8 @@ export const useWebSocket = ({
           sender: SenderType.USER,
           messageType: MessageType.TEXT,
           message: payload.text,
-          timestamp: Date.now(),
+          timestamp: new Date().toISOString(),
+          tokenCount: 0,
           messageOrder: payload.messageOrder,
           isVoice: payload.isVoice,
         };
