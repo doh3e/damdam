@@ -72,7 +72,7 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
         ) : (
           messages.map((message, index) => (
             <ChatBubble
-              key={message.id || `${message.timestamp}-${index}`} // 고유 키 생성
+              key={message.id || `${message.timestamp}-${message.messageOrder}-${message.sender}-${index}`} // 고유 키 생성
               message={processMessageForDisplay(message)} // 메시지 표시 전처리
               aiProfile={aiProfile}
               showSenderName={true} // AI 이름 표시 (옵션)

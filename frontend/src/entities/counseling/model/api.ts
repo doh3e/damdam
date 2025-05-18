@@ -166,39 +166,25 @@ export const createSessionReport = async (counsId: string): Promise<CreateSessio
 };
 
 /**
- * @function createReportAndEndSession
- * @description 특정 상담 세션에 대한 레포트를 생성하고 세션을 종료합니다.
- * (백엔드에서 POST /counsels/{counsId}/reports 요청 시 레포트 생성과 세션 종료를 함께 처리한다고 가정)
+ * 지정된 상담 세션에 대한 레포트를 생성하고 해당 세션을 종료합니다.
+ *
  * @param {string} counsId - 레포트를 생성하고 종료할 상담 세션의 ID.
- * @returns {Promise<{ success: boolean; message?: string }>} 작업 성공 여부 및 메시지.
- * @throws {Error} API 요청 실패 시 에러 발생.
+ * @returns {Promise<{ sreportId: number }>} 성공 시 생성된 레포트 ID를 포함하는 객체를 반환합니다.
+ * @throws {Error} API 요청 실패 시 에러를 발생시킵니다.
  */
-export const createReportAndEndSession = async (counsId: string): Promise<{ success: boolean; message?: string }> => {
-  try {
-    const responseData = await apiClient.post<undefined, ApiResponse<null | { message: string }>>(
-      `/counsels/${counsId}/reports`,
-      undefined // 요청 본문 없음
-    );
-
-    // ApiResponse 타입에 따라 responseData.success로 성공 여부 판단
-    if (responseData.success) {
-      // responseData.data가 null일 수 있으므로, 실제 메시지는 responseData.message 또는 기본 메시지 사용
-      return {
-        success: true,
-        message: responseData.message || responseData.data?.message || '레포트가 생성되고 세션이 종료되었습니다.',
-      };
-    }
-    // API 응답이 성공적이지 않은 경우 (responseData.success === false)
-    throw new Error(responseData.message || '레포트 생성 및 세션 종료에 실패했습니다.');
-  } catch (error: any) {
-    console.error('Error creating report and ending session for ' + counsId + ':', error);
-    const errorMessage =
-      error?.response?.data?.message ||
-      error?.data?.message || // 인터셉터에서 가공된 에러 데이터의 메시지
-      error?.message ||
-      '레포트 생성 및 세션 종료 중 오류가 발생했습니다.';
-    throw new Error(errorMessage);
+export const createReportAndEndSession = async (counsId: string): Promise<{ sreportId: number }> => {
+  if (!counsId) {
+    throw new Error('레포트 생성 및 세션 종료를 위한 상담 ID가 제공되지 않았습니다.');
   }
+  const endpoint = `/counsels/${counsId}/reports`;
+  console.log(`API 요청: POST ${endpoint}`);
+  // apiClient.post<TRequest, TResponse>(url, data)
+  // TRequest (요청 본문 타입)는 undefined, TResponse (응답 본문 타입)는 { sreportId: number }
+  // data (요청 본문 값)는 undefined
+  // apiClient.post는 응답 인터셉터에 의해 Promise<TResponse> (즉, Promise<{ sreportId: number }>)를 반환합니다.
+  const responseData = await apiClient.post<undefined, { sreportId: number }>(endpoint, undefined);
+  console.log('createReportAndEndSession API responseData:', responseData);
+  return responseData;
 };
 
 // sendChatMessageToServer 함수는 웹소켓으로 대체되므로 여기서는 주석 처리 또는 삭제합니다.

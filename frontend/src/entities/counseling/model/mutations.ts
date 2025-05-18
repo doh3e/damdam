@@ -153,13 +153,13 @@ export const useCreateSessionReport = (
  * @description 상담 세션에 대한 레포트를 생성하고 해당 세션을 종료하는 Tanstack Query 뮤테이션 훅입니다.
  * 성공 시 관련 상담 상세 및 목록 쿼리를 무효화합니다.
  *
- * @returns {UseMutationResult<{ success: boolean; message?: string }, Error, string, unknown>}
+ * @returns {UseMutationResult<{ sreportId: number }, Error, string, unknown>}
  *  - `mutate`: 레포트 생성 및 세션 종료를 실행하는 함수. 인자로 `counsId` (string)를 받습니다.
  *  - `isPending`: 뮤테이션 진행 중 상태.
  *  - `isSuccess`: 뮤테이션 성공 상태.
  *  - `isError`: 뮤테이션 에러 발생 상태.
  *  - `error`: 발생한 에러 객체.
- *  - `data`: 성공 시 API로부터 반환된 데이터 (`{ success: boolean; message?: string }`).
+ *  - `data`: 성공 시 API로부터 반환된 데이터 (`{ sreportId: number }`).
  */
 export const useCreateReportAndEndSession = () => {
   const queryClient = useQueryClient();
@@ -167,14 +167,15 @@ export const useCreateReportAndEndSession = () => {
   const currentCounsIdFromStore = useCounselingStore((state) => state.currentSessionId);
 
   return useMutation<
-    { success: boolean; message?: string }, // 성공 시 반환 타입
+    { sreportId: number }, // 성공 시 반환 타입 (명세에 따름)
     Error, // 에러 타입
     string, // 뮤테이트 함수 입력 타입 (counsId)
-    unknown // 컨텍스트 타입 (여기서는 사용 안 함)
+    unknown // 컨텍스트 타입
   >({
     mutationFn: (counsId: string) => createReportAndEndSession(counsId),
     onSuccess: (data, counsId) => {
-      console.log('레포트 생성 및 세션 종료 성공:', data);
+      // data는 이제 { sreportId: number } 타입입니다.
+      console.log('레포트 생성 및 세션 종료 성공:', data, '생성된 레포트 ID:', data.sreportId);
       // 현재 스토어의 세션 ID와 뮤테이션 대상 ID가 같으면 스토어 상태도 업데이트
       if (counsId === currentCounsIdFromStore) {
         setIsCurrentSessionClosed(true);
@@ -201,7 +202,7 @@ export const useCreateReportAndEndSession = () => {
       queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
       // TODO: 레포트 관련 쿼리도 무효화 필요 (예: reportQueryKeys.list(), reportQueryKeys.detailByCounselId(counsId))
       // queryClient.invalidateQueries({ queryKey: reportQueryKeys.lists() });
-      // queryClient.invalidateQueries({ queryKey: ['reports', { counsId }] }); // 예시
+      // queryClient.invalidateQueries({ queryKey: ['reports', { counsId, sreportId: data.sreportId }] }); // 예시: sreportId 사용
     },
     onError: (error: Error, counsId) => {
       console.error(`레포트 생성 및 세션 종료 실패 (counsId: ${counsId}):`, error);
