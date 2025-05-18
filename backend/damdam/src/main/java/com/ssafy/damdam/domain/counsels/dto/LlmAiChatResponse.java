@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+// llm → 백엔드 채팅으로 받을 정보들
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

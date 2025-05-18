@@ -36,6 +36,7 @@ public class WebClientConfig {
                 .build();
     }
 
+    @Bean
     public WebClient textWebClient(AnalyzeApiProperties props) {
         return WebClient.builder()
                 .baseUrl(props.getTextUrl())

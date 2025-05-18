@@ -3,8 +3,10 @@ package com.ssafy.damdam.domain.counsels.controller;
 import java.net.URI;
 import java.security.Principal;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import com.ssafy.damdam.domain.counsels.service.AiService;
+import com.ssafy.damdam.domain.reports.dto.SessionReportOutputDto;
 import com.ssafy.damdam.domain.users.dto.auth.CustomOAuth2User;
 import com.ssafy.damdam.global.aws.s3.S3FileUploadService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -64,20 +66,19 @@ public class CounselController {
 	)
 	public void uploadAudio(
 			@PathVariable Long counsId,
-			@RequestPart("file")
+			@RequestParam("file")
 			@Parameter(description = "업로드할 오디오 파일", required = true, content = @Content(schema = @Schema(type = "string", format = "binary")))
 			MultipartFile file,
 
-			@RequestPart("messageOrder")
+			@RequestParam("messageOrder")
 			@Parameter(description = "메시지 순서", required = true)
 			int messageOrder,
 
 			@AuthenticationPrincipal CustomOAuth2User user
-	) {
+	) throws ExecutionException, InterruptedException {
 		chatService.handleVoiceMessage(
 				counsId,
 				user.getUserId(),
-				user.getNickname(),
 				messageOrder,
 				file
 		);
@@ -109,19 +110,18 @@ public class CounselController {
 	public ResponseEntity<Void> closeCounsel(@PathVariable Long counsId) {
 		// RDB에서 isClosed 플래그 업데이트
 		counselService.closeCounsel(counsId);
-
 		// Redis에 쌓인 대화 이력 삭제
 		chatService.endCounsel(counsId);
 
 		return ResponseEntity.noContent().build();
 	}
 
-//	@PostMapping("/{counsId}/reports")
-//	public ResponseEntity<Void> reportCounsel(
-//		@PathVariable Long counsId
-//	) {
-//		counselService.reportCounsel(counsId);
-//		return ResponseEntity.ok(null);
-//	}
+	@PostMapping("/{counsId}/reports")
+	public ResponseEntity<SessionReportOutputDto> reportCounsel(
+		@PathVariable Long counsId
+	) {
+		SessionReportOutputDto dto = counselService.reportCounsel(counsId);
+		return ResponseEntity.ok(dto);
+	}
 
 }
