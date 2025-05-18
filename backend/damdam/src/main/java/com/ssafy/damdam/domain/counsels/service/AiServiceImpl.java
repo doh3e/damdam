@@ -1,5 +1,6 @@
 package com.ssafy.damdam.domain.counsels.service;
 
+import static com.ssafy.damdam.domain.counsels.exception.CounsExceptionCode.COUNSEL_NOT_FOUND;
 import static com.ssafy.damdam.domain.users.exception.user.UserExceptionCode.*;
 import static com.ssafy.damdam.global.redis.exception.RedisExceptionCode.*;
 
@@ -7,6 +8,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 
+import com.ssafy.damdam.domain.counsels.entity.Counseling;
+import com.ssafy.damdam.domain.counsels.exception.CounsException;
+import com.ssafy.damdam.domain.counsels.repository.CounselingRepository;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,6 +63,7 @@ public class AiServiceImpl implements AiService {
 	private final RedisTemplate<String, Object> redisTemplate;
 	private final CounselSessionRepository sessionRepository;
 	private final S3FileUploadService s3FileUploadService;
+	private final CounselingRepository counselingRepository;
 
 	// 값이 없거나 특정되지 않은 경우 null화 하는 함수
 	private String normalizeEnumValue(String v) {
@@ -140,6 +145,7 @@ public class AiServiceImpl implements AiService {
 	}
 
 	@Override
+	@Transactional
 	public LlmSummaryResponse getSessionReport(Long counsId) throws JsonProcessingException {
 
 		// 1. 레디스 세션 불러오기
@@ -164,8 +170,13 @@ public class AiServiceImpl implements AiService {
 		// 3. 레디스에 있는 것들 S3에 json 형태로 업로드
 		String s3Url = s3FileUploadService.uploadFullText(request);
 		log.info("uploaded full chatting s3 url: {}", s3Url);
+		// 4. counseling entity에 s3url update
+		Counseling counseling = counselingRepository.findById(counsId)
+			.orElseThrow(() -> new CounsException(COUNSEL_NOT_FOUND));
 
-		// 4. DTO 반환
+		counseling.updateS3Link(s3Url);
+
+		// 5. DTO 반환
 
 		return llmResponse;
 	}
