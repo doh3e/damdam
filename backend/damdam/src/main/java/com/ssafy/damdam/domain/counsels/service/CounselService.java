@@ -3,6 +3,7 @@ package com.ssafy.damdam.domain.counsels.service;
 import java.util.List;
 
 import com.ssafy.damdam.domain.counsels.dto.CounselingDto;
+import com.ssafy.damdam.domain.reports.dto.SessionReportOutputDto;
 
 public interface CounselService {
 
@@ -18,4 +19,5 @@ public interface CounselService {
 
 	void closeCounsel(Long counsId);
 
+	SessionReportOutputDto reportCounsel(Long counsId);
 }

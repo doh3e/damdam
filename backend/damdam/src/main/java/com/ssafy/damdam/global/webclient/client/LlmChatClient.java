@@ -1,6 +1,6 @@
 package com.ssafy.damdam.global.webclient.client;
 
-import com.ssafy.damdam.domain.counsels.dto.LlmAiChatRequest;
+import com.ssafy.damdam.domain.counsels.dto.LlmAiChatRequestDto;
 import com.ssafy.damdam.domain.counsels.dto.LlmAiChatResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +16,7 @@ public class LlmChatClient {
 
     private final WebClient chatWebClient;
 
-    public LlmAiChatResponse requestChatResponse(LlmAiChatRequest request) {
+    public LlmAiChatResponse requestChatResponse(LlmAiChatRequestDto request) {
         log.info("[LLM 요청 시작] payload={}", request);
 
         return chatWebClient.post()

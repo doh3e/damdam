@@ -141,8 +141,7 @@ public class UserServiceImpl implements UserService {
 		Users user = validateUser();
 
 		UserSurvey survey = userSurveyRepository
-				.findByUsers_UserId(user.getUserId())
-				.orElseThrow(() -> new UserException(USER_SURVEY_NOT_FOUND));
+				.findByUsers_UserId(user.getUserId()).orElse(null);
 
 		return UserSurveyOutputDto.fromEntity(survey);
 	}
@@ -160,9 +159,11 @@ public class UserServiceImpl implements UserService {
 	public void deleteSurvey() {
 		Users user = validateUser();
 		UserSurvey survey = userSurveyRepository
-			.findByUsers_UserId(user.getUserId())
-			.orElseThrow(() -> new UserException(USER_SURVEY_NOT_FOUND));
+			.findByUsers_UserId(user.getUserId()).orElse(null);
 
+		if (survey == null) {
+			throw new UserException(USER_SURVEY_NOT_FOUND);
+		}
 		userSurveyRepository.delete(survey);
 	}
 }

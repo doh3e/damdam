@@ -4,21 +4,20 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 감정분석 api에 음성분석 요청 시 풀로 받아오는 정보
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AudioApiFullResponse {
+public class TextApiFullResponse {
     private String message;
-    private String filename;
-    private Result result;
+    private String text;
+    private AudioApiFullResponse.Result result;
 
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Result {
         private String emotion;
-        private EmotionScores emotion_scores;
+        private AudioApiFullResponse.EmotionScores emotion_scores;
         private String language;
         private String event;
     }
