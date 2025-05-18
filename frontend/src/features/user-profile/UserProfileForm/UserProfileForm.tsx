@@ -1,11 +1,12 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useProfileStore } from '@/app/store/userProfileStore';
 import { getUserProfile, updateUserProfile } from '@/entities/user/model/api';
 import { Gender, Age, MBTI } from '@/shared/consts/enum';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { UserProfile } from '@/entities/user/model/types';
+import AlertModal from '@/shared/ui/alertmodal';
 
 export default function UserProfileForm() {
   const {
@@ -67,9 +68,9 @@ export default function UserProfileForm() {
 
     try {
       await updateUserProfile(formData);
-      alert('프로필이 성공적으로 저장되었습니다!');
+      setShowAlert(true);
     } catch (error) {
-      alert('저장에 실패했습니다.');
+      setErrorAlert(true);
     }
   };
 
@@ -79,26 +80,53 @@ export default function UserProfileForm() {
     setProfileImage(file || null);
   };
 
+  // alert 모달
+  const [showAlert, setShowAlert] = useState(false);
+  const [showErrorAlert, setErrorAlert] = useState(false);
+
   return (
     <form className="w-full flex flex-col gap-4">
       {/* 프로필 이미지 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">프로필 이미지</label>
-        <div className="flex items-center gap-4">
-          <div className="relative w-20 h-20 rounded-full overflow-hidden border border-gray-300">
-            {preview ? (
-              <img src={preview} alt="프로필 이미지" className="object-cover w-full h-full" />
-            ) : (
-              <Image src="/profile.png" alt="기본 이미지" fill className="object-cover" />
-            )}
-          </div>
-          <input type="file" accept="image/*" onChange={handleImageChange} />
+        <span className="font-semibold">프로필 이미지</span>
+        <div className="relative w-24 h-24 rounded-full overflow-hidden border border-gray-300 my-2 group">
+          <Image
+            src={preview || '/profile.png'}
+            alt="프로필 이미지"
+            fill
+            className="object-cover cursor-pointer"
+            onClick={() => document.getElementById('userImageInput')?.click()}
+          />
+
+          {/* 숨겨진 input 파일 필드 */}
+          <input
+            type="file"
+            id="userImageInput"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                setProfileImage(file); // Zustand에 저장
+              }
+            }}
+          />
+
+          {/* 연필 아이콘 버튼 */}
+          <button
+            type="button"
+            onClick={() => document.getElementById('userImageInput')?.click()}
+            className="absolute bottom-1.5 right-1.5 bg-white rounded-full p-1 shadow hover:scale-105 transition"
+            aria-label="프로필 이미지 변경"
+          >
+            ✏️
+          </button>
         </div>
       </div>
 
       {/* 닉네임 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">닉네임</label>
+        <label className="block text-lg font-bold text-gray-700 mb-1">닉네임</label>
         <input
           type="text"
           value={nickname}
@@ -110,7 +138,7 @@ export default function UserProfileForm() {
 
       {/* 나이 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">나이</label>
+        <label className="block text-lg font-bold text-gray-700 mb-1">나이</label>
         <select
           value={age}
           onChange={(e) => setAge(e.target.value as Age)}
@@ -126,7 +154,7 @@ export default function UserProfileForm() {
 
       {/* 성별 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">성별</label>
+        <label className="block text-lg font-bold text-gray-700 mb-1">성별</label>
         <select
           value={gender}
           onChange={(e) => setGender(e.target.value as Gender)}
@@ -142,7 +170,7 @@ export default function UserProfileForm() {
 
       {/* 직업 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">직업</label>
+        <label className="block text-lg font-bold text-gray-700 mb-1">직업</label>
         <input
           type="text"
           value={career}
@@ -153,7 +181,7 @@ export default function UserProfileForm() {
 
       {/* MBTI */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">MBTI</label>
+        <label className="block text-lg font-bold text-gray-700 mb-1">MBTI</label>
         <select
           value={mbti}
           onChange={(e) => setMbti(e.target.value as MBTI)}
@@ -177,6 +205,8 @@ export default function UserProfileForm() {
       >
         저장하기
       </button>
+      {showAlert && <AlertModal message="프로필이 성공적으로 저장되었습니다!" onClose={() => setShowAlert(false)} />}
+      {showErrorAlert && <AlertModal message="저장에 실패하였습니다" onClose={() => setErrorAlert(false)} />}
     </form>
   );
 }
