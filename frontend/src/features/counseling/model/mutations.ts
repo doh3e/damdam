@@ -4,7 +4,6 @@
  * STT 요청을 위한 뮤테이션을 추가합니다.
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { 상담_API } from '@/shared/api'; // 이제 index.ts를 통해 apiClient as 상담_API를 가져옴
 import { CounselingSession } from '@/entities/counseling/model/types';
 import { counselingQueryKeys } from '@/entities/counseling/model/queries'; // 경로 수정: queryKeys -> queries
 import { useCounselingStore } from '@/features/counseling/model/counselingStore';
