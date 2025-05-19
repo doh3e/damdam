@@ -80,18 +80,26 @@ export default function UserProfileForm() {
   // 저장 처리 (PATCH 204 응답 → GET으로 동기화)
   const handleSave = async () => {
     try {
+      // 닉네임 공백 검사
+      if (!nickname.trim()) {
+        alert('닉네임을 입력해주세요.');
+        return;
+      }
       const formData = new FormData();
       if (profileImage) formData.append('profileImage', profileImage);
-      formData.append('nickname', (nickname ?? '').trim() || '내담이');
+      formData.append('nickname', nickname.trim());
       formData.append('age', age);
       formData.append('gender', gender);
       formData.append('career', career);
       formData.append('mbti', mbti);
 
       // 1. PATCH: 서버에 저장 (204 No Content 응답)
-      await updateUserProfile(formData);
+      const patchResult = await updateUserProfile(formData);
 
       // 2. GET: 최신 프로필 정보 다시 받아오기
+      if (patchResult === null) {
+        console.log('204 No Content 응답으로 저장 성공!');
+      }
       const updatedProfile = await getUserProfile();
 
       // 3. Zustand 등 상태 동기화
