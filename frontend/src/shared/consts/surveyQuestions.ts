@@ -3,7 +3,8 @@ import { SurveySection } from '@/shared/types/survey';
 // 평가 항목: 우울 (PHQ-9)
 export const depressionSection: SurveySection = {
   category: 'depression',
-  description: '“지난 2주 동안 다음의 문제들로 인해서 얼마나 자주 방해를 받았나요?”',
+  description:
+    '📝 <span class="text-orange-500 font-bold">최근 2주간</span> 동안 다음의 문제들로 얼마나 자주 방해를 받았나요?',
   options: [
     { value: 0, label: '전혀없음' },
     { value: 1, label: '며칠간' },
@@ -29,7 +30,8 @@ export const depressionSection: SurveySection = {
 // 평가 항목: 불안 (GAD-7)
 export const anxietySection: SurveySection = {
   category: 'anxiety',
-  description: '“지난 2주 동안 다음의 문제들로 인해서 얼마나 자주 방해를 받았나요?”',
+  description:
+    '📝 <span class="text-orange-500 font-bold">최근 2주간</span> 동안 다음의 문제들로 얼마나 자주 방해를 받았나요?',
   options: [
     { value: 0, label: '전혀없음' },
     { value: 1, label: '며칠간' },
@@ -50,7 +52,8 @@ export const anxietySection: SurveySection = {
 // 평가 항목: 스트레스 (PSS)
 export const stressSection: SurveySection = {
   category: 'stress',
-  description: '“지난 30일 동안 들었던 기분이나 생각에 대해 여쭤볼게요!”',
+  description:
+    '📝 <span class="text-orange-500 font-bold">지난 30일</span> 동안 들었던 기분이나 생각에 대해 여쭤볼게요!',
   options: [
     { value: 0, label: '전혀 없음' },
     { value: 1, label: '거의 없음' },
@@ -75,7 +78,7 @@ export const stressSection: SurveySection = {
 // 평가 항목: 스트레스 요인
 export const stressReasonSection: SurveySection = {
   category: 'stressReason',
-  description: '“혹시 요즘 신경 쓰이는 일이나 생각들이 있다면 나눠볼래요?”',
+  description: '💬 <span class="text-orange-500 font-bold">요즘 신경 쓰이는 일</span>이나 생각들이 있다면 나눠볼래요?',
   options: [],
   questions: [],
 };

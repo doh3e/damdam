@@ -2,7 +2,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useProfileStore } from '@/app/store/profileStore';
+import { useProfileStore } from '@/app/store/userProfileStore';
 
 export default function WelcomePage() {
   const { nickname } = useProfileStore();

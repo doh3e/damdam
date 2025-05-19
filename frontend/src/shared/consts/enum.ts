@@ -1,6 +1,6 @@
 // 성별 Enum
 export enum Gender {
-  UNKOWN = 'UNKOWN',
+  UNKNOWN = 'UNKNOWN',
   MALE = 'MALE',
   FEMALE = 'FEMALE',
   OTHER = 'OTHER',

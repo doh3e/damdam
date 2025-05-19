@@ -8,7 +8,6 @@ const axiosInstance: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  // withCredentials: true, // 쿠키 기반 인증 시 필요
 });
 
 // 요청 인터셉터(Zustand token 사용)
