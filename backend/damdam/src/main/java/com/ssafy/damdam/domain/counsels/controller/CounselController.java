@@ -113,6 +113,7 @@ public class CounselController {
 
 	@DeleteMapping("/{counsId}")
 	public ResponseEntity<String> deleteCounsel(@PathVariable Long counsId) {
+		chatService.deleteRedisChatting(counsId);
 		counselService.deleteCounsel(counsId);
 		return ResponseEntity.noContent().build();
 	}
