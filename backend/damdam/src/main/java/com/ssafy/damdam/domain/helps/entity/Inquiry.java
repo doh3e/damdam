@@ -1,5 +1,6 @@
 package com.ssafy.damdam.domain.helps.entity;
 
+import com.ssafy.damdam.domain.helps.dto.InquiryInputDto;
 import com.ssafy.damdam.domain.users.entity.Users;
 import com.ssafy.damdam.global.audit.BaseTimeEntity;
 
@@ -15,11 +16,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
-import lombok.ToString;
 
 @Entity
 @Getter
-@ToString
 @Table(name = "inquiry")
 public class Inquiry extends BaseTimeEntity {
 
@@ -40,7 +39,7 @@ public class Inquiry extends BaseTimeEntity {
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "category", nullable = false, length = 20)
-	private Category category;
+	private InquiryCategory category;
 
 	@Column(name = "content", columnDefinition = "TEXT", nullable = false)
 	private String content;
@@ -50,4 +49,21 @@ public class Inquiry extends BaseTimeEntity {
 
 	@Column(name = "is_answered", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
 	private Boolean isAnswered = false;
+
+	public static Inquiry createInquiry(Users user, InquiryInputDto inquiryInputDto, String file) {
+		Inquiry inquiry = new Inquiry();
+		inquiry.users = user;
+		inquiry.email = inquiryInputDto.getEmail();
+		inquiry.title = inquiryInputDto.getTitle();
+		inquiry.category = InquiryCategory.valueOf(inquiryInputDto.getCategory());
+		inquiry.content = inquiryInputDto.getContent();
+		inquiry.file = file;
+		inquiry.isAnswered = false;
+
+		return inquiry;
+	}
+
+	public void isAnswered() {
+		this.isAnswered = true;
+	}
 }
