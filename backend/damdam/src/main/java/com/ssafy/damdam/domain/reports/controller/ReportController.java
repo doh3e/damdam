@@ -1,5 +1,6 @@
 package com.ssafy.damdam.domain.reports.controller;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,10 +9,14 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ssafy.damdam.domain.reports.dto.CreatePeriodReportResponse;
+import com.ssafy.damdam.domain.reports.dto.PeriodReportInputDto;
 import com.ssafy.damdam.domain.reports.dto.PeriodReportListDto;
 import com.ssafy.damdam.domain.reports.dto.PeriodReportOutputDto;
 import com.ssafy.damdam.domain.reports.dto.SessionReportListDto;
@@ -93,6 +98,16 @@ public class ReportController {
 	) {
 		reportService.deletePeriodReport(pReportId);
 		return ResponseEntity.noContent().build();
+	}
+
+	@PostMapping("/periodic")
+	public ResponseEntity<CreatePeriodReportResponse> createPeriodReport(
+		@RequestBody PeriodReportInputDto periodReportInputDto
+	) {
+		Long pReportId = reportService.createPeriodReport(periodReportInputDto);
+		return ResponseEntity
+			.created(URI.create(String.valueOf(pReportId)))
+			.body(new CreatePeriodReportResponse(pReportId));
 	}
 
 }
