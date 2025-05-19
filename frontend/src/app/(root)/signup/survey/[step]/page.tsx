@@ -1,5 +1,5 @@
 'use client';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, usePathname } from 'next/navigation';
 import { surveySections } from '@/shared/consts/surveyQuestions';
 import { useSurveyStore } from '@/app/store/surveyStore';
 import { useState, useEffect } from 'react';
@@ -63,11 +63,12 @@ export default function SurveyStepPage() {
   };
 
   // 페이지 이탈 시 초기화
+  const pathname = usePathname();
   useEffect(() => {
     return () => {
-      reset();
+      if (!pathname.startsWith('/signup/survey')) reset();
     };
-  }, [reset]);
+  }, [pathname, reset]);
 
   return (
     <div className="min-h-screen flex flex-col items-center py-2">
