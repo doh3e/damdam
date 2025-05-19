@@ -43,19 +43,17 @@ export default function UserProfileForm() {
 
   // 이미지 미리보기 (Base64 → File → 서버 URL 순서로 우선 적용)
   useEffect(() => {
-    // 1. 사용자가 새 파일을 업로드한 경우 (메모리 미리보기)
     if (profileImage) {
       const url = URL.createObjectURL(profileImage);
       setPreview(url);
       return () => URL.revokeObjectURL(url);
     }
 
-    // 2. 새로고침 후 localStorage에 Base64가 있으면 그걸로 미리보기
+    // 새로고침 후 localStorage에 Base64가 있으면 그걸로 미리보기
     const base64 = typeof window !== 'undefined' ? localStorage.getItem('profile-image-preview') : null;
     if (base64) {
       setPreview(base64);
     } else if (profileImageUrl) {
-      // 3. 서버에서 받은 이미지 URL로 미리보기
       setPreview(profileImageUrl);
     } else {
       setPreview('/profile.png');
@@ -79,7 +77,7 @@ export default function UserProfileForm() {
     }
   }, [data, setNickname, setAge, setGender, setCareer, setMbti, setProfileImageUrl]);
 
-  // 저장 처리
+  // 저장 처리 (PATCH 204 응답 → GET으로 동기화)
   const handleSave = async () => {
     try {
       const formData = new FormData();
@@ -90,8 +88,13 @@ export default function UserProfileForm() {
       formData.append('career', career);
       formData.append('mbti', mbti);
 
-      const updatedProfile = await updateUserProfile(formData);
+      // 1. PATCH: 서버에 저장 (204 No Content 응답)
+      await updateUserProfile(formData);
 
+      // 2. GET: 최신 프로필 정보 다시 받아오기
+      const updatedProfile = await getUserProfile();
+
+      // 3. Zustand 등 상태 동기화
       setNickname(updatedProfile.nickname);
       setAge(updatedProfile.age);
       setGender(updatedProfile.gender);
@@ -100,12 +103,14 @@ export default function UserProfileForm() {
       setProfileImageUrl(updatedProfile.profileImage);
       setProfileImage(null);
 
-      // 저장 성공 시 Base64 미리보기 삭제 (서버 이미지로 대체)
+      // 4. 저장 성공 시 Base64 미리보기 삭제 (서버 이미지로 대체)
       if (typeof window !== 'undefined') {
         localStorage.removeItem('profile-image-preview');
       }
 
+      // 5. React Query 캐시 무효화 (최신 데이터 반영)
       await queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+
       setShowAlert(true);
     } catch (error) {
       console.error('프로필 저장 에러:', error);
@@ -139,7 +144,7 @@ export default function UserProfileForm() {
               const file = e.target.files?.[0];
               if (file) {
                 setProfileImage(file);
-                // Base64 변환 후 localStorage에 저장
+                // Base64 변환 후 localStorage에 저장 (저장 전 미리보기 UX)
                 const base64 = await fileToBase64(file);
                 if (typeof window !== 'undefined') {
                   localStorage.setItem('profile-image-preview', base64);
