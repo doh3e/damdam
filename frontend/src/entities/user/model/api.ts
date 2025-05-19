@@ -12,5 +12,5 @@ export async function updateUserProfile(formData: FormData): Promise<UserProfile
   const res = await axiosInstance.patch<UserProfile>('/users/profile', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-  return res.data; // 수정: 응답 데이터 반환
+  return res.data;
 }
