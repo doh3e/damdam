@@ -197,7 +197,7 @@ public class CounselServiceImpl implements CounselService {
 		SessionReport sessionReport = SessionReport.of(
 			counseling,
 			response.getSummary(),
-			response.getAnalyse(),
+			response.getAnalyze(),
 			response.getArousal(),
 			response.getValence()
 		);

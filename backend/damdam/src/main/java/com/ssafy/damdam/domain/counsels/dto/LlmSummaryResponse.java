@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class LlmSummaryResponse {
 	private String summary;
-	private String analyse;
+	private String analyze;
 	private String arousal;
 	private String valence;
 }
