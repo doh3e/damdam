@@ -8,6 +8,16 @@ import Image from 'next/image';
 import { UserProfile } from '@/entities/user/model/types';
 import AlertModal from '@/shared/ui/alertmodal';
 
+// 파일을 Base64(데이터 URL)로 변환하는 함수
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new window.FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function UserProfileForm() {
   const {
     nickname,
@@ -31,31 +41,33 @@ export default function UserProfileForm() {
   const [showErrorAlert, setErrorAlert] = useState(false);
   const queryClient = useQueryClient();
 
-  // 이미지 미리보기
+  // 이미지 미리보기 (Base64 → File → 서버 URL 순서로 우선 적용)
   useEffect(() => {
+    // 1. 사용자가 새 파일을 업로드한 경우 (메모리 미리보기)
     if (profileImage) {
-      // 사용자가 새 파일 선택한 경우 메모리 내 임시 URL로 미리보기
       const url = URL.createObjectURL(profileImage);
-      console.log('로컬 미리보기:', url);
       setPreview(url);
       return () => URL.revokeObjectURL(url);
+    }
+
+    // 2. 새로고침 후 localStorage에 Base64가 있으면 그걸로 미리보기
+    const base64 = typeof window !== 'undefined' ? localStorage.getItem('profile-image-preview') : null;
+    if (base64) {
+      setPreview(base64);
     } else if (profileImageUrl) {
-      // 서버에서 받은 이미지 URL로 미리보기
-      console.log('서버 이미지:', profileImageUrl);
+      // 3. 서버에서 받은 이미지 URL로 미리보기
       setPreview(profileImageUrl);
     } else {
-      // 기본 이미지
       setPreview('/profile.png');
     }
   }, [profileImage, profileImageUrl]);
 
-  // 사용자 정보 불러오기
+  // 사용자 정보 불러오기 및 Zustand 동기화
   const { data } = useQuery<UserProfile, Error>({
     queryKey: ['userProfile'],
     queryFn: getUserProfile,
   });
 
-  // zustand 상태 동기화
   useEffect(() => {
     if (data) {
       setNickname(data.nickname);
@@ -64,14 +76,12 @@ export default function UserProfileForm() {
       setCareer(data.career);
       setMbti(data.mbti);
       setProfileImageUrl(data.profileImage);
-      // profileImage(File)는 직접 선택한 경우에만 setProfileImage로 갱신
     }
   }, [data, setNickname, setAge, setGender, setCareer, setMbti, setProfileImageUrl]);
 
   // 저장 처리
   const handleSave = async () => {
     try {
-      // 1. FormData 구성
       const formData = new FormData();
       if (profileImage) formData.append('profileImage', profileImage);
       formData.append('nickname', (nickname ?? '').trim() || '내담이');
@@ -80,25 +90,25 @@ export default function UserProfileForm() {
       formData.append('career', career);
       formData.append('mbti', mbti);
 
-      // 2. PATCH 요청 (프로필 수정)
       const updatedProfile = await updateUserProfile(formData);
 
-      // 3. Zustand 상태 동기화
       setNickname(updatedProfile.nickname);
       setAge(updatedProfile.age);
       setGender(updatedProfile.gender);
       setCareer(updatedProfile.career);
       setMbti(updatedProfile.mbti);
       setProfileImageUrl(updatedProfile.profileImage);
-      setProfileImage(null); // 파일 상태 초기화
+      setProfileImage(null);
 
-      // 4. React Query 캐시 무효화 (최신 데이터 반영)
+      // 저장 성공 시 Base64 미리보기 삭제 (서버 이미지로 대체)
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('profile-image-preview');
+      }
+
       await queryClient.invalidateQueries({ queryKey: ['userProfile'] });
-
-      // 5. 성공 모달 표시
       setShowAlert(true);
     } catch (error) {
-      // 6. 실패 모달 표시
+      console.error('프로필 저장 에러:', error);
       setErrorAlert(true);
     }
   };
@@ -111,7 +121,7 @@ export default function UserProfileForm() {
         <div className="relative w-24 h-24 rounded-full overflow-hidden border border-gray-300 my-2 group">
           <Image
             key={preview}
-            src={(preview || '/profile.png') as string}
+            src={preview || '/profile.png'}
             alt="프로필 이미지"
             fill
             className="object-cover cursor-pointer"
@@ -125,10 +135,15 @@ export default function UserProfileForm() {
             id="userImageInput"
             accept="image/*"
             className="hidden"
-            onChange={(e) => {
+            onChange={async (e) => {
               const file = e.target.files?.[0];
               if (file) {
-                setProfileImage(file); // Zustand에 저장
+                setProfileImage(file);
+                // Base64 변환 후 localStorage에 저장
+                const base64 = await fileToBase64(file);
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('profile-image-preview', base64);
+                }
               }
             }}
           />
@@ -161,7 +176,7 @@ export default function UserProfileForm() {
       <div>
         <label className="block text-lg font-bold text-gray-700 mb-1">나이</label>
         <select
-          value={age || Age.UNKNOWN}
+          value={age}
           onChange={(e) => setAge(e.target.value as Age)}
           className="w-full border rounded-md px-3 py-2"
         >
@@ -177,7 +192,7 @@ export default function UserProfileForm() {
       <div>
         <label className="block text-lg font-bold text-gray-700 mb-1">성별</label>
         <select
-          value={gender || Gender.UNKNOWN}
+          value={gender}
           onChange={(e) => setGender(e.target.value as Gender)}
           className="w-full border rounded-md px-3 py-2"
         >
@@ -204,7 +219,7 @@ export default function UserProfileForm() {
       <div>
         <label className="block text-lg font-bold text-gray-700 mb-1">MBTI</label>
         <select
-          value={mbti || MBTI.UNKNOWN}
+          value={mbti}
           onChange={(e) => setMbti(e.target.value as MBTI)}
           className="w-full border rounded-md px-3 py-2"
         >
