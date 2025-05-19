@@ -13,6 +13,7 @@ import {
   faGear,
   faRightFromBracket,
 } from '@fortawesome/free-solid-svg-icons';
+
 const user = {
   nickname: '내담이',
   email: 'user@example.com',
