@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @Builder
 public class LlmAiChatRequest {
-	private ChatInputDto chatInputDto;
 	private UserContextDto userContextDto;
+	private ChatInputDto chatInputDto;
 	private EmotionDto emotionDto;
 }
