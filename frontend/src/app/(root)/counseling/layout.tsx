@@ -13,22 +13,8 @@ import React from 'react';
  * @returns {JSX.Element} 상담 섹션 레이아웃
  */
 const CounselingLayout = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <main className="flex flex-col min-h-screen bg-background">
-      {/* 
-        향후 이 레이아웃에 상담 섹션 전용 헤더, 네비게이션 바, 푸터 등이 추가될 수 있습니다.
-        예를 들어, 상담 중임을 나타내는 특별한 헤더나, 상담 관련 메뉴를 포함하는 사이드바 등입니다.
-        현재는 기본적인 구조만 제공하며, children을 통해 실제 페이지 내용이 렌더링됩니다.
-      */}
-      <div className="flex-grow container mx-auto p-4">{children}</div>
-      {/* 예시: 상담 섹션 전용 푸터 */}
-      {/* 
-      <footer className="bg-muted p-4 text-center text-muted-foreground text-sm">
-        담담 AI 상담 서비스 - 상담 섹션
-      </footer> 
-      */}
-    </main>
-  );
+  // RootLayout의 <main> 스타일이 적용되도록 특별한 래퍼 없이 children을 반환합니다.
+  return <>{children}</>;
 };
 
 export default CounselingLayout;

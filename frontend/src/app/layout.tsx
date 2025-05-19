@@ -8,6 +8,7 @@ import { Header } from '@/widgets/Header'; // Header 위젯 가져오기
 import { BottomNavigation } from '@/widgets/BottomNavigation'; // BottomNavigation 위젯 가져오기
 import QueryClientProviders from './providers/QueryClientProviders';
 import { ThemeProvider } from './providers/ThemeProvider';
+import AudioEncoderInitializer from './providers/AudioEncoderInitializer';
 import { config } from '@fortawesome/fontawesome-svg-core';
 import '@fortawesome/fontawesome-svg-core/styles.css';
 config.autoAddCss = false;
@@ -82,15 +83,17 @@ export default function RootLayout({
         className={cn('min-h-screen bg-muted font-sans antialiased', nonoSans.variable)}
         suppressHydrationWarning={true}
       >
+        {/* === Audio Encoder Initializer === */}
+        <AudioEncoderInitializer />
         {/* === 앱 전체 뷰 컨테이너 === */}
         {/* h-screen으로 높이 고정, overflow-hidden으로 내부 스크롤 제한 */}
         <div className="mx-auto flex h-screen max-w-screen-sm flex-col overflow-hidden bg-background shadow-md">
           {/* === 헤더 영역 === */}
           <Header />
           {/* === 메인 콘텐츠 영역 === */}
-          {/* flex-1으로 남은 공간 채우고, overflow-y-auto로 자체 스크롤 */}
+          {/* flex-1으로 남은 공간 채우고, overflow-hidden으로 내부 스크롤 제한 */}
           {/* globals.css에 정의된 커스텀 스크롤바 스타일 적용 (페일 코랄 핑크) */}
-          <main className="flex-1 overflow-y-auto scrollbar-custom">
+          <main className="flex-1 scrollbar-custom overflow-hidden">
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
               <QueryClientProviders>{children}</QueryClientProviders>
             </ThemeProvider>

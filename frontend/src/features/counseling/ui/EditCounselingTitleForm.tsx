@@ -5,12 +5,14 @@
  * 상담 세션 제목 수정 폼 컴포넌트입니다.
  * FSD 아키텍처에 따라 `features` 레이어의 `counseling` 슬라이스 내 `ui`에 위치합니다.
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useUpdateCounselingTitle } from '@/entities/counseling/model/mutations';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/shared/ui/dialog';
+import { useQueryClient } from '@tanstack/react-query';
+import { counselingQueryKeys } from '@/entities/counseling/model/queries';
 
 export interface EditCounselingTitleFormProps {
   /** 수정할 상담 세션의 ID */
@@ -40,10 +42,24 @@ const EditCounselingTitleForm = ({
 }: EditCounselingTitleFormProps): React.ReactElement => {
   // 상태 관리
   const [titleInput, setTitleInput] = useState(currentTitle);
+  const queryClient = useQueryClient();
+
+  // currentTitle prop이 변경되거나 _폼이 열릴 때_ titleInput 상태를 업데이트합니다.
+  useEffect(() => {
+    if (isOpen) {
+      // 폼이 열려 있을 때만 동기화 (또는 필요시 isOpen 조건 없이 currentTitle 변경 시 항상 동기화)
+      setTitleInput(currentTitle);
+    }
+  }, [currentTitle, isOpen]); // isOpen을 의존성에 추가하여 폼이 열릴 때마다 실행되도록 함
 
   // Tanstack Query 뮤테이션 훅 초기화
   const mutation = useUpdateCounselingTitle({
-    onSuccess: () => {
+    onSuccess: (updatedSession, variables) => {
+      // 캐시 무효화 먼저 실행
+      queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(variables.counsId) });
+      queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
+
+      // 기존 로직 실행
       onSuccess?.();
       onClose();
     },
@@ -68,7 +84,7 @@ const EditCounselingTitleForm = ({
       mutation.mutate({
         counsId,
         payload: {
-          couns_title: trimmedTitle,
+          counsTitle: trimmedTitle,
         },
       });
     },

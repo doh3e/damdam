@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Textarea } from '@/shared/ui/textarea';
 import { Button } from '@/shared/ui/button';
-import { Paperclip, Mic, SendHorizonal } from 'lucide-react';
+import { Mic, SendHorizonal, StopCircle, Loader2, X } from 'lucide-react';
 import { useCounselingStore } from '@/features/counseling/model/counselingStore';
 import { type StompSendUserMessagePayload } from '@/features/counseling/hooks/useWebSocket';
 import { type ChatMessage, MessageType, SenderType } from '@/entities/counseling/model/types';
+import { useSTTStore, RecordingState } from '@/features/counseling/model/sttStore';
+import { useAudioRecording } from '@/features/counseling/hooks/useAudioRecording';
+import { useRequestSTTMutation, useUploadVoiceFileMutation } from '@/features/counseling/model/mutations';
 
 /**
  * @interface SendMessageFormProps
@@ -15,6 +18,7 @@ import { type ChatMessage, MessageType, SenderType } from '@/entities/counseling
  * @property {boolean} disabled - 폼을 비활성화할지 여부 (옵션, 예: 상담 종료 시)
  * @property {(payload: StompSendUserMessagePayload) => void} [sendUserMessage] - 웹소켓을 통해 메시지를 전송하는 함수.
  * @property {boolean} [isWebSocketConnected] - 웹소켓 연결 상태.
+ * @property {() => void} [onUserActivity] - 사용자 활동(예: 입력) 시 호출될 콜백.
  */
 interface SendMessageFormProps {
   currentCounsId: string | null;
@@ -22,6 +26,7 @@ interface SendMessageFormProps {
   disabled?: boolean;
   sendUserMessage?: (payload: StompSendUserMessagePayload) => void;
   isWebSocketConnected?: boolean;
+  onUserActivity?: () => void;
 }
 
 /**
@@ -38,95 +43,340 @@ const SendMessageForm = ({
   disabled,
   sendUserMessage,
   isWebSocketConnected,
+  onUserActivity,
 }: SendMessageFormProps): React.ReactElement => {
   const [newMessageInput, setNewMessageInput] = useState('');
-  const addMessageToStore = useCounselingStore((state) => state.addMessage);
   const messages = useCounselingStore((state) => state.messages);
+  const {
+    recordingState,
+    audioBlob,
+    errorMessage: sttErrorMessageFromStore,
+    setRecordingState,
+    setAudioBlob,
+    setSttResultText,
+    setErrorMessage: setSttErrorMessageToStore,
+    resetSTTState,
+    messageOrderForAudio,
+    setMessageOrderForAudio,
+    isCurrentMessageFromVoice,
+    setIsCurrentMessageFromVoice,
+  } = useSTTStore();
 
-  const handleInputChange = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setNewMessageInput(event.target.value);
+  const { startRecording, stopRecording, requestMicrophonePermission } = useAudioRecording();
+  const sttMutation = useRequestSTTMutation();
+  const uploadVoiceMutation = useUploadVoiceFileMutation();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // STT 결과가 변경되면 입력창에 반영
+  useEffect(() => {
+    const sttResult = useSTTStore.getState().sttResultText;
+    if (sttResult && isCurrentMessageFromVoice) {
+      setNewMessageInput(sttResult);
+    }
+  }, [isCurrentMessageFromVoice]);
+
+  // STT 에러 처리
+  useEffect(() => {
+    if (sttErrorMessageFromStore) {
+      console.error('STT Error from store:', sttErrorMessageFromStore);
+      setRecordingState(RecordingState.IDLE);
+    }
+  }, [sttErrorMessageFromStore, setRecordingState]);
+
+  // newMessageInput 상태 변경 시 Textarea 높이 자동 조절
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'; // 높이를 먼저 auto로 설정하여 축소 가능하게
+      let newHeight = textareaRef.current.scrollHeight;
+      const maxHeight = 120; // Tailwind CSS의 h-32 (8rem, 128px)에 근접한 최대 높이 (5줄 정도)
+      if (newHeight > maxHeight) {
+        newHeight = maxHeight;
+        textareaRef.current.style.overflowY = 'auto'; // 최대 높이 도달 시 스크롤 표시
+      } else {
+        textareaRef.current.style.overflowY = 'hidden'; // 평소에는 스크롤 숨김
+      }
+      textareaRef.current.style.height = `${newHeight}px`;
+    }
+  }, [newMessageInput]);
+
+  const handleClearVoiceInput = useCallback(() => {
+    setNewMessageInput('');
+    setAudioBlob(null);
+    setIsCurrentMessageFromVoice(false);
+    setSttResultText('');
+
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
   }, []);
+
+  const handleInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setNewMessageInput(event.target.value);
+      if (isCurrentMessageFromVoice) {
+        // setIsCurrentMessageFromVoice(false);
+      }
+      if (onUserActivity) {
+        onUserActivity();
+      }
+    },
+    [onUserActivity, isCurrentMessageFromVoice]
+  );
+
+  const handleMicButtonClick = useCallback(async () => {
+    const isFormDisabled = disabled || !isWebSocketConnected;
+    if (isFormDisabled) return;
+
+    if (recordingState === RecordingState.IDLE || recordingState === RecordingState.ERROR) {
+      if (useSTTStore.getState().sttResultText || audioBlob) {
+        handleClearVoiceInput();
+      }
+      setSttErrorMessageToStore(null);
+      const permissionGranted = await requestMicrophonePermission();
+      if (permissionGranted) {
+        startRecording();
+      }
+    } else if (recordingState === RecordingState.RECORDING) {
+      stopRecording();
+    }
+  }, [
+    disabled,
+    isWebSocketConnected,
+    recordingState,
+    requestMicrophonePermission,
+    startRecording,
+    stopRecording,
+    setSttErrorMessageToStore,
+    resetSTTState,
+    audioBlob,
+    handleClearVoiceInput,
+  ]);
+
+  // audioBlob (WAV)이 생성되고, 녹음 상태가 STOPPED일 때 STT API 요청
+  useEffect(() => {
+    console.log('[STT useEffect] Triggered. audioBlob (WAV):', audioBlob, 'recordingState:', recordingState);
+    if (audioBlob && recordingState === RecordingState.STOPPED) {
+      console.log('[STT useEffect] Condition met. Requesting STT with WAV blob...');
+      setRecordingState(RecordingState.PROCESSING_STT);
+
+      const userMessagesCount = messages.filter((msg) => msg.sender === SenderType.USER).length;
+      const nextMessageOrder = userMessagesCount + 1;
+      setMessageOrderForAudio(nextMessageOrder);
+
+      sttMutation.mutate(
+        { audioFile: audioBlob },
+        {
+          onSuccess: (data) => {
+            console.log('[STT useEffect] STT mutate onSuccess data:', data);
+            if (data && typeof data.text === 'string') {
+              setNewMessageInput(data.text);
+              setSttResultText(data.text);
+              setIsCurrentMessageFromVoice(true);
+            } else {
+              console.warn('[STT useEffect] STT mutate onSuccess: data.text is invalid', data);
+              setSttErrorMessageToStore('STT 결과가 올바르지 않습니다.');
+            }
+            setRecordingState(RecordingState.IDLE);
+          },
+          onError: (error) => {
+            console.error('[STT useEffect] STT mutate onError:', error);
+            setSttErrorMessageToStore(error.message || 'STT 변환에 실패했습니다.');
+            setRecordingState(RecordingState.ERROR);
+            setAudioBlob(null);
+            setMessageOrderForAudio(null);
+            setIsCurrentMessageFromVoice(false);
+          },
+        }
+      );
+    } else {
+      if (!audioBlob) {
+        // console.log('[STT useEffect] Condition NOT met: audioBlob (WAV) is null or undefined.');
+      }
+      if (recordingState !== RecordingState.STOPPED) {
+        // console.log(`[STT useEffect] Condition NOT met: recordingState is ${recordingState}, not STOPPED.`);
+      }
+    }
+  }, [
+    audioBlob,
+    recordingState,
+    setRecordingState,
+    sttMutation,
+    setSttResultText,
+    setSttErrorMessageToStore,
+    messages,
+    setMessageOrderForAudio,
+    setAudioBlob,
+    setIsCurrentMessageFromVoice,
+  ]);
 
   const handleSubmit = useCallback(
     (event?: React.FormEvent<HTMLFormElement>) => {
       event?.preventDefault();
-      if (!newMessageInput.trim() || !currentCounsId || !isWebSocketConnected || !sendUserMessage) return;
+      if (!newMessageInput.trim() || !currentCounsId || !isWebSocketConnected || !sendUserMessage) {
+        console.warn('[SendMessageForm] Submit prerequisites not met:', {
+          newMessageInput,
+          currentCounsId,
+          isWebSocketConnected,
+          sendUserMessageExists: !!sendUserMessage,
+        });
+        return;
+      }
 
       const trimmedMessage = newMessageInput.trim();
+      const userMessagesCount = messages.filter((message) => message.sender === SenderType.USER).length;
+      const currentMessageOrder =
+        isCurrentMessageFromVoice && messageOrderForAudio != null ? messageOrderForAudio : userMessagesCount + 1;
 
       const payload: StompSendUserMessagePayload = {
         text: trimmedMessage,
-        messageOrder: messages.length + 1,
-        isVoice: false,
+        messageOrder: currentMessageOrder,
+        isVoice: isCurrentMessageFromVoice,
       };
       sendUserMessage(payload);
+      console.log('[SendMessageForm] Message sent via WebSocket:', payload);
+
+      if (audioBlob && isCurrentMessageFromVoice && currentCounsId) {
+        console.log(
+          '[SendMessageForm] Uploading WAV audioBlob for messageOrder:',
+          currentMessageOrder,
+          'Blob:',
+          audioBlob
+        );
+        uploadVoiceMutation.mutate(
+          {
+            counsId: currentCounsId,
+            audioFile: audioBlob,
+            messageOrder: currentMessageOrder,
+          },
+          {
+            onSuccess: (uploadData) => {
+              console.log('[SendMessageForm] WAV voice file uploaded successfully:', uploadData);
+              resetSTTState();
+            },
+            onError: (uploadError) => {
+              console.error('[SendMessageForm] Failed to upload WAV voice file:', uploadError);
+              setSttErrorMessageToStore(`음성 파일 업로드에 실패했습니다: ${uploadError.message || '서버 오류'}`);
+            },
+          }
+        );
+      } else if (isCurrentMessageFromVoice && !audioBlob) {
+        console.warn(
+          '[SendMessageForm] isCurrentMessageFromVoice is true, but audioBlob is null. Voice file will not be uploaded.'
+        );
+      }
 
       setNewMessageInput('');
-    },
-    [newMessageInput, currentCounsId, isWebSocketConnected, sendUserMessage, messages]
-  );
-
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-        event.preventDefault();
-        handleSubmit();
+      if (isCurrentMessageFromVoice) {
+        // resetSTTState();
+      } else {
+        resetSTTState();
+      }
+      textareaRef.current?.focus();
+      if (onUserActivity) {
+        onUserActivity();
       }
     },
-    [handleSubmit]
+    [
+      newMessageInput,
+      currentCounsId,
+      isWebSocketConnected,
+      sendUserMessage,
+      messages,
+      audioBlob,
+      isCurrentMessageFromVoice,
+      messageOrderForAudio,
+      uploadVoiceMutation,
+      resetSTTState,
+      setSttErrorMessageToStore,
+      onUserActivity,
+    ]
   );
 
-  const isSendDisabled = !newMessageInput.trim() || !isWebSocketConnected || disabled;
-
-  const placeholderText = disabled
-    ? '종료된 상담입니다'
-    : isWebSocketConnected
-      ? '메시지를 입력하세요...'
-      : '연결 중입니다...';
-
   return (
-    <form onSubmit={handleSubmit} className="flex items-end p-4 border-t border-border bg-background shadow-sm">
+    <form onSubmit={handleSubmit} className="flex w-full items-end space-x-2">
+      {/* 마이크 버튼 */}
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        className="mr-2 text-muted-foreground hover:text-primary"
-        aria-label="Attach file"
-        title="파일 첨부 (구현 예정)"
-        disabled={disabled || !isWebSocketConnected}
+        onClick={handleMicButtonClick}
+        disabled={disabled || !isWebSocketConnected || recordingState === RecordingState.PROCESSING_STT}
+        className="flex-shrink-0 text-gray-500 hover:text-pale-coral-pink dark:text-gray-400 dark:hover:text-pale-coral-pink disabled:opacity-50"
+        aria-label={recordingState === RecordingState.RECORDING ? '녹음 중지' : '음성으로 입력하기'}
       >
-        <Paperclip className="h-5 w-5" />
+        {recordingState === RecordingState.RECORDING ? (
+          <StopCircle className="h-6 w-6 text-red-500 animate-pulse" />
+        ) : recordingState === RecordingState.PROCESSING_STT ? (
+          <Loader2 className="h-6 w-6 animate-spin" />
+        ) : (
+          <Mic className="h-6 w-6" />
+        )}
       </Button>
 
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="mr-2 text-muted-foreground hover:text-primary"
-        aria-label="Voice input"
-        title="음성 입력 (구현 예정)"
-        disabled={disabled || !isWebSocketConnected}
-      >
-        <Mic className="h-5 w-5" />
-      </Button>
+      {/* 메시지 입력 Textarea */}
+      <div className="flex-grow relative">
+        {isCurrentMessageFromVoice && audioBlob && (
+          <div className="absolute top-1/2 transform -translate-y-1/2 right-3 z-10">
+            <Button
+              type="button"
+              variant="default"
+              size="icon"
+              onClick={handleClearVoiceInput}
+              className="h-6 w-6 p-1 bg-pale-coral-pink hover:bg-pale-coral-pink/90 text-white dark:bg-tomato-red dark:hover:bg-tomato-red/90 dark:text-white rounded-full shadow-md"
+              aria-label="음성 입력 지우기"
+            >
+              <X size={14} />
+            </Button>
+          </div>
+        )}
+        <Textarea
+          ref={textareaRef}
+          value={newMessageInput}
+          onChange={handleInputChange}
+          onKeyDown={(e) => {
+            if (onUserActivity) onUserActivity();
+            if (e.key === 'Enter' && !e.shiftKey && !disabled) {
+              e.preventDefault();
+              handleSubmit();
+            }
+          }}
+          placeholder={
+            disabled
+              ? '상담이 종료되었습니다.'
+              : !isWebSocketConnected
+                ? '연결 중...'
+                : recordingState === RecordingState.RECORDING
+                  ? '음성 녹음 중... 중지하려면 버튼을 누르세요.'
+                  : recordingState === RecordingState.PROCESSING_STT
+                    ? '음성 처리 중...'
+                    : '메시지를 입력하세요... (Shift+Enter로 줄바꿈)'
+          }
+          className="w-full resize-none overflow-y-hidden rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pale-coral-pink dark:focus:ring-pale-coral-pink/80 pr-10 min-h-[40px]" // pr-10은 전송 버튼 공간 확보 (필요시)
+          rows={1} // 초기에는 1줄로 시작
+          disabled={
+            disabled || recordingState === RecordingState.RECORDING || recordingState === RecordingState.PROCESSING_STT
+          }
+        />
+      </div>
 
-      <Textarea
-        value={newMessageInput}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholderText}
-        className="flex-1 resize-none border-border focus:ring-1 focus:ring-ring p-2.5 text-sm min-h-[40px] max-h-[120px]"
-        rows={1}
-        disabled={disabled || !isWebSocketConnected}
-        aria-label="Chat message input"
-      />
-
+      {/* 전송 버튼 */}
       <Button
         type="submit"
-        disabled={isSendDisabled}
-        className="ml-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full p-2.5 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed"
-        aria-label="Send message"
-        title="메시지 전송"
+        variant="default"
+        size="icon"
+        disabled={
+          disabled ||
+          !newMessageInput.trim() ||
+          !isWebSocketConnected ||
+          recordingState === RecordingState.PROCESSING_STT
+        }
+        className="flex-shrink-0 bg-pale-coral-pink hover:bg-pale-coral-pink/90 text-white dark:bg-tomato-red dark:hover:bg-tomato-red/90 dark:text-white disabled:opacity-50 rounded-full" // 동그란 버튼으로 변경
+        aria-label="메시지 전송"
       >
         <SendHorizonal className="h-5 w-5" />
       </Button>
