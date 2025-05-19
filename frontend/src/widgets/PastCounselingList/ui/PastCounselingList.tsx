@@ -178,7 +178,7 @@ export function PastCounselingList() {
   }
 
   return (
-    <Card className="w-full h-[500px] flex flex-col border-r border-gray-200 dark:border-gray-700 overflow-hidden">
+    <Card className="w-full h-full flex flex-col border-r border-gray-200 dark:border-gray-700 overflow-hidden bg-white">
       {/* 상단: "대화" 텍스트와 새 대화 시작 버튼 */}
       <CardHeader className="p-4 border-b flex-shrink-0 flex justify-between items-center">
         <h2 className="text-xl font-semibold" style={{ color: '#222222' }}>
@@ -189,7 +189,7 @@ export function PastCounselingList() {
       </CardHeader>
 
       {/* 중앙: 과거 상담 목록 (스크롤 가능 영역) */}
-      <CardContent className="flex-grow overflow-hidden p-0">
+      <CardContent className="flex-1 overflow-hidden p-0">
         <ScrollArea className="h-full w-full p-4">
           {/* 1. 로딩 상태 처리 */}
           {isLoading && (
@@ -264,7 +264,7 @@ export function PastCounselingList() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute top-1/2 right-8 transform -translate-y-1/2 h-6 w-6 rounded-full opacity-70 hover:opacity-100 hover:bg-blue-100 hover:text-blue-600 z-10"
+                        className="absolute top-1/2 right-14 transform -translate-y-1/2 h-6 w-6 rounded-full opacity-70 hover:opacity-100 hover:bg-blue-100 hover:text-blue-600 z-10"
                         onClick={(e) => handleOpenTitleEditModal(e, session)}
                         title="상담 제목 수정하기"
                       >
