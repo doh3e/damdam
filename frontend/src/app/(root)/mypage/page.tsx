@@ -6,6 +6,7 @@ import { useAuthStore } from '@/app/store/authStore';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { getUserProfile } from '@/entities/user/model/api';
+import { useProfileStore } from '@/app/store/userProfileStore';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBullhorn,
@@ -21,7 +22,9 @@ export default function MyPage() {
   const router = useRouter();
 
   const handleLogout = () => {
-    useAuthStore.getState().clearToken();
+    useAuthStore.getState().clearToken(); // 인증 정보 초기화
+    useProfileStore.getState().reset(); // 사용자 프로필 상태 초기화
+    localStorage.removeItem('user-profile-store'); // localstorage 사용자 프로필 제거
     router.replace('/login');
   };
 
