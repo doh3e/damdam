@@ -63,14 +63,16 @@ export default function ReportsPage() {
             <input className="border rounded px-2 py-1 text-sm flex-1" placeholder="키워드로 검색" type="text" />
           </div>
 
-          <span>상담날짜 선택</span>
+          <span className="font-bold block mb-2">상담날짜 선택</span>
           {/* 캘린더 */}
           <ReportCalendar selectedDate={selectedDate ?? new Date()} onSelectDate={setSelectedDate} />
-          <button onClick={() => setSelectedDate(null)}>전체 보기</button>
+          <button onClick={() => setSelectedDate(null)} className="mt-2 text-sm text-blue-600">
+            전체 목록 보기
+          </button>
 
-          <div className="text-xs text-gray-500 mb-2">
+          {/* <div className="text-xs text-gray-500 mb-2 mt-1">
             {selectedDate ? formattedDate.replace(/-/g, '.') : '전체 레포트 보기'}
-          </div>
+          </div> */}
 
           <ReportList reports={reportsToShow} isLoading={isLoading} />
         </>
