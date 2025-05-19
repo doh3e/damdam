@@ -56,6 +56,8 @@ export default function MyPage() {
       setGender(data.gender);
       setCareer(data.career);
       setMbti(data.mbti);
+      console.log('응답받은 이미지 URL :', data.profileImage);
+      console.log('현재 상태에 저장된 이미지 URL:', profileImageUrl);
       setProfileImageUrl(data.profileImage);
     }
   }, [data, setNickname, setAge, setGender, setCareer, setMbti, setProfileImageUrl]);
@@ -71,6 +73,7 @@ export default function MyPage() {
         <div className="flex flex-col items-center mb-8">
           <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-orange-200 mb-2">
             <Image
+              key={profileImageUrl}
               src={profileImageUrl || '/profile.png'}
               alt="프로필 이미지"
               width={96}
