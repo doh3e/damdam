@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuthStore } from '@/app/store/authStore';
@@ -35,11 +35,15 @@ export default function MyPage() {
     reset: resetProfile,
   } = useProfileStore();
 
+  // Base64 미리보기 적용을 위한 preview 상태
+  const [preview, setPreview] = useState<string | null>(null);
+
   // 로그아웃
   const handleLogout = () => {
     useAuthStore.getState().clearToken(); // 인증 정보 초기화
     resetProfile(); // 사용자 프로필 상태 초기화
     localStorage.removeItem('user-profile-store'); // localstorage 사용자 프로필 제거
+    localStorage.removeItem('profile-image-preview'); // base64 미리보기도 제거
     router.replace('/login');
   };
 
@@ -56,11 +60,22 @@ export default function MyPage() {
       setGender(data.gender);
       setCareer(data.career);
       setMbti(data.mbti);
-      console.log('응답받은 이미지 URL :', data.profileImage);
-      console.log('현재 상태에 저장된 이미지 URL:', profileImageUrl);
       setProfileImageUrl(data.profileImage);
     }
   }, [data, setNickname, setAge, setGender, setCareer, setMbti, setProfileImageUrl]);
+
+  // Base64 미리보기 우선 적용 로직
+  useEffect(() => {
+    // 1. localStorage에 Base64 미리보기가 있으면 우선 사용
+    const base64 = typeof window !== 'undefined' ? localStorage.getItem('profile-image-preview') : null;
+    if (base64) {
+      setPreview(base64);
+    } else if (profileImageUrl) {
+      setPreview(profileImageUrl);
+    } else {
+      setPreview('/profile.png');
+    }
+  }, [profileImageUrl]);
 
   if (isLoading) {
     return <div className="text-center text-gray-500 mt-10">로딩 중...</div>;
@@ -73,8 +88,8 @@ export default function MyPage() {
         <div className="flex flex-col items-center mb-8">
           <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-orange-200 mb-2">
             <Image
-              key={profileImageUrl}
-              src={profileImageUrl || '/profile.png'}
+              key={preview}
+              src={preview || '/profile.png'}
               alt="프로필 이미지"
               width={96}
               height={96}
