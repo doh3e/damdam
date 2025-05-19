@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.damdam.domain.counsels.entity.Counseling;
 import com.ssafy.damdam.domain.counsels.exception.CounsException;
 import com.ssafy.damdam.domain.counsels.repository.CounselingRepository;
@@ -64,6 +65,7 @@ public class AiServiceImpl implements AiService {
 	private final CounselSessionRepository sessionRepository;
 	private final S3FileUploadService s3FileUploadService;
 	private final CounselingRepository counselingRepository;
+	private final ObjectMapper objectMapper;
 
 	// 값이 없거나 특정되지 않은 경우 null화 하는 함수
 	private String normalizeEnumValue(String v) {
@@ -159,9 +161,11 @@ public class AiServiceImpl implements AiService {
 
 		String listKey = "counsel:" + counsId + ":messages";
 		List<Object> rawList = redisTemplate.opsForList().range(listKey, 0, -1);
-		List<ChatMessageDto> messages = Objects.requireNonNull(rawList).stream()
-			.map(obj -> (ChatMessageDto)obj)
-			.toList();
+		List<ChatMessageDto> messages = rawList == null
+				? List.of()
+				: rawList.stream()
+				.map(item -> objectMapper.convertValue(item, ChatMessageDto.class))
+				.toList();
 
 		// 2. 리스트화 후 LLM에 레포트 요청
 		LlmSummaryRequest request = LlmSummaryRequest.builder()
