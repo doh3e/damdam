@@ -37,8 +37,10 @@ export default function UserProfileForm() {
       const url = URL.createObjectURL(profileImage);
       setPreview(url);
       return () => URL.revokeObjectURL(url);
+    } else if (profileImageUrl) {
+      setPreview(profileImageUrl);
     } else {
-      setPreview(profileImageUrl || null);
+      setPreview(null);
     }
   }, [profileImage, profileImageUrl]);
 
@@ -84,7 +86,7 @@ export default function UserProfileForm() {
       setProfileImage(null); // 파일 상태 초기화
 
       // 쿼리 캐시 무효화
-      await queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       setShowAlert(true);
     } catch (error) {
       setErrorAlert(true);
