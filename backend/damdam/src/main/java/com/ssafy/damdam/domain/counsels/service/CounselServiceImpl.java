@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +47,7 @@ public class CounselServiceImpl implements CounselService {
 	private final UserUtil userUtil;
 	private final AiService aiService;
 	private final SessionReportRepository sessionReportRepository;
+	private final ObjectMapper objectMapper;
 
 	// 유저 검증 메서드
 	private Users validateUser() {
@@ -104,18 +106,22 @@ public class CounselServiceImpl implements CounselService {
 			// 열려있다면 레디스에서 꺼내옴
 			String listKey = "counsel:" + counsId + ":messages";
 			List<Object> raw = redisTemplate.opsForList().range(listKey, 0, -1);
-			if (raw != null && !raw.isEmpty()) {
-				messageList = raw.stream()
-						.map(o -> (ChatRecordDto) o)
-						.map(r -> ChatOutputDto.builder()
-								.sender(r.getSender())
-								.message(r.getMessage())
-								.timestamp(r.getTimestamp())
-								.tokenCount(r.getTokenCount())
-								.messageOrder(r.getMessageOrder())
-								.build())
-						.toList();
-			}
+			List<ChatRecordDto> records = raw == null
+					? List.of()
+					: raw.stream()
+					// ② LinkedHashMap → ChatRecordDto 로 변환
+					.map(item -> objectMapper.convertValue(item, ChatRecordDto.class))
+					.toList();
+
+			messageList = records.stream()
+					.map(r -> ChatOutputDto.builder()
+							.sender(r.getSender())
+							.message(r.getMessage())
+							.timestamp(r.getTimestamp())
+							.tokenCount(r.getTokenCount())
+							.messageOrder(r.getMessageOrder())
+							.build())
+					.toList();
 		}
 
 		return dtoBuilder
