@@ -73,9 +73,14 @@ export default function UserProfileForm() {
 
     try {
       await updateUserProfile(formData); // 서버 업데이트
-      await queryClient.invalidateQueries({ queryKey: ['userProfile'] }); // 캐시 무효화
-      // 최신 데이터로 zustand 동기화 (자동)
-      setProfileImage(null); // 파일 상태 초기화(중요!)
+      const updated = await getUserProfile(); // 저장 후 직접 다시 fetch
+      setNickname(updated.nickname);
+      setAge(updated.age);
+      setGender(updated.gender);
+      setCareer(updated.career);
+      setMbti(updated.mbti);
+      setProfileImageUrl(updated.profileImage);
+      setProfileImage(null); // 파일 상태 초기화
       setShowAlert(true);
     } catch (error) {
       setErrorAlert(true);
