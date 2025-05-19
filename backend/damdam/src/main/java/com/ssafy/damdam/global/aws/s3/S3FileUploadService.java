@@ -9,6 +9,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.ssafy.damdam.domain.counsels.dto.TranscriptDto;
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -22,8 +23,12 @@ import com.ssafy.damdam.global.aws.s3.exception.S3Exception;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
+import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 import software.amazon.awssdk.transfer.s3.model.Upload;
@@ -184,6 +189,28 @@ public class S3FileUploadService {
 		} catch (JsonProcessingException e) {
 			log.error("[S3] JSON 직렬화 실패", e);
 			throw new S3Exception(JSON_SERIALIZATION_FAIL);
+		}
+	}
+
+	public TranscriptDto downloadTranscript(String s3Link) {
+		String key = s3Link.replace(defaultUrl, "");
+		try {
+			// 2) S3에서 bytes 단위로 가져오기 (동기 블록)
+			ResponseBytes<GetObjectResponse> resp = s3AsyncClient.getObject(
+					GetObjectRequest.builder()
+							.bucket(bucket)
+							.key(key)
+							.build(),
+					AsyncResponseTransformer.toBytes()
+			).join();
+
+			// 3) byte[] → String → DTO
+			String json = new String(resp.asByteArray(), StandardCharsets.UTF_8);
+			return objectMapper.readValue(json, TranscriptDto.class);
+
+		} catch (Exception e) {
+			log.error("[S3] 다운로드 실패: key={}", key, e);
+			throw new S3Exception(FILE_DOWNLOAD_FAIL);
 		}
 	}
 }
