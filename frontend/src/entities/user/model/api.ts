@@ -8,8 +8,9 @@ export async function getUserProfile(): Promise<UserProfile> {
 }
 
 // PATCH: 프로필 정보 업데이트 (FormData 사용)
-export async function updateUserProfile(formData: FormData): Promise<void> {
-  await axiosInstance.patch('/users/profile', formData, {
+export async function updateUserProfile(formData: FormData): Promise<UserProfile> {
+  const res = await axiosInstance.patch<UserProfile>('/users/profile', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+  return res.data; // 수정: 응답 데이터 반환
 }
