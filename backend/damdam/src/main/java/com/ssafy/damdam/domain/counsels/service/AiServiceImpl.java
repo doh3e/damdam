@@ -123,6 +123,7 @@ public class AiServiceImpl implements AiService {
 		Gender genderEnum = rawGender != null ? Gender.valueOf(rawGender) : null;
 
 		UserContextDto userContext = UserContextDto.builder()
+			.nickname(nickname)
 			.botCustom(normalizeEnumValue(setting.getBotCustom()))
 			.age(ageEnum)   // Age enum or null
 			.mbti(mbtiEnum)   // Mbti enum or null
@@ -140,7 +141,9 @@ public class AiServiceImpl implements AiService {
 			.userContextDto(userContext)
 			.build();
 
-		log.info("chatwithllm service request: {}", request);
+		log.info("채팅에 들어갈 리퀘스트 정보들: " +
+				"닉네임 = {}, 메세지 = {}, 유저정보 = {}" +
+				nickname, input.getMessage(), userContext);
 		return llmChatClient.requestChatResponse(request);
 	}
 
