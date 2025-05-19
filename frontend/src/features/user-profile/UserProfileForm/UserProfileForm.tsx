@@ -35,12 +35,14 @@ export default function UserProfileForm() {
   useEffect(() => {
     if (profileImage) {
       const url = URL.createObjectURL(profileImage);
+      console.log('로컬 미리보기:', url);
       setPreview(url);
       return () => URL.revokeObjectURL(url);
     } else if (profileImageUrl) {
+      console.log('서버 이미지:', profileImageUrl);
       setPreview(profileImageUrl);
     } else {
-      setPreview(null);
+      setPreview('/profile.png');
     }
   }, [profileImage, profileImageUrl]);
 
@@ -100,7 +102,8 @@ export default function UserProfileForm() {
         <span className="font-semibold">프로필 이미지</span>
         <div className="relative w-24 h-24 rounded-full overflow-hidden border border-gray-300 my-2 group">
           <Image
-            src={preview || '/profile.png'}
+            key={preview}
+            src={(preview || '/profile.png') as string}
             alt="프로필 이미지"
             fill
             className="object-cover cursor-pointer"
