@@ -25,25 +25,21 @@ public class ReportController {
 
     @GetMapping("")
     public ResponseEntity<List<Object>> getReportList(
-            @RequestParam(value = "category", required = false) String category,
+            @RequestParam(value = "category") String category,
             @RequestParam(value = "start", required = false) String start,
             @RequestParam(value = "end",   required = false) String end,
             @RequestParam(value = "keyword", required = false) String keyword
     ) {
-        if ("session".equals(category)) {
+        if ("session".equalsIgnoreCase(category)) {
             List<SessionReportOutputDto> sReports = reportService.getSReportList(start, end, keyword);
             return ResponseEntity.ok(new ArrayList<>(sReports));
         }
-        if ("period".equals(category)) {
+        else if ("period".equalsIgnoreCase(category)) {
             List<PeriodReportOutputDto> pReports = reportService.getPReportList(start, end, keyword);
             return ResponseEntity.ok(new ArrayList<>(pReports));
         }
-
-        // all
-        List<Object> combined = new ArrayList<>();
-        combined.addAll(reportService.getSReportList(start, end, keyword));
-        combined.addAll(reportService.getPReportList(start, end, keyword));
-        return ResponseEntity.ok(combined);
+        else {
+            return ResponseEntity.badRequest().body(new ArrayList<>());
+        }
     }
-
 }

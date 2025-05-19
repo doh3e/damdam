@@ -1,6 +1,5 @@
 package com.ssafy.damdam.domain.reports.dto;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,21 +11,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SessionReportOutputDto {
+public class SessionReportListDto {
+
     private Long sReportId;
-    private String sReportTitle;
-
-    private Long userId;
-    private String nickname;
-
     private Long counsId;
-    private String counsTitle;
-
-    private String summary;
-    private String analyze;
-
-    private String valence;
-    private String arousal;
-
+    private String sReportTitle;
     private LocalDateTime createdAt;
+
 }
