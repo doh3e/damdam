@@ -4,12 +4,10 @@
  * FSD 아키텍처에 따라 `entities` 레이어의 `counseling` 슬라이스 내 `ui`에 위치합니다.
  */
 import React from 'react';
-import Link from 'next/link';
-import { CounselingSession, SenderType } from '@/entities/counseling/model/types';
+import { CounselingSession } from '@/entities/counseling/model/types';
 import UserAvatar from '@/entities/user/ui/UserAvatar';
-import { AiProfile } from '@/entities/user/model/types'; // AI 프로필 타입 임포트 (실제로는 세션 정보에서 AI 이름/아바타 가져와야 함)
 import { cn } from '@/shared/lib/utils';
-import { ChevronRight } from 'lucide-react';
+import { format } from 'date-fns';
 
 /**
  * PastCounselingListItem 컴포넌트의 Props 인터페이스
@@ -21,11 +19,6 @@ interface PastCounselingListItemProps {
   isActive?: boolean;
   /** 제목을 표시할지 여부 */
   showTitle?: boolean;
-  /** AI 프로필 정보 (실제로는 session 객체 내에서 AI 정보를 가져오거나, 별도 prop으로 받을 수 있음) */
-  // 현재 CounselingSession 타입에는 aiId만 있으므로, AI의 구체적인 프로필(이름, 아바타)은
-  // 이 컴포넌트를 사용하는 상위 컴포넌트에서 조회하여 전달하거나, session 객체 자체에 포함되어야 합니다.
-  // 여기서는 임시로 aiProfile prop을 추가하지만, 데이터 흐름에 따라 수정될 수 있습니다.
-  aiProfile?: Pick<AiProfile, 'name' | 'avatarUrl'>;
 }
 
 /**
@@ -39,24 +32,9 @@ const PastCounselingListItem: React.FC<PastCounselingListItemProps> = ({
   session,
   isActive = false,
   showTitle = false,
-  aiProfile, // 임시 AI 프로필
 }) => {
-  // 마지막 메시지 텍스트 (간결하게 표시하기 위해 길이 제한 등 필요할 수 있음)
-  const lastMessageText = session.lastMessage?.content || '대화 내용이 없습니다.';
-  const lastMessageSender = session.lastMessage?.sender;
-
-  // TODO: 실제 날짜 포맷팅 유틸리티 함수로 교체 필요 (예: shared/lib/formatDate.ts)
-  const formattedTime = session.lastMessage?.timestamp
-    ? new Date(session.lastMessage.timestamp).toLocaleDateString('ko-KR', {
-        month: 'short',
-        day: 'numeric',
-      })
-    : '';
-
-  // AI 이름은 session.aiId를 기반으로 조회하거나, aiProfile prop을 통해 받아야 합니다.
-  // 여기서는 임시로 aiProfile prop을 사용합니다.
-  const aiDisplayName = aiProfile?.name || '담담이';
-  const aiAvatarFallback = aiDisplayName.substring(0, 1);
+  // 세션 생성 시각 포맷팅 (YYYY년 M월 D일)
+  const formattedCreationTime = session.createdAt ? format(new Date(session.createdAt), 'yyyy년 M월 d일') : '';
 
   return (
     <div
@@ -66,28 +44,31 @@ const PastCounselingListItem: React.FC<PastCounselingListItemProps> = ({
       )}
     >
       <UserAvatar
-        imageUrl={aiProfile?.avatarUrl}
-        fallbackText={aiAvatarFallback}
-        altText={`${aiDisplayName} avatar`}
+        imageUrl={session.aiProfile?.avatarUrl} // session.aiProfile?.avatarUrl 사용, 없으면 UserAvatar 내부에서 기본 이미지 처리
+        fallbackText="담담이" // fallbackText를 "담담이"로 명시적 설정 (UserAvatar 기본값과 동일하지만 명시)
+        altText="AI avatar"
         size="md"
         className="mr-3 flex-shrink-0"
       />
       <div className="flex-grow overflow-hidden">
         {showTitle && session.counsTitle && (
           <div className="mb-1">
-            <h3 className="text-sm font-bold text-foreground truncate">{session.counsTitle}</h3>
+            <h3 className="text-sm font-bold text-foreground truncate" title={session.counsTitle}>
+              {session.counsTitle}
+            </h3>
           </div>
         )}
-        <div className="flex justify-between items-center mb-0.5">
-          <h3 className="text-sm font-semibold text-foreground truncate">{aiDisplayName} 와의 상담</h3>
-          {formattedTime && <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">{formattedTime}</span>}
-        </div>
-        <p className="text-xs text-muted-foreground truncate">
-          {lastMessageSender === SenderType.USER && '나: '}
-          {lastMessageText}
-        </p>
+        {/* 세션 종료 상태 표시 */}
+        {session.isClosed ? (
+          <p className="text-xs text-muted-foreground truncate">종료된 상담입니다.</p>
+        ) : (
+          <p className="text-xs text-green-600 dark:text-green-500 truncate">진행 중인 상담입니다.</p>
+        )}
+        {/* 세션 생성 시각 표시 */}
+        {formattedCreationTime && (
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">{formattedCreationTime}</p>
+        )}
       </div>
-      <ChevronRight className="h-5 w-5 text-muted-foreground ml-2 flex-shrink-0 opacity-70 group-hover:opacity-100" />
     </div>
   );
 };

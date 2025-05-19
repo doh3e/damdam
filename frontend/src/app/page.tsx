@@ -9,7 +9,7 @@ import Link from 'next/link';
  */
 export default function HomePage() {
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 space-y-6 h-full overflow-y-auto scrollbar-custom">
       {/* 서비스 소개 */}
       <section className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
         <h3 className="text-lg font-semibold mb-2 text-red-500">서비스 소개</h3>

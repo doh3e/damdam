@@ -80,13 +80,13 @@ const CounselingPage = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 h-screen overflow-hidden">
+    <div className="h-full p-4 overflow-y-auto scrollbar-custom">
       {token ? (
         // 인증된 사용자에게는 상담 목록 표시
         <PastCounselingList />
       ) : (
         // 미인증 사용자에게는 로그인 유도 메시지 표시
-        <div className="flex flex-col items-center justify-center space-y-4 p-8 border rounded-lg bg-slate-50">
+        <div className="flex flex-col items-center justify-center space-y-4 p-8 border rounded-lg bg-slate-50 h-full">
           <p className="text-center text-lg">상담 서비스를 이용하기 위해서는 로그인이 필요합니다.</p>
           <Button onClick={handleLoginRedirect}>로그인하러 가기</Button>
         </div>

@@ -105,8 +105,8 @@ export function processMessageForDisplay(message: ChatMessage): ChatMessage {
       break;
     case MessageType.ERROR:
       // 오류 메시지 처리 로직 (필요시)
-      if (!processedMessage.content && processedMessage.error) {
-        processedMessage.content = `오류가 발생했습니다. (${processedMessage.error.message})`;
+      if (!processedMessage.message && processedMessage.error) {
+        processedMessage.message = `오류가 발생했습니다. (${processedMessage.error.message})`;
       }
       break;
     case MessageType.VOICE:

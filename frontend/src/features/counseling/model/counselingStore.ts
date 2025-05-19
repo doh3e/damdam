@@ -5,12 +5,23 @@
  */
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware'; // Zustand 개발자 도구 (선택 사항)
-import { ChatMessage, CounselingDisplayStatus } from '@/entities/counseling/model/types';
+import { type Client as StompClient, type StompSubscription } from '@stomp/stompjs'; // StompJs 대신 StompClient, StompSubscription 직접 임포트
+import { type ChatMessage, type CounselingSession } from '@/entities/counseling/model/types';
 
 /**
  * 웹소켓 연결 상태를 나타내는 타입
  */
 type WebsocketStatus = 'idle' | 'connecting' | 'connected' | 'disconnected' | 'error';
+
+/**
+ * 웹소켓 클라이언트 상태를 나타냅니다.
+ */
+export interface WebSocketState {
+  stompClient: StompClient | null;
+  isConnected: boolean;
+  error: string | null;
+  currentSubscription: StompSubscription | null;
+}
 
 /**
  * Counseling 스토어의 상태(State) 인터페이스
@@ -30,6 +41,10 @@ interface CounselingState {
   error: string | null;
   /** 새 메시지 입력 값 (controlled component 용도) */
   newMessageInput: string;
+  /** 현재 상담 세션의 상세 정보 */
+  currentSessionDetails: CounselingSession | null;
+  /** 마지막 사용자 활동 시간 */
+  lastUserActivityTime: number | null;
 }
 
 /**
@@ -56,6 +71,10 @@ interface CounselingActions {
   setNewMessageInput: (input: string) => void;
   /** 스토어의 모든 상태를 초기값으로 리셋합니다. (예: 상담 종료 또는 새 상담 시작 시) */
   resetCounselingState: () => void;
+  /** 현재 상담 세션의 상세 정보를 설정합니다. */
+  setCurrentSessionDetails: (session: CounselingSession | null) => void;
+  /** 마지막 사용자 활동 시간을 설정합니다. */
+  setLastUserActivityTime: (time: number | null) => void;
 }
 
 /**
@@ -69,6 +88,8 @@ const initialState: CounselingState = {
   isAiTyping: false,
   error: null,
   newMessageInput: '',
+  currentSessionDetails: null,
+  lastUserActivityTime: null,
 };
 
 /**
@@ -105,6 +126,10 @@ export const useCounselingStore = create<CounselingState & CounselingActions>()(
       setError: (error) => set({ error }),
 
       setNewMessageInput: (input) => set({ newMessageInput: input }),
+
+      setCurrentSessionDetails: (session) => set({ currentSessionDetails: session }),
+
+      setLastUserActivityTime: (time) => set({ lastUserActivityTime: time }),
 
       resetCounselingState: () => set(initialState),
     }),
