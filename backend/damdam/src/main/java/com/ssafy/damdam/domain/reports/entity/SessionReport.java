@@ -39,8 +39,8 @@ public class SessionReport extends BaseTimeEntity {
 	@Column(name = "summary", columnDefinition = "TEXT")
 	private String summary;
 
-	@Column(name = "analyse", columnDefinition = "TEXT")
-	private String analyse;
+	@Column(name = "analyze", columnDefinition = "TEXT")
+	private String analyze;
 
 	@Column(name = "valence", length = 10)
 	private String valence;
@@ -61,14 +61,14 @@ public class SessionReport extends BaseTimeEntity {
 	public static SessionReport of(
 		Counseling counseling,
 		String summary,
-		String analyse,
+		String analyze,
 		String arousal,
 		String valence
 	) {
 		SessionReport r = new SessionReport();
 		r.counseling = counseling;
 		r.summary = summary;
-		r.analyse = analyse;
+		r.analyze = analyze;
 		r.arousal = arousal;
 		r.valence = valence;
 		r.fillDefaultTitle();

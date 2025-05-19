@@ -15,5 +15,5 @@ public class SessionReportInputDto {
 	private String valence;
 	private String feeling;
 	private String summary;
-	private String analyse;
+	private String analyze;
 }
