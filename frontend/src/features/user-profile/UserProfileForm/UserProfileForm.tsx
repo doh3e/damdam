@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useProfileStore } from '@/app/store/userProfileStore';
 import { getUserProfile, updateUserProfile } from '@/entities/user/model/api';
 import { Gender, GenderLabel, Age, AgeLabel, MBTI, MBTILabel } from '@/shared/consts/enum';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { UserProfile } from '@/entities/user/model/types';
 import AlertModal from '@/shared/ui/alertmodal';
@@ -40,7 +40,7 @@ export default function UserProfileForm() {
   }, [profileImage, profileImageUrl]);
 
   // 사용자 정보 불러오기
-  const { data } = useQuery<UserProfile, Error>({
+  const { data, refetch } = useQuery<UserProfile, Error>({
     queryKey: ['userProfile'],
     queryFn: getUserProfile,
   });
@@ -57,8 +57,6 @@ export default function UserProfileForm() {
   }, [data]);
 
   // 저장 처리
-  const queryClient = useQueryClient();
-
   const handleSave = async () => {
     const formData = new FormData();
     if (profileImage) formData.append('profileImage', profileImage);
@@ -69,8 +67,10 @@ export default function UserProfileForm() {
     formData.append('mbti', mbti);
 
     try {
-      await updateUserProfile(formData);
-      await queryClient.invalidateQueries({ queryKey: ['userProfile'] }); // 캐시 무효화
+      await updateUserProfile(formData); // 서버 업데이트
+      useProfileStore.getState().reset(); // store 상태 초기화
+      await new Promise((r) => setTimeout(r, 100)); // 살짝 delay
+      await refetch(); // 최신 서버 데이터 가져와서 상태에 반영
       setShowAlert(true);
     } catch (error) {
       setErrorAlert(true);
