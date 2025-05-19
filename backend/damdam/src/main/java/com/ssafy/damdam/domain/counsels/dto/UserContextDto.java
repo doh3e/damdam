@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class UserContextDto {
+    private String nickname;
     private String botCustom;
 
     private Gender gender;
