@@ -3,7 +3,7 @@ import React from 'react';
 import Link from 'next/link'; // Next.js의 Link 컴포넌트 사용
 import Image from 'next/image'; // Next.js의 Image 컴포넌트 사용 (이미지 최적화)
 import { Button } from '@/shared/ui/button'; // shadcn/ui의 Button 컴포넌트 가져오기
-import { Moon } from 'lucide-react'; // 아이콘 라이브러리 (예: lucide-react)에서 아이콘 가져오기
+// import { Moon } from 'lucide-react'; // 아이콘 라이브러리 (예: lucide-react)에서 아이콘 가져오기
 import { useAuthStore } from '@/app/store/authStore';
 
 /**
@@ -43,11 +43,11 @@ const Header = () => {
           )}
           {/* 다크 모드 토글 버튼 */}
           {/* TODO: 다크 모드 기능 구현 및 토글 로직 추가 */}
-          <Button variant="ghost" size="icon">
-            {/* Moon 아이콘 (lucide-react) 사용 */}
-            <Moon className="h-5 w-5" />
-            <span className="sr-only">테마 변경</span> {/* 스크린 리더 전용 텍스트 */}
-          </Button>
+          {/* <Button variant="ghost" size="icon"> */}
+          {/* Moon 아이콘 (lucide-react) 사용 */}
+          {/* <Moon className="h-5 w-5" /> */}
+          {/* <span className="sr-only">테마 변경</span> 스크린 리더 전용 텍스트 */}
+          {/* </Button> */}
         </div>
       </div>
     </header>
