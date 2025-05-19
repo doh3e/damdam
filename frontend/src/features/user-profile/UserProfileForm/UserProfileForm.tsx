@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useProfileStore } from '@/app/store/userProfileStore';
 import { getUserProfile, updateUserProfile } from '@/entities/user/model/api';
 import { Gender, GenderLabel, Age, AgeLabel, MBTI, MBTILabel } from '@/shared/consts/enum';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { UserProfile } from '@/entities/user/model/types';
 import AlertModal from '@/shared/ui/alertmodal';
@@ -27,6 +27,9 @@ export default function UserProfileForm() {
   } = useProfileStore();
 
   const [preview, setPreview] = useState<string | null>(null);
+  const [showAlert, setShowAlert] = useState(false);
+  const [showErrorAlert, setErrorAlert] = useState(false);
+  const queryClient = useQueryClient();
 
   // 이미지 미리보기
   useEffect(() => {
@@ -40,11 +43,12 @@ export default function UserProfileForm() {
   }, [profileImage, profileImageUrl]);
 
   // 사용자 정보 불러오기
-  const { data, refetch } = useQuery<UserProfile, Error>({
+  const { data } = useQuery<UserProfile, Error>({
     queryKey: ['userProfile'],
     queryFn: getUserProfile,
   });
 
+  // zustand 상태 동기화
   useEffect(() => {
     if (data) {
       setNickname(data.nickname);
@@ -53,14 +57,15 @@ export default function UserProfileForm() {
       setCareer(data.career);
       setMbti(data.mbti);
       setProfileImageUrl(data.profileImage);
+      // profileImage(File)는 직접 선택한 경우에만 setProfileImage로 갱신
     }
-  }, [data]);
+  }, [data, setNickname, setAge, setGender, setCareer, setMbti, setProfileImageUrl]);
 
   // 저장 처리
   const handleSave = async () => {
     const formData = new FormData();
     if (profileImage) formData.append('profileImage', profileImage);
-    formData.append('nickname', nickname);
+    formData.append('nickname', (nickname ?? '').trim() || '내담이');
     formData.append('age', age);
     formData.append('gender', gender);
     formData.append('career', career);
@@ -68,18 +73,14 @@ export default function UserProfileForm() {
 
     try {
       await updateUserProfile(formData); // 서버 업데이트
-      useProfileStore.getState().reset(); // store 상태 초기화
-      await new Promise((r) => setTimeout(r, 100)); // 살짝 delay
-      await refetch(); // 최신 서버 데이터 가져와서 상태에 반영
+      await queryClient.invalidateQueries({ queryKey: ['userProfile'] }); // 캐시 무효화
+      // 최신 데이터로 zustand 동기화 (자동)
+      setProfileImage(null); // 파일 상태 초기화(중요!)
       setShowAlert(true);
     } catch (error) {
       setErrorAlert(true);
     }
   };
-
-  // alert 모달
-  const [showAlert, setShowAlert] = useState(false);
-  const [showErrorAlert, setErrorAlert] = useState(false);
 
   return (
     <form className="w-full flex flex-col gap-4">
@@ -93,6 +94,7 @@ export default function UserProfileForm() {
             fill
             className="object-cover cursor-pointer"
             onClick={() => document.getElementById('userImageInput')?.click()}
+            priority
           />
 
           {/* 숨겨진 input 파일 필드 */}
