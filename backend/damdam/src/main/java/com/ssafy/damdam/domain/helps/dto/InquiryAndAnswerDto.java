@@ -3,7 +3,7 @@ package com.ssafy.damdam.domain.helps.dto;
 import java.time.LocalDateTime;
 
 import com.querydsl.core.annotations.QueryProjection;
-import com.ssafy.damdam.domain.helps.entity.Category;
+import com.ssafy.damdam.domain.helps.entity.InquiryCategory;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,7 +28,7 @@ public class InquiryAndAnswerDto {
 	//문의 생성 날짜
 	private LocalDateTime inquiryCreatedAt;
 	//문의 카테고리
-	private Category category;
+	private InquiryCategory inquiryCategory;
 	//문의 파일
 	private String inquiryImageUrl;
 	//답변 생성 날짜
@@ -40,7 +40,7 @@ public class InquiryAndAnswerDto {
 
 	@QueryProjection
 	public InquiryAndAnswerDto(Long userId, Integer inquiryId, String inquiryTitle, String inquiryContent, String email,
-		LocalDateTime inquiryCreatedAt, Category category, String inquiryImageUrl,
+		LocalDateTime inquiryCreatedAt, InquiryCategory inquiryCategory, String inquiryImageUrl,
 		LocalDateTime answerCreatedAt, boolean isAnswered, String answerContent) {
 		this.userId = userId;
 		this.inquiryId = inquiryId;
@@ -48,7 +48,7 @@ public class InquiryAndAnswerDto {
 		this.inquiryContent = inquiryContent;
 		this.email = email;
 		this.inquiryCreatedAt = inquiryCreatedAt;
-		this.category = category;
+		this.inquiryCategory = inquiryCategory;
 		this.inquiryImageUrl = inquiryImageUrl;
 		this.answerCreatedAt = answerCreatedAt;
 		this.isAnswered = isAnswered;

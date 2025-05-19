@@ -39,7 +39,7 @@ public class Inquiry extends BaseTimeEntity {
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "category", nullable = false, length = 20)
-	private Category category;
+	private InquiryCategory inquiryCategory;
 
 	@Column(name = "content", columnDefinition = "TEXT", nullable = false)
 	private String content;
@@ -55,7 +55,7 @@ public class Inquiry extends BaseTimeEntity {
 		inquiry.users = user;
 		inquiry.email = inquiryInputDto.getEmail();
 		inquiry.title = inquiryInputDto.getTitle();
-		inquiry.category = Category.valueOf(inquiryInputDto.getCategory());
+		inquiry.inquiryCategory = InquiryCategory.valueOf(inquiryInputDto.getCategory());
 		inquiry.content = inquiryInputDto.getContent();
 		inquiry.file = file;
 		inquiry.isAnswered = false;

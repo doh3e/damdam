@@ -1,6 +1,6 @@
 package com.ssafy.damdam.domain.helps.dto;
 
-import com.ssafy.damdam.domain.helps.entity.Category;
+import com.ssafy.damdam.domain.helps.entity.InquiryCategory;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -38,7 +38,7 @@ public class InquiryInputDto {
 	public void emailTextGenerator() {
 		{
 			this.title = title + "문의하신 내용 전송 드립니다.";
-			this.content = "<h1>문의 종류 : " + Category.valueOf(category).getDisplayName() + "</h1>\n "
+			this.content = "<h1>문의 종류 : " + InquiryCategory.valueOf(category).getDisplayName() + "</h1>\n "
 				+ content
 				+ "\n\n<b>빠른 시일 내에 답변해드리겠습니다. 감사합니다.</b>\n"
 				+ "\n\n<b>담담팀 드림</b>\n";
