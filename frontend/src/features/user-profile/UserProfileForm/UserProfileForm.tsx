@@ -34,14 +34,17 @@ export default function UserProfileForm() {
   // 이미지 미리보기
   useEffect(() => {
     if (profileImage) {
+      // 사용자가 새 파일 선택한 경우 메모리 내 임시 URL로 미리보기
       const url = URL.createObjectURL(profileImage);
       console.log('로컬 미리보기:', url);
       setPreview(url);
       return () => URL.revokeObjectURL(url);
     } else if (profileImageUrl) {
+      // 서버에서 받은 이미지 URL로 미리보기
       console.log('서버 이미지:', profileImageUrl);
       setPreview(profileImageUrl);
     } else {
+      // 기본 이미지
       setPreview('/profile.png');
     }
   }, [profileImage, profileImageUrl]);
@@ -67,18 +70,20 @@ export default function UserProfileForm() {
 
   // 저장 처리
   const handleSave = async () => {
-    const formData = new FormData();
-    if (profileImage) formData.append('profileImage', profileImage);
-    formData.append('nickname', (nickname ?? '').trim() || '내담이');
-    formData.append('age', age);
-    formData.append('gender', gender);
-    formData.append('career', career);
-    formData.append('mbti', mbti);
-
     try {
+      // 1. FormData 구성
+      const formData = new FormData();
+      if (profileImage) formData.append('profileImage', profileImage);
+      formData.append('nickname', (nickname ?? '').trim() || '내담이');
+      formData.append('age', age);
+      formData.append('gender', gender);
+      formData.append('career', career);
+      formData.append('mbti', mbti);
+
+      // 2. PATCH 요청 (프로필 수정)
       const updatedProfile = await updateUserProfile(formData);
 
-      // zustand 상태 업데이트
+      // 3. Zustand 상태 동기화
       setNickname(updatedProfile.nickname);
       setAge(updatedProfile.age);
       setGender(updatedProfile.gender);
@@ -87,10 +92,13 @@ export default function UserProfileForm() {
       setProfileImageUrl(updatedProfile.profileImage);
       setProfileImage(null); // 파일 상태 초기화
 
-      // 쿼리 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+      // 4. React Query 캐시 무효화 (최신 데이터 반영)
+      await queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+
+      // 5. 성공 모달 표시
       setShowAlert(true);
     } catch (error) {
+      // 6. 실패 모달 표시
       setErrorAlert(true);
     }
   };
