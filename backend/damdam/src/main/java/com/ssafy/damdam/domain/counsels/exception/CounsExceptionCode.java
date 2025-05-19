@@ -15,7 +15,7 @@ public enum CounsExceptionCode implements ExceptionCode {
 
 	COUNSEL_NOT_FOUND(NOT_FOUND, "C-C-001", "상담정보를 찾을 수 없습니다."),
 	COUNSEL_ALREADY_EXIST(BAD_REQUEST, "C-C-002", "이미 생성된 상담내역입니다."),
-	NOT_YOUR_COUNSEL(FORBIDDEN, "C-C-003", "본인의 상담내역이 아닙니다.");
+	NOT_YOUR_COUNSEL(FORBIDDEN, "C-C-003", "본인의 상담내역이 아닙니다."),;
 
 	private final HttpStatus httpStatus;
 	private final String code;
