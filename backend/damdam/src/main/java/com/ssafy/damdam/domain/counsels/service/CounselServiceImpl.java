@@ -10,16 +10,13 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ssafy.damdam.domain.counsels.dto.*;
+import com.ssafy.damdam.global.aws.s3.S3FileUploadService;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.ssafy.damdam.domain.counsels.dto.ChatOutputDto;
-import com.ssafy.damdam.domain.counsels.dto.ChatRecordDto;
-import com.ssafy.damdam.domain.counsels.dto.CounselingChatListDto;
-import com.ssafy.damdam.domain.counsels.dto.CounselingDto;
-import com.ssafy.damdam.domain.counsels.dto.LlmSummaryResponse;
 import com.ssafy.damdam.domain.counsels.entity.Counseling;
 import com.ssafy.damdam.domain.counsels.exception.CounsException;
 import com.ssafy.damdam.domain.counsels.repository.CounselingRepository;
@@ -42,12 +39,12 @@ import lombok.extern.slf4j.Slf4j;
 public class CounselServiceImpl implements CounselService {
 
 	private final CounselingRepository counselingRepository;
-	private final CounselSessionRepository sessionRepository;
 	private final RedisTemplate<String, Object> redisTemplate;
 	private final UserUtil userUtil;
 	private final AiService aiService;
 	private final SessionReportRepository sessionReportRepository;
 	private final ObjectMapper objectMapper;
+	private final S3FileUploadService s3FileUploadService;
 
 	// 유저 검증 메서드
 	private Users validateUser() {
@@ -101,7 +98,18 @@ public class CounselServiceImpl implements CounselService {
 		// 세션이 닫혔는지 여부에 따라 대화내역 불러올 곳이 달라짐
 		if (counseling.getIsClosed()) {
 			// 닫혀있다면 S3에서 꺼내옴
+			String s3Link = counseling.getS3Link();
+			TranscriptDto transcript = s3FileUploadService.downloadTranscript(s3Link);
 
+			messageList = transcript.getMessageList().stream()
+					.map(r -> ChatOutputDto.builder()
+							.sender(r.getSender())
+							.message(r.getMessage())
+							.timestamp(r.getTimestamp())
+							.messageOrder(r.getMessageOrder())
+							.tokenCount(null)  // 필요 시 null 또는 값
+							.build())
+					.toList();
 		} else {
 			// 열려있다면 레디스에서 꺼내옴
 			String listKey = "counsel:" + counsId + ":messages";
@@ -118,7 +126,7 @@ public class CounselServiceImpl implements CounselService {
 							.sender(r.getSender())
 							.message(r.getMessage())
 							.timestamp(r.getTimestamp())
-							.tokenCount(r.getTokenCount())
+							.tokenCount(null)
 							.messageOrder(r.getMessageOrder())
 							.build())
 					.toList();
