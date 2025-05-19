@@ -1,3 +1,4 @@
+import { Gender, Age, MBTI } from '@/shared/consts/enum';
 /**
  * @file 사용자(User) 엔티티와 관련된 주요 데이터 구조를 정의합니다.
  * FSD 아키텍처에 따라 `entities` 레이어의 `user` 슬라이스 내 `model`에 위치합니다.
@@ -38,3 +39,15 @@ export interface AiProfile {
 // 참고: 프로젝트에 이미 User 타입이 존재하고, 해당 타입에 AI를 구분하는 필드
 // (예: userType: 'human' | 'ai')를 추가하는 방식도 고려할 수 있습니다.
 // 이 경우, AiProfile은 User 타입의 일부 속성을 확장하거나 특정화하는 형태로 정의될 수 있습니다.
+
+// entities/user/model/types.ts
+export interface UserProfile {
+  provider: string;
+  nickname: string;
+  email: string;
+  profileImage: string;
+  gender: Gender;
+  age: Age;
+  career: string;
+  mbti: MBTI;
+}
