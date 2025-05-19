@@ -59,7 +59,7 @@ export interface ChatMessage {
   /** 메시지 생성 타임스탬프 (ISO 문자열) */
   timestamp: string;
   /** AI 답변 토큰 수 카운터 */
-  tokenCount: number;
+  tokenCount?: number;
   /** 유저의 채팅 순서 카운트 */
   messageOrder: number;
   /** 메시지 유형 (옵션, 작업 예정 형식에서는 message 내용으로 구분 가능성) */

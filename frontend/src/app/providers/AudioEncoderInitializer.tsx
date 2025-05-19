@@ -1,8 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
-import { register } from 'extendable-media-recorder';
-import { connect } from 'extendable-media-recorder-wav-encoder';
+// import dynamic from 'next/dynamic'; // next/dynamic 제거
+
+// 기존 import 주석 처리
+// import { register } from 'extendable-media-recorder';
+// import { connect } from 'extendable-media-recorder-wav-encoder';
 
 /**
  * @file frontend/src/app/providers/AudioEncoderInitializer.tsx
@@ -23,15 +26,22 @@ const AudioEncoderInitializer = (): null => {
      * 이 함수는 컴포넌트가 마운트될 때 한 번만 실행됩니다.
      */
     const initializeAudioEncoder = async () => {
-      try {
-        // extendable-media-recorder-wav-encoder의 connect 함수를 호출하여 인코더 연결 설정을 가져옵니다.
-        const encoderConfig = await connect();
-        // extendable-media-recorder의 register 함수를 사용하여 WAV 인코더를 등록합니다.
-        await register(encoderConfig);
-        console.log('WAV audio encoder registered successfully.');
-      } catch (error) {
-        console.error('Failed to register WAV audio encoder:', error);
-        // 여기에 사용자에게 알림을 보내거나, 오류 리포팅 서비스를 호출하는 등의 추가적인 오류 처리 로직을 넣을 수 있습니다.
+      // 브라우저 환경에서만 실행되도록 명시적 확인
+      if (typeof window !== 'undefined') {
+        try {
+          // 모듈을 동적으로 직접 import
+          const { connect } = await import('extendable-media-recorder-wav-encoder');
+          const { register } = await import('extendable-media-recorder');
+
+          // extendable-media-recorder-wav-encoder의 connect 함수를 호출하여 인코더 연결 설정을 가져옵니다.
+          const encoderConfig = await connect();
+          // extendable-media-recorder의 register 함수를 사용하여 WAV 인코더를 등록합니다.
+          await register(encoderConfig);
+          console.log('WAV audio encoder registered successfully.');
+        } catch (error) {
+          console.error('Failed to register WAV audio encoder:', error);
+          // 여기에 사용자에게 알림을 보내거나, 오류 리포팅 서비스를 호출하는 등의 추가적인 오류 처리 로직을 넣을 수 있습니다.
+        }
       }
     };
 

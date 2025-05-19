@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Textarea } from '@/shared/ui/textarea';
 import { Button } from '@/shared/ui/button';
-import { Mic, SendHorizonal, StopCircle, Loader2, Paperclip } from 'lucide-react';
+import { Mic, SendHorizonal, StopCircle, Loader2, X } from 'lucide-react';
 import { useCounselingStore } from '@/features/counseling/model/counselingStore';
 import { type StompSendUserMessagePayload } from '@/features/counseling/hooks/useWebSocket';
 import { type ChatMessage, MessageType, SenderType } from '@/entities/counseling/model/types';
@@ -66,6 +66,7 @@ const SendMessageForm = ({
   const sttMutation = useRequestSTTMutation();
   const uploadVoiceMutation = useUploadVoiceFileMutation();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // STT 결과가 변경되면 입력창에 반영
   useEffect(() => {
@@ -91,6 +92,21 @@ const SendMessageForm = ({
     }
   }, [newMessageInput]);
 
+  const handleClearVoiceInput = useCallback(() => {
+    setNewMessageInput('');
+    setAudioBlob(null);
+    setIsCurrentMessageFromVoice(false);
+    setSttResultText('');
+
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, []);
+
   const handleInputChange = useCallback(
     (event: React.ChangeEvent<HTMLTextAreaElement>) => {
       setNewMessageInput(event.target.value);
@@ -110,8 +126,7 @@ const SendMessageForm = ({
 
     if (recordingState === RecordingState.IDLE || recordingState === RecordingState.ERROR) {
       if (useSTTStore.getState().sttResultText || audioBlob) {
-        resetSTTState();
-        setNewMessageInput('');
+        handleClearVoiceInput();
       }
       setSttErrorMessageToStore(null);
       const permissionGranted = await requestMicrophonePermission();
@@ -131,6 +146,7 @@ const SendMessageForm = ({
     setSttErrorMessageToStore,
     resetSTTState,
     audioBlob,
+    handleClearVoiceInput,
   ]);
 
   // audioBlob (WAV)이 생성되고, 녹음 상태가 STOPPED일 때 STT API 요청
@@ -307,22 +323,49 @@ const SendMessageForm = ({
         <span className="sr-only">{micButtonTooltip}</span>
       </Button>
 
-      <Textarea
-        ref={textareaRef}
-        placeholder={disabled ? '상담이 종료되었습니다.' : '메시지를 입력하세요...'}
-        value={newMessageInput}
-        onChange={handleInputChange}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSubmit();
+      <div className="flex-grow relative">
+        <Textarea
+          ref={textareaRef}
+          placeholder={
+            recordingState === RecordingState.RECORDING
+              ? '녹음 중... 녹음을 완료하려면 녹음 버튼을 다시 누르세요.'
+              : recordingState === RecordingState.PROCESSING_STT
+                ? '음성 변환 중...'
+                : isCurrentMessageFromVoice
+                  ? '음성 변환 결과입니다. 전송하거나 다시 녹음하세요.'
+                  : '메시지를 입력하세요...'
           }
-        }}
-        rows={1}
-        className="max-h-[120px] min-h-[40px] flex-1 resize-none overflow-y-auto rounded-full px-4 py-2 scrollbar-thin"
-        disabled={disabled || !isWebSocketConnected || recordingState === RecordingState.PROCESSING_STT}
-        maxLength={1000}
-      />
+          value={newMessageInput}
+          onChange={handleInputChange}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSubmit();
+            }
+          }}
+          rows={1}
+          className="max-h-[120px] min-h-[40px] flex-1 resize-none overflow-y-auto rounded-full px-4 py-2 scrollbar-thin"
+          disabled={
+            disabled || recordingState === RecordingState.RECORDING || recordingState === RecordingState.PROCESSING_STT
+          }
+          onFocus={onUserActivity}
+          onBlur={() => {
+            // console.log('Textarea blurred');
+          }}
+        />
+        {isCurrentMessageFromVoice && newMessageInput && !disabled && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="absolute top-1/2 right-1 transform -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-destructive"
+            onClick={handleClearVoiceInput}
+            title="음성 입력 취소"
+          >
+            <X size={18} />
+          </Button>
+        )}
+      </div>
 
       <Button
         type="submit"

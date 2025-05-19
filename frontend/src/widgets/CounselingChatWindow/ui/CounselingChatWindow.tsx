@@ -8,7 +8,7 @@ import { useCounselingStore } from '@/features/counseling/model/counselingStore'
 import { useAuthStore } from '@/app/store/authStore';
 import { useFetchCounselingSessionDetail, counselingQueryKeys } from '@/entities/counseling/model/queries';
 import { useWebSocket, type StompSendUserMessagePayload } from '@/features/counseling/hooks/useWebSocket';
-import { useCloseCounselingSession } from '@/entities/counseling/model/mutations';
+import { useCloseCounselingSession, useCreateReportAndEndSession } from '@/entities/counseling/model/mutations';
 import type { ChatMessage } from '@/entities/counseling/model/types';
 import type { CounselingSession } from '@/entities/counseling/model/types';
 
@@ -21,9 +21,10 @@ import ChatMessageList from '@/widgets/ChatMessageList/ui/ChatMessageList';
 import { Card, CardHeader, CardContent, CardFooter } from '@/shared/ui/card';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
-import { Terminal, AlertCircle, AlertTriangle, HelpCircle } from 'lucide-react';
+import { Terminal, AlertCircle, AlertTriangle, HelpCircle, LogOut } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import BackButton from '@/shared/ui/BackButton';
+import SessionEndModal from '@/features/counseling/ui/SessionEndModal';
 
 /** @constant {number} AUTO_SESSION_END_TIMEOUT - 사용자의 비활성 상태가 지속될 경우 자동으로 세션을 종료하는 시간 (밀리초 단위, 현재 10분). */
 const AUTO_SESSION_END_TIMEOUT = 10 * 60 * 1000;
@@ -69,6 +70,9 @@ export function CounselingChatWindow() {
 
   /** @ref {NodeJS.Timeout | null} autoEndTimerRef - 자동 세션 종료를 위한 타이머 ID를 저장하는 ref. */
   const autoEndTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  /** @state {boolean} isSessionEndModalOpen - 세션 종료 확인 모달 표시 여부. */
+  const [isSessionEndModalOpen, setIsSessionEndModalOpen] = useState(false);
 
   /**
    * @function handleAuthError
@@ -215,7 +219,8 @@ export function CounselingChatWindow() {
 
   // --- Automatic Session Ending Logic ---
   /** @constant {function} closeSessionMutation - 상담 세션을 종료하는 Tanstack Query 뮤테이션 함수. */
-  const { mutate: closeSessionMutation } = useCloseCounselingSession();
+  const { mutate: closeSessionMutation, isPending: isCloseSessionPending } = useCloseCounselingSession();
+  const { mutate: createReportMutation, isPending: isCreateReportPending } = useCreateReportAndEndSession();
 
   /**
    * @effect 자동 세션 종료 로직을 관리하는 `useEffect`.
@@ -278,6 +283,7 @@ export function CounselingChatWindow() {
             // 캐시 무효화
             await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(couns_id) });
             await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
+            router.push('/counseling'); // 자동 종료 후 상담 목록으로 이동
           },
           onError: (error) => {
             console.error(`[AutoEnd] Failed to close session ${couns_id} automatically:`, error);
@@ -317,6 +323,7 @@ export function CounselingChatWindow() {
               // 캐시 무효화
               await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(couns_id) });
               await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
+              router.push('/counseling'); // 자동 종료 후 상담 목록으로 이동
             },
             onError: (error) => {
               console.error(`[AutoEnd] Failed to close session ${couns_id} automatically (timer):`, error);
@@ -344,6 +351,7 @@ export function CounselingChatWindow() {
     disconnectWebSocket,
     queryClient,
     setIsCurrentSessionClosed,
+    router,
   ]);
 
   // --- Effects ---
@@ -363,10 +371,7 @@ export function CounselingChatWindow() {
         console.log('[ChatWindow] 새 세션으로 감지됨. 상담 목록 캐시를 무효화합니다.');
         queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
 
-        // URL에서 isNew 파라미터를 제거하여 중복 실행 방지 (현재 경로에서 쿼리만 변경)
-        // window.history.replaceState(null, '', `/counseling/${couns_id}`); // 브라우저 API 직접 사용 방식
-        // Next.js App Router에서는 router.replace를 사용하되, searchParams를 조작해야 합니다.
-        // 현재 URL에서 'isNew' 파라미터만 제거하고 나머지 유지
+        // URL에서 isNew 파라미터를 제거하고 나머지 유지
         const newSearchParams = new URLSearchParams(searchParams.toString());
         newSearchParams.delete('isNew');
         router.replace(`/counseling/${couns_id}?${newSearchParams.toString()}`, { scroll: false });
@@ -492,62 +497,106 @@ export function CounselingChatWindow() {
   // 서버에서 로드된 실제 세션 상태가 반영될 때까지는 열린 것으로 가정합니다.
   const isEffectivelyClosed = storeIsCurrentSessionClosed ?? sessionDetail.isClosed ?? false;
 
+  // 모달의 '상담만 종료하기' 버튼 클릭 시 실행될 함수
+  const handleConfirmEndSession = () => {
+    if (!couns_id || isCloseSessionPending || isCreateReportPending) return;
+    closeSessionMutation(couns_id, {
+      onSuccess: async () => {
+        console.log('[Modal] 상담 세션 종료 성공 (counsels/{counsId} POST)');
+        setIsCurrentSessionClosed(true); // Zustand 스토어 업데이트
+        if (disconnectWebSocket) {
+          await disconnectWebSocket();
+        }
+        setIsSessionEndModalOpen(false);
+        router.push('/counseling');
+        return; // 명시적 void 반환 시도
+      },
+      onError: (error) => {
+        console.error('[Modal] 상담 세션 종료 실패:', error);
+        setIsSessionEndModalOpen(false);
+        // 에러 토스트 메시지 등 표시 가능
+      },
+    });
+  };
+
+  // 모달의 '레포트 발행하기' 버튼 클릭 시 실행될 함수
+  const handleConfirmCreateReport = () => {
+    if (!couns_id || isCloseSessionPending || isCreateReportPending) return;
+    createReportMutation(couns_id, {
+      onSuccess: async () => {
+        console.log('[Modal] 레포트 생성 및 세션 종료 성공 (counsels/{counsId}/reports POST)');
+        if (disconnectWebSocket) {
+          await disconnectWebSocket();
+        }
+        setIsSessionEndModalOpen(false);
+        router.push('/reports');
+        return; // 명시적 void 반환 시도
+      },
+      onError: (error) => {
+        console.error('[Modal] 레포트 생성 및 세션 종료 실패:', error);
+        setIsSessionEndModalOpen(false);
+        // 에러 토스트 메시지 등 표시 가능
+      },
+    });
+  };
+
   return (
-    <Card className="w-full h-[calc(100vh-theme(space.16)-theme(space.16))] flex flex-col relative">
-      {/* CardHeader: 상담 제목 및 컨트롤 버튼 (수정, 레포트, 종료) */}
-      <CardHeader className="flex flex-row items-center justify-between p-4 border-b sticky top-0 bg-card z-10">
-        <div className="flex items-center flex-1 min-w-0">
-          <BackButton href="/counseling" className="mr-2 flex-shrink-0" />
-          <h1 className="text-lg font-semibold truncate" title={currentTitle}>
-            {currentTitle}
-          </h1>
-        </div>
-        <div className="flex items-center space-x-2 flex-shrink-0">
-          {/* 제목 수정 버튼 */}
-          <EditCounselingTitleButton counsId={couns_id!} currentTitle={currentTitle} />
-          {/* 세션이 열려 있을 때만 레포트 생성 버튼 표시 */}
-          {couns_id && !isEffectivelyClosed && (
-            <CreateSessionReportButton
-              counsId={couns_id}
-              isSessionClosed={isEffectivelyClosed}
-              disconnectWebSocket={disconnectWebSocket}
-              onReportSuccess={() => {
-                // 레포트 생성 및 세션 종료 성공 시 추가 작업 (예: 토스트 메시지)
-                console.log('[UI] 레포트 생성 및 세션 종료 성공! 화면에서 추가 작업 가능.');
-                // 필요한 경우, 상담 목록 페이지로 이동 등의 라우팅 처리도 가능
-                // router.push('/reports');
-              }}
-            />
-          )}
-          {/* 상담 종료 버튼 (isSessionClosed prop 전달하여 내부에서 비활성화 처리 기대) */}
-          <EndCounselingButton
+    <>
+      <Card className="w-full h-[calc(100vh-theme(space.16)-theme(space.16))] flex flex-col relative">
+        {/* CardHeader: 상담 제목 및 컨트롤 버튼 (수정, 레포트, 종료) */}
+        <CardHeader className="flex flex-row items-center justify-between p-4 border-b sticky top-0 bg-card z-10">
+          <div className="flex items-center flex-1 min-w-0">
+            <BackButton href="/counseling" className="mr-2 flex-shrink-0" />
+            <h1 className="text-lg font-semibold truncate" title={currentTitle}>
+              {currentTitle}
+            </h1>
+          </div>
+          <div className="flex items-center space-x-2 flex-shrink-0">
+            {/* 제목 수정 버튼 */}
+            <EditCounselingTitleButton counsId={couns_id!} currentTitle={currentTitle} />
+
+            {/* 세션이 열려 있을 때만 상담 완료 버튼 표시 */}
+            {couns_id && !isEffectivelyClosed && (
+              <Button
+                onClick={() => setIsSessionEndModalOpen(true)}
+                variant="destructive" // 기존 EndCounselingButton 스타일과 유사하게
+                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                size="sm"
+                disabled={isCloseSessionPending || isCreateReportPending}
+              >
+                <LogOut size={16} className="mr-2" />
+                상담 종료
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+
+        {/* CardContent: 채팅 메시지 목록 */}
+        <CardContent className="flex-grow p-4 space-y-4 overflow-y-auto bg-background" id="chat-message-list-container">
+          <ChatMessageList messages={messages} />
+        </CardContent>
+
+        {/* CardFooter: 메시지 입력 폼 */}
+        <CardFooter className="p-4 border-t sticky bottom-0 bg-card z-10">
+          <SendMessageForm
             currentCounsId={couns_id!}
-            disconnectWebSocket={disconnectWebSocket}
-            isSessionClosed={isEffectivelyClosed}
-            onEndSuccess={() => {
-              // 상담 종료 성공 시 추가 작업 (예: 토스트 메시지)
-              console.log('[UI] 상담 종료 성공! 화면에서 추가 작업 가능.');
-            }}
+            disabled={isEffectivelyClosed || !isWebSocketConnected} // 세션 종료 또는 웹소켓 미연결 시 비활성화
+            isWebSocketConnected={isWebSocketConnected} // isWebSocketConnected prop 전달 추가
+            sendUserMessage={handleSendUserMessage} // 래핑된 메시지 전송 함수 전달
+            onUserActivity={() => setLastUserActivityTime(Date.now())} // 사용자 입력 활동 시 시간 업데이트
           />
-        </div>
-      </CardHeader>
+        </CardFooter>
+      </Card>
 
-      {/* CardContent: 채팅 메시지 목록 */}
-      <CardContent className="flex-grow p-4 space-y-4 overflow-y-auto bg-background" id="chat-message-list-container">
-        <ChatMessageList messages={messages} />
-      </CardContent>
-
-      {/* CardFooter: 메시지 입력 폼 */}
-      <CardFooter className="p-4 border-t sticky bottom-0 bg-card z-10">
-        <SendMessageForm
-          currentCounsId={couns_id!}
-          disabled={isEffectivelyClosed || !isWebSocketConnected} // 세션 종료 또는 웹소켓 미연결 시 비활성화
-          isWebSocketConnected={isWebSocketConnected} // isWebSocketConnected prop 전달 추가
-          sendUserMessage={handleSendUserMessage} // 래핑된 메시지 전송 함수 전달
-          onUserActivity={() => setLastUserActivityTime(Date.now())} // 사용자 입력 활동 시 시간 업데이트
-        />
-      </CardFooter>
-    </Card>
+      <SessionEndModal
+        isOpen={isSessionEndModalOpen}
+        onClose={() => setIsSessionEndModalOpen(false)}
+        onConfirmReport={handleConfirmCreateReport}
+        onConfirmEnd={handleConfirmEndSession}
+        isReportPending={isCreateReportPending}
+        isEndPending={isCloseSessionPending}
+      />
+    </>
   );
 }
 
