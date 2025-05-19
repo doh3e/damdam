@@ -1,8 +1,8 @@
 'use client';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useProfileStore } from '@/app/store/userProfileStore';
 import { getUserProfile, updateUserProfile } from '@/entities/user/model/api';
-import { Gender, Age, MBTI } from '@/shared/consts/enum';
+import { Gender, GenderLabel, Age, AgeLabel, MBTI, MBTILabel } from '@/shared/consts/enum';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { UserProfile } from '@/entities/user/model/types';
@@ -140,13 +140,13 @@ export default function UserProfileForm() {
       <div>
         <label className="block text-lg font-bold text-gray-700 mb-1">나이</label>
         <select
-          value={age}
+          value={age || Age.UNKNOWN}
           onChange={(e) => setAge(e.target.value as Age)}
           className="w-full border rounded-md px-3 py-2"
         >
           {Object.entries(Age).map(([key, val]) => (
             <option key={key} value={val}>
-              {val}
+              {AgeLabel[val as Age]}
             </option>
           ))}
         </select>
@@ -156,13 +156,13 @@ export default function UserProfileForm() {
       <div>
         <label className="block text-lg font-bold text-gray-700 mb-1">성별</label>
         <select
-          value={gender}
+          value={gender || Gender.UNKNOWN}
           onChange={(e) => setGender(e.target.value as Gender)}
           className="w-full border rounded-md px-3 py-2"
         >
           {Object.entries(Gender).map(([key, val]) => (
             <option key={key} value={val}>
-              {val}
+              {GenderLabel[val as Gender]}
             </option>
           ))}
         </select>
@@ -183,17 +183,15 @@ export default function UserProfileForm() {
       <div>
         <label className="block text-lg font-bold text-gray-700 mb-1">MBTI</label>
         <select
-          value={mbti}
+          value={mbti || MBTI.UNKNOWN}
           onChange={(e) => setMbti(e.target.value as MBTI)}
           className="w-full border rounded-md px-3 py-2"
         >
-          {Object.entries(MBTI)
-            .filter(([_, val]) => val !== MBTI.UNKNOWN)
-            .map(([key, val]) => (
-              <option key={key} value={val}>
-                {val}
-              </option>
-            ))}
+          {Object.entries(MBTI).map(([key, val]) => (
+            <option key={key} value={val}>
+              {MBTILabel[val as MBTI]}
+            </option>
+          ))}
         </select>
       </div>
 
