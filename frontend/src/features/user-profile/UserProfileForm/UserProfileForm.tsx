@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useProfileStore } from '@/app/store/userProfileStore';
 import { getUserProfile, updateUserProfile } from '@/entities/user/model/api';
 import { Gender, GenderLabel, Age, AgeLabel, MBTI, MBTILabel } from '@/shared/consts/enum';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { UserProfile } from '@/entities/user/model/types';
 import AlertModal from '@/shared/ui/alertmodal';
@@ -28,7 +28,7 @@ export default function UserProfileForm() {
 
   const [preview, setPreview] = useState<string | null>(null);
 
-  // 이미지 미리보기 URL 처리
+  // 이미지 미리보기
   useEffect(() => {
     if (profileImage) {
       const url = URL.createObjectURL(profileImage);
@@ -39,7 +39,7 @@ export default function UserProfileForm() {
     }
   }, [profileImage, profileImageUrl]);
 
-  // 초기 유저 정보 불러오기
+  // 사용자 정보 불러오기
   const { data } = useQuery<UserProfile, Error>({
     queryKey: ['userProfile'],
     queryFn: getUserProfile,
@@ -56,7 +56,9 @@ export default function UserProfileForm() {
     }
   }, [data]);
 
-  // 저장 요청
+  // 저장 처리
+  const queryClient = useQueryClient();
+
   const handleSave = async () => {
     const formData = new FormData();
     if (profileImage) formData.append('profileImage', profileImage);
@@ -68,16 +70,11 @@ export default function UserProfileForm() {
 
     try {
       await updateUserProfile(formData);
+      await queryClient.invalidateQueries({ queryKey: ['userProfile'] }); // 캐시 무효화
       setShowAlert(true);
     } catch (error) {
       setErrorAlert(true);
     }
-  };
-
-  // 이미지 변경
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    setProfileImage(file || null);
   };
 
   // alert 모달
@@ -203,6 +200,8 @@ export default function UserProfileForm() {
       >
         저장하기
       </button>
+
+      {/* 모달 */}
       {showAlert && <AlertModal message="프로필이 성공적으로 저장되었습니다!" onClose={() => setShowAlert(false)} />}
       {showErrorAlert && <AlertModal message="저장에 실패하였습니다" onClose={() => setErrorAlert(false)} />}
     </form>
