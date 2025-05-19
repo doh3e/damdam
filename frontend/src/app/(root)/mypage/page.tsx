@@ -1,8 +1,11 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuthStore } from '@/app/store/authStore';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import { getUserProfile } from '@/entities/user/model/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBullhorn,
@@ -14,27 +17,38 @@ import {
   faRightFromBracket,
 } from '@fortawesome/free-solid-svg-icons';
 
-const user = {
-  nickname: '내담이',
-  email: 'user@example.com',
-  profileImage: '/pixeldamdam.png', // 기본 이미지 경로, 실제 이미지는 usersprofile API 연동
-};
-
 export default function MyPage() {
   const router = useRouter();
+
   const handleLogout = () => {
     useAuthStore.getState().clearToken();
     router.replace('/login');
   };
+
+  const { data: user, isLoading } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: getUserProfile,
+  });
+
+  if (isLoading) {
+    return <div className="text-center text-gray-500 mt-10">로딩 중...</div>;
+  }
+
   return (
     <div className="p-4 space-y-6 flex flex-col items-center">
       {/* 프로필 영역 */}
       <section className="bg-white w-full max-w-xl mx-auto rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
         <div className="flex flex-col items-center mb-8">
           <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-orange-200 mb-2">
-            <img src={user.profileImage} alt="프로필 이미지" width={96} height={96} className="object-cover" />
+            <Image
+              src={user?.profileImage || '/profile.png'}
+              alt="프로필 이미지"
+              width={96}
+              height={96}
+              className="object-cover"
+            />
           </div>
-          <div className="text-xl font-bold text-gray-900">{user.nickname}</div>
+          <div className="text-xl font-bold text-gray-900">{user?.nickname || '내담이'}</div>
         </div>
 
         {/* 메뉴 리스트 */}
