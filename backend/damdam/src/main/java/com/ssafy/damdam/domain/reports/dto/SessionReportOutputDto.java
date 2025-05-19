@@ -23,7 +23,7 @@ public class SessionReportOutputDto {
     private String counsTitle;
 
     private String summary;
-    private String analyse;
+    private String analyze;
 
     private String valence;
     private String arousal;
