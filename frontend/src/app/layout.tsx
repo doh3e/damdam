@@ -8,6 +8,7 @@ import { Header } from '@/widgets/Header'; // Header 위젯 가져오기
 import { BottomNavigation } from '@/widgets/BottomNavigation'; // BottomNavigation 위젯 가져오기
 import QueryClientProviders from './providers/QueryClientProviders';
 import { ThemeProvider } from './providers/ThemeProvider';
+import AudioEncoderInitializer from './providers/AudioEncoderInitializer';
 import { config } from '@fortawesome/fontawesome-svg-core';
 import '@fortawesome/fontawesome-svg-core/styles.css';
 config.autoAddCss = false;
@@ -82,6 +83,8 @@ export default function RootLayout({
         className={cn('min-h-screen bg-muted font-sans antialiased', nonoSans.variable)}
         suppressHydrationWarning={true}
       >
+        {/* === Audio Encoder Initializer === */}
+        <AudioEncoderInitializer />
         {/* === 앱 전체 뷰 컨테이너 === */}
         {/* h-screen으로 높이 고정, overflow-hidden으로 내부 스크롤 제한 */}
         <div className="mx-auto flex h-screen max-w-screen-sm flex-col overflow-hidden bg-background shadow-md">

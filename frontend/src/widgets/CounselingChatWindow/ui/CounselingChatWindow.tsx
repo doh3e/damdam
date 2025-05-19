@@ -94,7 +94,7 @@ export function CounselingChatWindow() {
     isError,
     error,
   } = useFetchCounselingSessionDetail(couns_id || '', {
-    staleTime: 5 * 60 * 1000, // 5분 동안 캐시된 데이터를 최신으로 간주.
+    staleTime: 0, // 5 * 60 * 1000, // 5분 동안 캐시된 데이터를 최신으로 간주.
     gcTime: 10 * 60 * 1000, // 10분 동안 사용되지 않은 캐시 데이터는 제거.
     enabled: !!couns_id && !!token, // `couns_id`와 `token`이 모두 유효할 때만 쿼리 실행.
   });

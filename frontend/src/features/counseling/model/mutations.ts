@@ -127,8 +127,8 @@ const uploadVoiceFile = async (payload: UploadVoiceFilePayload): Promise<UploadV
 
   const formData = new FormData();
   // Swagger 스펙에 따라 필드명을 'file'로 변경
-  // filename이 제공되면 사용하고, 아니면 기본 파일명 사용
-  const finalFilename = filename || 'voice_message.webm';
+  // filename이 제공되면 사용하고, 아니면 기본 파일명을 'voice.wav'로 사용
+  const finalFilename = filename || 'voice.wav';
   formData.append('file', audioFile, finalFilename);
 
   // Swagger 스펙에 따라 messageOrder를 쿼리 파라미터로 전달
@@ -139,7 +139,11 @@ const uploadVoiceFile = async (payload: UploadVoiceFilePayload): Promise<UploadV
   // axiosInstance.ts 에서 FormData인 경우 Content-Type 헤더를 삭제하도록 수정했으므로,
   // 여기서는 별도의 headers 설정을 전달할 필요가 없습니다.
   // config 인자가 옵셔널이므로 전달하지 않아도 됩니다.
-  return apiClient.post<FormData, UploadVoiceFileResponse>(endpoint, formData);
+  return apiClient.post<FormData, UploadVoiceFileResponse>(
+    endpoint,
+    formData,
+    { timeout: 30000 } as import('axios').InternalAxiosRequestConfig // 타입 단언 추가
+  );
 };
 
 /**
