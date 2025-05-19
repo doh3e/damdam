@@ -115,12 +115,10 @@ services:
         NEXT_PUBLIC_GOOGLE_LOGIN_URL: "https://k12s202.p.ssafy.io/oauth2/authorization/google"
         NEXT_PUBLIC_NAVER_LOGIN_URL:  "https://k12s202.p.ssafy.io/oauth2/authorization/naver"
         NEXT_PUBLIC_KAKAO_LOGIN_URL:  "https://k12s202.p.ssafy.io/oauth2/authorization/kakao"
-        OPENAI_API_KEY: ${OPEN_API_KEY}
+        OPENAI_API_KEY:  "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"
     environment:
       - NODE_ENV=production      # 런타임에서도 NODE_ENV 확인용
       - OPEN_API_KEY=${OPENAI_API_KEY}
-    env_file:
-      - .env.production
     ports:
       - "3000:3000"     
   ai-data:
