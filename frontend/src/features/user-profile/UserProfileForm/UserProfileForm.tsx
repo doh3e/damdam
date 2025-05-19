@@ -72,15 +72,20 @@ export default function UserProfileForm() {
     formData.append('mbti', mbti);
 
     try {
-      await updateUserProfile(formData); // 서버 업데이트
-      const updated = await getUserProfile(); // 저장 후 직접 다시 fetch
-      setNickname(updated.nickname);
-      setAge(updated.age);
-      setGender(updated.gender);
-      setCareer(updated.career);
-      setMbti(updated.mbti);
-      setProfileImageUrl(updated.profileImage);
-      setProfileImage(null); // 파일 상태 초기화
+      const updatedProfile = await updateUserProfile(formData);
+      useProfileStore.getState().syncFromServer(updatedProfile);
+      await queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+      // // zustand 상태 업데이트
+      // setNickname(updatedProfile.nickname);
+      // setAge(updatedProfile.age);
+      // setGender(updatedProfile.gender);
+      // setCareer(updatedProfile.career);
+      // setMbti(updatedProfile.mbti);
+      // setProfileImageUrl(updatedProfile.profileImage);
+      // setProfileImage(null); // 파일 상태 초기화
+
+      // 쿼리 캐시 무효화
+      await queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       setShowAlert(true);
     } catch (error) {
       setErrorAlert(true);
