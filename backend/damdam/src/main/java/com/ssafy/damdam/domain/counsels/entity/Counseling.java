@@ -1,5 +1,7 @@
 package com.ssafy.damdam.domain.counsels.entity;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 import com.ssafy.damdam.domain.users.entity.Users;
@@ -54,7 +56,8 @@ public class Counseling extends BaseTimeEntityWithUpdatedAt {
 	@PrePersist
 	private void fillDefaultTitle() {
 		// AuditingEntityListener가 createdAt을 먼저 채워줌
-		String prefix = this.getCreatedAt().format(DateTimeFormatter.ofPattern("yyMMdd_HHmm"));
+		String prefix = LocalDateTime.now(ZoneId.of("Asia/Seoul"))
+				.format(DateTimeFormatter.ofPattern("yyMMdd_HHmm"));
 		this.counsTitle = prefix + "_상담일지";
 	}
 
