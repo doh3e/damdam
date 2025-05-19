@@ -10,11 +10,9 @@ import lombok.NoArgsConstructor;
 @Getter
 @Builder
 public class EmotionDto {
-
     private int happiness;
     private int sadness;
     private int angry;
     private int neutral;
     private int other;
-
 }

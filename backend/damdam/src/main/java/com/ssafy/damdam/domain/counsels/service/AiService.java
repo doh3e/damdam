@@ -11,7 +11,7 @@ public interface AiService {
 
 	EmotionDto analyzingText(String message);
 
-	LlmAiChatResponse chatWithLlm(Long roomId, Long userId, String nickname, ChatInputDto input);
+	LlmAiChatResponse chatWithLlm(Long roomId, Long userId, String nickname, ChatInputDto input, EmotionDto emotion);
 
 	LlmSummaryResponse getSessionReport(Long counsId) throws JsonProcessingException;
 }

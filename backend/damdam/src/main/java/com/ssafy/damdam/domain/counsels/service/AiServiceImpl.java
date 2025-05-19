@@ -88,7 +88,8 @@ public class AiServiceImpl implements AiService {
 		Long roomId,
 		Long userId,
 		String nickname,
-		ChatInputDto input
+		ChatInputDto input,
+		EmotionDto emotion
 	) {
 
 		CounselSession session = sessionRepository.findById(roomId)
@@ -137,8 +138,9 @@ public class AiServiceImpl implements AiService {
 			.build();
 
 		LlmAiChatRequest request = LlmAiChatRequest.builder()
-			.chatInputDto(input)
-			.userContextDto(userContext)
+			.messageInput(input)
+			.userContext(userContext)
+			.emotion(emotion)
 			.build();
 
 		log.info("채팅에 들어갈 리퀘스트 정보들: " +

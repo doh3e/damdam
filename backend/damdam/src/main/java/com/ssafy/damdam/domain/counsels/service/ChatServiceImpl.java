@@ -113,7 +113,7 @@ public class ChatServiceImpl implements ChatService {
 
 		// llm 로직 호출
 		LlmAiChatResponse botReply = aiService.chatWithLlm(
-			roomId, userId, nickname, input
+			roomId, userId, nickname, input, emotion
 		);
 
 		// 세션 업데이트 (토큰 차감 + 마지막 감정 저장)
@@ -196,7 +196,7 @@ public class ChatServiceImpl implements ChatService {
 
 		// llm 로직 호출
 		LlmAiChatResponse botReply = aiService.chatWithLlm(
-			roomId, userId, nickname, input
+			roomId, userId, nickname, input, emotion
 		);
 
 		// 세션 업데이트

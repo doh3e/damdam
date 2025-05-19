@@ -12,6 +12,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class LlmAiChatRequest {
 	private UserContextDto userContext;
-	private ChatInputDto MessageInput;
+	private ChatInputDto messageInput;
 	private EmotionDto emotion;
 }
