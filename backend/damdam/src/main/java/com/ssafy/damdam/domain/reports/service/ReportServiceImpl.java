@@ -1,8 +1,9 @@
 package com.ssafy.damdam.domain.reports.service;
 
+import com.ssafy.damdam.domain.reports.dto.PeriodReportListDto;
 import com.ssafy.damdam.domain.reports.dto.PeriodReportOutputDto;
+import com.ssafy.damdam.domain.reports.dto.SessionReportListDto;
 import com.ssafy.damdam.domain.reports.dto.SessionReportOutputDto;
-import com.ssafy.damdam.domain.reports.entity.PeriodReport;
 import com.ssafy.damdam.domain.reports.entity.SessionReport;
 import com.ssafy.damdam.domain.reports.repository.PeriodReportRepository;
 import com.ssafy.damdam.domain.reports.repository.SessionReportRepository;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,17 +41,23 @@ public class ReportServiceImpl implements ReportService {
         return user;
     }
 
+
+    private boolean isBlank(String s) {
+        return s == null || s.isBlank();
+    }
+
+    private LocalDate parseDate(String raw) {
+        if (isBlank(raw)) return null;
+        return LocalDate.parse(raw, DateTimeFormatter.ofPattern("yyyyMMdd"));
+    }
+
     @Override
-    public List<SessionReportOutputDto> getSReportList(
+    public List<SessionReportListDto> getSReportList(
             String startDate, String endDate, String keyword) {
         Users user = validateUser();
 
-        LocalDate start = (startDate == null || startDate.isBlank())
-                ? null
-                : LocalDate.parse(startDate);
-        LocalDate end = (endDate == null || endDate.isBlank())
-                ? null
-                : LocalDate.parse(endDate);
+        LocalDate start = parseDate(startDate);
+        LocalDate end   = parseDate(endDate);
 
         List<SessionReport> reports = sessionReportRepository
                 .findByFilter(user, start, end, keyword);
@@ -57,23 +65,10 @@ public class ReportServiceImpl implements ReportService {
         return reports.stream()
                 .map(r -> {
                     var counseling = r.getCounseling();
-                    var member     = counseling.getUsers();    // Users 엔티티
-                    return SessionReportOutputDto.builder()
+                    return SessionReportListDto.builder()
                             .sReportId   (r.getSReportId())
                             .sReportTitle(r.getSReportTitle())
-
-                            .userId      (member.getUserId())
-                            .nickname    (member.getNickname())
-
                             .counsId     (counseling.getCounsId())
-                            .counsTitle  (counseling.getCounsTitle())
-
-                            .summary     (r.getSummary())
-                            .analyze     (r.getAnalyze())
-
-                            .valence     (r.getValence())
-                            .arousal     (r.getArousal())
-
                             .createdAt   (r.getCreatedAt())
                             .build();
                 })
@@ -81,21 +76,57 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public List<PeriodReportOutputDto> getPReportList(
+    public List<PeriodReportListDto> getPReportList(
             String startDate, String endDate, String keyword) {
         Users user = validateUser();
 
-        LocalDate start = (startDate == null || startDate.isBlank())
-                ? null
-                : LocalDate.parse(startDate);
-        LocalDate end = (endDate == null || endDate.isBlank())
-                ? null
-                : LocalDate.parse(endDate);
+        LocalDate start = parseDate(startDate);
+        LocalDate end   = parseDate(endDate);
 
-        List<PeriodReport> reports = periodReportRepository
-                .findByFilter(user, start, end, keyword);
-
-        return List.of();
+        return periodReportRepository.findByFilter(user, start, end, keyword)
+                .stream()
+                .map(p -> PeriodReportListDto.builder()
+                        .pReportId   (p.getPReportId())
+                        .pReportTitle(p.getPReportTitle())
+                        .startDate   (p.getStartDate())
+                        .endDate     (p.getEndDate())
+                        .createdAt   (p.getCreatedAt())
+                        .build()
+                )
+                .collect(Collectors.toList());
     }
 
+    @Override
+    public SessionReportOutputDto getSessionReport(Long reportId) {
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public void updateSessionReportTitle(Long reportId, String sessionReportTitle) {
+
+    }
+
+    @Override
+    @Transactional
+    public void deleteSessionReport(Long reportId) {
+
+    }
+
+    @Override
+    public PeriodReportOutputDto getPeriodReport(Long pReportId) {
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public void updatePeriodReportTitle(Long pReportId, String pReportTitle) {
+
+    }
+
+    @Override
+    @Transactional
+    public void deletePeriodReport(Long pReportId) {
+
+    }
 }
