@@ -542,12 +542,17 @@ export function CounselingChatWindow() {
 
   return (
     <>
-      <Card className="w-full h-[calc(100vh-theme(space.16)-theme(space.16))] flex flex-col relative">
-        {/* CardHeader: 상담 제목 및 컨트롤 버튼 (수정, 레포트, 종료) */}
-        <CardHeader className="flex flex-row items-center justify-between p-4 border-b sticky top-0 bg-card z-10">
+      {/* 최상위 Card: 화면 전체 높이 차지, 기본 배경색 지정, 내부 스크롤은 CardContent가 담당 */}
+      <Card className="w-full h-full flex flex-col overflow-hidden bg-soft-ivory dark:bg-charcoal-black rounded-none shadow-none border-none">
+        {/* CardHeader: 상담 제목 및 컨트롤 버튼 */}
+        {/* 배경색을 white로 변경하고, 하단 그림자(shadow-sm) 추가, 기존 패딩 유지 */}
+        <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-light-gray dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10 shadow-sm">
           <div className="flex items-center flex-1 min-w-0">
-            <BackButton href="/counseling" className="mr-2 flex-shrink-0" />
-            <h1 className="text-lg font-semibold truncate" title={currentTitle}>
+            <BackButton href="/counseling" className="mr-2 flex-shrink-0 text-charcoal-black dark:text-soft-ivory" />
+            <h1
+              className="text-lg font-semibold truncate text-charcoal-black dark:text-soft-ivory"
+              title={currentTitle}
+            >
               {currentTitle}
             </h1>
           </div>
@@ -559,8 +564,8 @@ export function CounselingChatWindow() {
             {couns_id && !isEffectivelyClosed && (
               <Button
                 onClick={() => setIsSessionEndModalOpen(true)}
-                variant="destructive" // 기존 EndCounselingButton 스타일과 유사하게
-                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                variant="destructive"
+                className="bg-tomato-red hover:bg-tomato-red/90 text-white dark:bg-pale-coral-pink dark:hover:bg-pale-coral-pink/90 dark:text-charcoal-black"
                 size="sm"
                 disabled={isCloseSessionPending || isCreateReportPending}
               >
@@ -571,13 +576,15 @@ export function CounselingChatWindow() {
           </div>
         </CardHeader>
 
-        {/* CardContent: 채팅 메시지 목록 */}
-        <CardContent className="flex-grow p-4 space-y-4 overflow-y-auto bg-background" id="chat-message-list-container">
+        {/* CardContent: 채팅 메시지 목록. flex-grow로 남은 공간 모두 차지, 내부에서 스크롤 처리. 배경색 변경 */}
+        {/* p-0으로 변경하고, ChatMessageList 내부에서 패딩 및 스크롤 처리 */}
+        <CardContent className="flex-grow bg-light-gray dark:bg-gray-900 p-0" id="chat-message-list-container">
+          {/* ChatMessageList 내부에서 h-full 및 overflow-y-auto 필요 */}
           <ChatMessageList messages={messages} />
         </CardContent>
 
-        {/* CardFooter: 메시지 입력 폼 */}
-        <CardFooter className="p-4 border-t sticky bottom-0 bg-card z-10">
+        {/* CardFooter: 메시지 입력 폼. 배경색을 CardHeader와 동일하게, 패딩 조정 */}
+        <CardFooter className="p-3 border-t border-light-gray dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-800 z-10">
           <SendMessageForm
             currentCounsId={couns_id!}
             disabled={isEffectivelyClosed || !isWebSocketConnected} // 세션 종료 또는 웹소켓 미연결 시 비활성화

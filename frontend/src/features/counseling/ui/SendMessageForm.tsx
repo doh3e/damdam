@@ -87,8 +87,16 @@ const SendMessageForm = ({
   // newMessageInput 상태 변경 시 Textarea 높이 자동 조절
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+      textareaRef.current.style.height = 'auto'; // 높이를 먼저 auto로 설정하여 축소 가능하게
+      let newHeight = textareaRef.current.scrollHeight;
+      const maxHeight = 120; // Tailwind CSS의 h-32 (8rem, 128px)에 근접한 최대 높이 (5줄 정도)
+      if (newHeight > maxHeight) {
+        newHeight = maxHeight;
+        textareaRef.current.style.overflowY = 'auto'; // 최대 높이 도달 시 스크롤 표시
+      } else {
+        textareaRef.current.style.overflowY = 'hidden'; // 평소에는 스크롤 숨김
+      }
+      textareaRef.current.style.height = `${newHeight}px`;
     }
   }, [newMessageInput]);
 
@@ -289,93 +297,88 @@ const SendMessageForm = ({
     ]
   );
 
-  let micIcon = <Mic className="h-5 w-5" />;
-  let micButtonVariant: 'default' | 'destructive' | 'ghost' = 'ghost';
-  let micButtonTooltip = '음성 녹음 시작';
-
-  if (recordingState === RecordingState.REQUESTING_PERMISSION) {
-    micIcon = <Loader2 className="h-5 w-5 animate-spin" />;
-    micButtonTooltip = '마이크 권한 요청 중...';
-  } else if (recordingState === RecordingState.RECORDING) {
-    micIcon = <StopCircle className="h-5 w-5 text-red-500" />;
-    micButtonVariant = 'destructive';
-    micButtonTooltip = '녹음 중지';
-  } else if (recordingState === RecordingState.PROCESSING_STT) {
-    micIcon = <Loader2 className="h-5 w-5 animate-spin" />;
-    micButtonTooltip = '음성 변환 중...';
-  }
-
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="sticky bottom-0 flex w-full items-center space-x-2 border-t bg-background p-3 md:p-4"
-    >
+    <form onSubmit={handleSubmit} className="flex w-full items-end space-x-2">
+      {/* 마이크 버튼 */}
       <Button
         type="button"
-        variant={micButtonVariant}
+        variant="ghost"
         size="icon"
         onClick={handleMicButtonClick}
         disabled={disabled || !isWebSocketConnected || recordingState === RecordingState.PROCESSING_STT}
-        title={micButtonTooltip}
-        className="text-muted-foreground"
+        className="flex-shrink-0 text-gray-500 hover:text-pale-coral-pink dark:text-gray-400 dark:hover:text-pale-coral-pink disabled:opacity-50"
+        aria-label={recordingState === RecordingState.RECORDING ? '녹음 중지' : '음성으로 입력하기'}
       >
-        {micIcon}
-        <span className="sr-only">{micButtonTooltip}</span>
+        {recordingState === RecordingState.RECORDING ? (
+          <StopCircle className="h-6 w-6 text-red-500 animate-pulse" />
+        ) : recordingState === RecordingState.PROCESSING_STT ? (
+          <Loader2 className="h-6 w-6 animate-spin" />
+        ) : (
+          <Mic className="h-6 w-6" />
+        )}
       </Button>
 
+      {/* 메시지 입력 Textarea */}
       <div className="flex-grow relative">
+        {isCurrentMessageFromVoice && audioBlob && (
+          <div className="absolute top-1/2 transform -translate-y-1/2 right-3 z-10">
+            <Button
+              type="button"
+              variant="default"
+              size="icon"
+              onClick={handleClearVoiceInput}
+              className="h-6 w-6 p-1 bg-pale-coral-pink hover:bg-pale-coral-pink/90 text-white dark:bg-tomato-red dark:hover:bg-tomato-red/90 dark:text-white rounded-full shadow-md"
+              aria-label="음성 입력 지우기"
+            >
+              <X size={14} />
+            </Button>
+          </div>
+        )}
         <Textarea
           ref={textareaRef}
-          placeholder={
-            recordingState === RecordingState.RECORDING
-              ? '녹음 중... 녹음을 완료하려면 녹음 버튼을 다시 누르세요.'
-              : recordingState === RecordingState.PROCESSING_STT
-                ? '음성 변환 중...'
-                : isCurrentMessageFromVoice
-                  ? '음성 변환 결과입니다. 전송하거나 다시 녹음하세요.'
-                  : '메시지를 입력하세요...'
-          }
           value={newMessageInput}
           onChange={handleInputChange}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            if (onUserActivity) onUserActivity();
+            if (e.key === 'Enter' && !e.shiftKey && !disabled) {
               e.preventDefault();
               handleSubmit();
             }
           }}
-          rows={1}
-          className="max-h-[120px] min-h-[40px] flex-1 resize-none overflow-y-auto rounded-full px-4 py-2 scrollbar-thin"
+          placeholder={
+            disabled
+              ? '상담이 종료되었습니다.'
+              : !isWebSocketConnected
+                ? '연결 중...'
+                : recordingState === RecordingState.RECORDING
+                  ? '음성 녹음 중... 중지하려면 버튼을 누르세요.'
+                  : recordingState === RecordingState.PROCESSING_STT
+                    ? '음성 처리 중...'
+                    : '메시지를 입력하세요... (Shift+Enter로 줄바꿈)'
+          }
+          className="w-full resize-none overflow-y-hidden rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pale-coral-pink dark:focus:ring-pale-coral-pink/80 pr-10 min-h-[40px]" // pr-10은 전송 버튼 공간 확보 (필요시)
+          rows={1} // 초기에는 1줄로 시작
           disabled={
             disabled || recordingState === RecordingState.RECORDING || recordingState === RecordingState.PROCESSING_STT
           }
-          onFocus={onUserActivity}
-          onBlur={() => {
-            // console.log('Textarea blurred');
-          }}
         />
-        {isCurrentMessageFromVoice && newMessageInput && !disabled && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="absolute top-1/2 right-1 transform -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-destructive"
-            onClick={handleClearVoiceInput}
-            title="음성 입력 취소"
-          >
-            <X size={18} />
-          </Button>
-        )}
       </div>
 
+      {/* 전송 버튼 */}
       <Button
         type="submit"
+        variant="default"
         size="icon"
-        className="bg-primary text-primary-foreground hover:bg-primary/90"
-        disabled={!newMessageInput.trim() || disabled || !isWebSocketConnected}
-        title="메시지 전송"
+        disabled={
+          disabled ||
+          !newMessageInput.trim() ||
+          !isWebSocketConnected ||
+          recordingState === RecordingState.PROCESSING_STT
+        }
+        className="flex-shrink-0 bg-pale-coral-pink hover:bg-pale-coral-pink/90 text-white dark:bg-tomato-red dark:hover:bg-tomato-red/90 dark:text-white disabled:opacity-50 rounded-full" // 동그란 버튼으로 변경
+        aria-label="메시지 전송"
       >
         <SendHorizonal className="h-5 w-5" />
-        <span className="sr-only">메시지 전송</span>
       </Button>
     </form>
   );
