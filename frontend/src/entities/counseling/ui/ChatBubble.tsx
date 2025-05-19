@@ -73,7 +73,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
             'flex flex-col rounded-lg px-3 py-2 shadow-md break-words',
             isUserMessage
               ? 'bg-primary text-primary-foreground rounded-br-none' // 사용자 말풍선 (globals.css의 --color-primary 사용)
-              : 'bg-card text-card-foreground rounded-bl-none', // AI 말풍선 (globals.css의 --color-card 사용)
+              : 'bg-background text-card-foreground rounded-bl-none', // AI 말풍선 (globals.css의 --color-card 사용)
             {
               'ml-0': isUserMessage, // 사용자 메시지일 때 왼쪽 마진 없음
               'mr-0': isAiMessage, // AI 메시지일 때 오른쪽 마진 없음
