@@ -17,6 +17,8 @@ export interface ReceivedServerMessage {
   isVoice?: boolean;
   /** (옵션) 메시지 순서 (사용자 메시지 echo 시 포함될 수 있음) */
   messageOrder?: number;
+  /** (옵션) AI 답변 토큰 수 (서버에서 제공 시) */
+  tokenCount?: number;
   /** 실제 메시지 내용 */
   message: string; // 서버는 'message' 필드로 내용을 줌
   /** 메시지 타임스탬프 (ISO 문자열 또는 숫자) */

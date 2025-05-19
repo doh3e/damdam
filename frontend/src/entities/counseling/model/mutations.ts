@@ -13,9 +13,11 @@ import {
   type CreateCounselingSessionPayload,
   type UpdateCounselingTitlePayload,
   type CreateSessionReportResponse, // createSessionReport의 반환 타입
+  createReportAndEndSession, // 새로 추가된 API 함수 임포트
 } from './api'; // 정의된 API 함수 및 관련 타입을 가져옵니다.
 import type { CounselingSession } from './types';
 import { counselingQueryKeys } from './queries'; // 쿼리 키 관리를 위해 import
+import { useCounselingStore } from '@/features/counseling/model/counselingStore';
 
 /**
  * 새 상담 세션을 생성하는 Tanstack Query 뮤테이션 훅입니다.
@@ -39,7 +41,7 @@ export const useCreateCounselingSession = (
     mutationFn: (payload) => createCounselingSession(payload),
     onSuccess: (newSession, variables, context) => {
       // 새 세션 생성 성공 시, 상담 목록 및 해당 세션 상세 쿼리를 무효화하여 최신 데이터 반영
-      queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
+      // queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() }); // 라우팅 후 StartCounselingButton에서 처리하도록 주석 처리
       // queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(newSession.couns_id) }); // 생성 응답에 couns_id가 있다면 사용
       options?.onSuccess?.(newSession, variables, context);
     },
@@ -143,5 +145,68 @@ export const useCreateSessionReport = (
       options?.onSuccess?.(response, counsId, context);
     },
     ...options,
+  });
+};
+
+/**
+ * @hook useCreateReportAndEndSession
+ * @description 상담 세션에 대한 레포트를 생성하고 해당 세션을 종료하는 Tanstack Query 뮤테이션 훅입니다.
+ * 성공 시 관련 상담 상세 및 목록 쿼리를 무효화합니다.
+ *
+ * @returns {UseMutationResult<{ sreportId: number }, Error, string, unknown>}
+ *  - `mutate`: 레포트 생성 및 세션 종료를 실행하는 함수. 인자로 `counsId` (string)를 받습니다.
+ *  - `isPending`: 뮤테이션 진행 중 상태.
+ *  - `isSuccess`: 뮤테이션 성공 상태.
+ *  - `isError`: 뮤테이션 에러 발생 상태.
+ *  - `error`: 발생한 에러 객체.
+ *  - `data`: 성공 시 API로부터 반환된 데이터 (`{ sreportId: number }`).
+ */
+export const useCreateReportAndEndSession = () => {
+  const queryClient = useQueryClient();
+  const setIsCurrentSessionClosed = useCounselingStore((state) => state.setIsCurrentSessionClosed);
+  const currentCounsIdFromStore = useCounselingStore((state) => state.currentSessionId);
+
+  return useMutation<
+    { sreportId: number }, // 성공 시 반환 타입 (명세에 따름)
+    Error, // 에러 타입
+    string, // 뮤테이트 함수 입력 타입 (counsId)
+    unknown // 컨텍스트 타입
+  >({
+    mutationFn: (counsId: string) => createReportAndEndSession(counsId),
+    onSuccess: (data, counsId) => {
+      // data는 이제 { sreportId: number } 타입입니다.
+      console.log('레포트 생성 및 세션 종료 성공:', data, '생성된 레포트 ID:', data.sreportId);
+      // 현재 스토어의 세션 ID와 뮤테이션 대상 ID가 같으면 스토어 상태도 업데이트
+      if (counsId === currentCounsIdFromStore) {
+        setIsCurrentSessionClosed(true);
+      }
+
+      // Tanstack Query 캐시 직접 업데이트
+      // 1. 상담 목록 캐시 업데이트 (isClosed: true로 설정)
+      queryClient.setQueryData<CounselingSession[]>(counselingQueryKeys.lists(), (oldData) => {
+        if (!oldData) return undefined;
+        const numericCounsId = Number(counsId); // 문자열 counsId를 숫자로 변환
+        return oldData.map((session) =>
+          session.counsId === numericCounsId ? { ...session, isClosed: true } : session
+        );
+      });
+
+      // 2. 현재 세션 상세 정보 캐시 업데이트 (isClosed: true로 설정)
+      queryClient.setQueryData<CounselingSession>(counselingQueryKeys.detail(counsId), (oldData) => {
+        if (!oldData) return undefined;
+        return { ...oldData, isClosed: true };
+      });
+
+      // 관련 쿼리 무효화 (서버와 최종 동기화를 위해 유지)
+      queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(counsId) });
+      queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
+      // TODO: 레포트 관련 쿼리도 무효화 필요 (예: reportQueryKeys.list(), reportQueryKeys.detailByCounselId(counsId))
+      // queryClient.invalidateQueries({ queryKey: reportQueryKeys.lists() });
+      // queryClient.invalidateQueries({ queryKey: ['reports', { counsId, sreportId: data.sreportId }] }); // 예시: sreportId 사용
+    },
+    onError: (error: Error, counsId) => {
+      console.error(`레포트 생성 및 세션 종료 실패 (counsId: ${counsId}):`, error);
+      // 실패 시 사용자에게 알림 등의 추가 로직 구현 가능
+    },
   });
 };
