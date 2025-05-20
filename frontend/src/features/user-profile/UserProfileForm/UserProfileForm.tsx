@@ -5,7 +5,6 @@ import { getUserProfile, updateUserProfile } from '@/entities/user/model/api';
 import { Gender, GenderLabel, Age, AgeLabel, MBTI, MBTILabel } from '@/shared/consts/enum';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
-import { UserProfile } from '@/entities/user/model/types';
 import AlertModal from '@/shared/ui/alertmodal';
 
 function fileToBase64(file: File): Promise<string> {
@@ -20,62 +19,60 @@ function fileToBase64(file: File): Promise<string> {
 export default function UserProfileForm() {
   const {
     nickname,
-    setNickname,
     age,
-    setAge,
     gender,
-    setGender,
     career,
-    setCareer,
     mbti,
-    setMbti,
     profileImage,
-    setProfileImage,
     profileImageUrl,
+    setProfile,
+    setProfileImage,
     setProfileImageUrl,
+    setAge,
+    setGender,
+    setCareer,
+    setMbti,
   } = useProfileStore();
 
-  const [preview, setPreview] = useState<string | null>(null);
-  const [showAlert, setShowAlert] = useState(false);
-  const [showErrorAlert, setErrorAlert] = useState(false);
-  const queryClient = useQueryClient();
+  const [preview, setPreview] = useState<string | null>(null); // 미리보기 이미지
+  const [showAlert, setShowAlert] = useState(false); // 성공 모달
+  const [showErrorAlert, setErrorAlert] = useState(false); // 실패 모달
+  const queryClient = useQueryClient(); // react-query 캐시 조작 객체
 
-  // ✅ 이미지 미리보기
-  useEffect(() => {
-    if (profileImage) {
-      const url = URL.createObjectURL(profileImage);
-      setPreview(url);
-      return () => URL.revokeObjectURL(url);
-    }
-
-    const base64 = typeof window !== 'undefined' ? localStorage.getItem('profile-image-preview') : null;
-    if (base64) {
-      setPreview(base64);
-    } else if (profileImageUrl) {
-      setPreview(profileImageUrl);
-    } else {
-      setPreview('/profile.png');
-    }
-  }, [profileImage, profileImageUrl]);
-
-  // ✅ 프로필 GET 요청 → Zustand 동기화
-  const { data } = useQuery<UserProfile, Error>({
+  // 서버에서 유저 정보 가져오기 GET
+  const { data } = useQuery({
     queryKey: ['userProfile'],
     queryFn: getUserProfile,
   });
 
+  // zustand 상태에 저장(초기화)
   useEffect(() => {
     if (data) {
-      setNickname(data.nickname ?? '내담이');
-      setAge(data.age ?? Age.UNKNOWN);
-      setGender(data.gender ?? Gender.UNKNOWN);
-      setCareer(data.career ?? '');
-      setMbti(data.mbti ?? MBTI.UNKNOWN);
-      setProfileImageUrl(data.profileImage ?? null);
+      setProfile({
+        nickname: data.nickname ?? '내담이',
+        age: data.age ?? Age.UNKNOWN,
+        gender: data.gender ?? Gender.UNKNOWN,
+        career: data.career ?? '',
+        mbti: data.mbti ?? MBTI.UNKNOWN,
+        profileImageUrl: data.profileImage ?? null,
+      });
     }
-  }, [data]);
+  }, [data, setProfile]);
 
-  // ✅ 저장 처리
+  // 이미지 미리보기
+  useEffect(() => {
+    if (profileImage) {
+      const url = URL.createObjectURL(profileImage);
+      setPreview(url);
+      return () => URL.revokeObjectURL(url); // 메모리 해제
+    }
+    const base64 = typeof window !== 'undefined' ? localStorage.getItem('profile-image-preview') : null;
+    if (base64) setPreview(base64);
+    else if (profileImageUrl) setPreview(profileImageUrl);
+    else setPreview('/profile.png'); // 기본 이미지
+  }, [profileImage, profileImageUrl]);
+
+  // 저장 처리 PATCH
   const handleSave = async () => {
     try {
       if (!nickname.trim()) {
@@ -91,39 +88,27 @@ export default function UserProfileForm() {
       formData.append('career', career);
       formData.append('mbti', mbti);
 
-      // 1. PATCH 요청
+      // 서버에 PATCH 요청
       await updateUserProfile(formData);
+      await queryClient.invalidateQueries({ queryKey: ['userProfile'] }); // react-query 캐시 무효화 → 자동 GET
 
-      // 2. React Query 캐시 무효화 → 자동 재요청
-      await queryClient.invalidateQueries({ queryKey: ['userProfile'] });
-
-      // 3. GET → fallback 적용하여 상태 동기화
-      const updated = await getUserProfile();
-
-      setNickname(updated?.nickname ?? '내담이');
-      setAge(updated?.age ?? Age.UNKNOWN);
-      setGender(updated?.gender ?? Gender.UNKNOWN);
-      setCareer(updated?.career ?? '');
-      setMbti(updated?.mbti ?? MBTI.UNKNOWN);
-      setProfileImageUrl(updated?.profileImage ?? null);
-      setProfileImage(null);
-
-      // 4. 미리보기 제거
+      setProfileImage(null); // 업로드한 이미지 초기화
       if (typeof window !== 'undefined') {
         localStorage.removeItem('profile-image-preview');
       }
 
-      // 5. 성공 모달
+      // 성공 모달
       setShowAlert(true);
     } catch (error) {
-      console.error('❌ 프로필 저장 에러:', error);
-      setErrorAlert(true);
+      console.error('프로필 저장 에러:', error);
+      setErrorAlert(true); // 실패 모달
     }
   };
 
   return (
     <form className="w-full flex flex-col gap-4">
       <div>
+        {/* 프로필 사진 */}
         <span className="font-semibold">프로필 이미지</span>
         <div className="relative w-24 h-24 rounded-full overflow-hidden border border-gray-300 my-2 group">
           <Image
@@ -133,7 +118,6 @@ export default function UserProfileForm() {
             fill
             className="object-cover cursor-pointer"
             onClick={() => document.getElementById('userImageInput')?.click()}
-            priority
           />
           <input
             type="file"
@@ -162,17 +146,19 @@ export default function UserProfileForm() {
         </div>
       </div>
 
+      {/* 닉네임 */}
       <div>
         <label className="block text-lg font-bold text-gray-700 mb-1">닉네임</label>
         <input
           type="text"
           value={nickname}
-          onChange={(e) => setNickname(e.target.value)}
+          onChange={(e) => useProfileStore.getState().setNickname(e.target.value)}
           className="w-full border rounded-md px-3 py-2"
           maxLength={10}
         />
       </div>
 
+      {/* 나이 */}
       <div>
         <label className="block text-lg font-bold text-gray-700 mb-1">나이</label>
         <select
@@ -188,6 +174,7 @@ export default function UserProfileForm() {
         </select>
       </div>
 
+      {/* 성별 */}
       <div>
         <label className="block text-lg font-bold text-gray-700 mb-1">성별</label>
         <select

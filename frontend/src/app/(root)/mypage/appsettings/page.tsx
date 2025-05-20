@@ -4,10 +4,11 @@ import Image from 'next/image';
 import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
-import axiosInstance from '@/shared/api/axiosInstance';
+import { apiClient } from '@/shared/api/axiosInstance';
 import { useSettingsStore } from '@/app/store/userSettingStore';
 import { Switch } from '@/shared/ui/switch';
 import AlertModal from '@/shared/ui/alertmodal';
+import { useRouter } from 'next/navigation';
 
 const personalityOptions = [
   { key: 'kind', label: '상냥함', description: '부드럽고 따뜻한 말투로 대화합니다.' },
@@ -17,22 +18,44 @@ const personalityOptions = [
 ];
 
 export default function AppSettingsPage() {
-  const { darkMode, alarmOn, botImage, botPersonality, setDarkMode, setAlarmOn, setBotImage, setBotPersonality } =
-    useSettingsStore();
+  const router = useRouter();
+  const {
+    isDarkmode,
+    isAlarm,
+    botImageUrl,
+    botImageFile,
+    botCustom,
+    setIsDarkmode,
+    setIsAlarm,
+    setBotImageUrl,
+    setBotImageFile,
+    setBotCustom,
+    setNickname,
+    setEmail,
+  } = useSettingsStore();
 
   const [preview, setPreview] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
 
-  // 최초 설정 불러오기
+  // 초기 설정 불러오기
   const fetchSettings = async () => {
     try {
-      const res = await axiosInstance.get('/users/setting');
-      const data = res.data;
-      setDarkMode(data.isDarkmode);
-      setAlarmOn(data.isAlarm);
-      setBotImage(data.botImage); // 서버에서 받은 URL(string)으로 설정
+      const data = await apiClient.get<{
+        nickname: string;
+        email: string;
+        isDarkmode: boolean;
+        isAlarm: boolean;
+        botImage: string;
+        botCustom: string;
+      }>('/users/setting');
+
+      setNickname(data.nickname);
+      setEmail(data.email);
+      setIsDarkmode(data.isDarkmode);
+      setIsAlarm(data.isAlarm);
+      setBotImageUrl(data.botImage);
+      setBotCustom(data.botCustom);
     } catch (err) {
       console.error('설정 불러오기 실패:', err);
     }
@@ -42,34 +65,29 @@ export default function AppSettingsPage() {
     fetchSettings();
   }, []);
 
-  // 이미지 미리보기 처리
+  // 이미지 미리보기
   useEffect(() => {
-    if (imageFile) {
-      const url = URL.createObjectURL(imageFile);
+    if (botImageFile) {
+      const url = URL.createObjectURL(botImageFile);
       setPreview(url);
       return () => URL.revokeObjectURL(url);
-    } else if (typeof botImage === 'string') {
-      setPreview(botImage); // 서버 URL 사용
     } else {
-      setPreview(null);
+      setPreview(botImageUrl || '/profile.png');
     }
-  }, [imageFile, botImage]);
+  }, [botImageFile, botImageUrl]);
 
-  // 서버 저장 (FormData 사용)
+  // 설정 저장
   const updateSettings = async (extra?: Record<string, string | boolean>) => {
     const formData = new FormData();
 
-    // 신규 이미지 파일 추가
-    if (imageFile) {
-      formData.append('botImage', imageFile);
+    if (botImageFile) {
+      formData.append('botImage', botImageFile);
     }
 
-    // 기본 설정값 추가
-    formData.append('isDarkmode', String(darkMode));
-    formData.append('isAlarm', String(alarmOn));
-    formData.append('botCustom', botPersonality);
+    formData.append('isDarkmode', String(isDarkmode));
+    formData.append('isAlarm', String(isAlarm));
+    formData.append('botCustom', botCustom);
 
-    // 추가 파라미터 처리
     if (extra) {
       Object.entries(extra).forEach(([key, value]) => {
         formData.append(key, String(value));
@@ -77,10 +95,9 @@ export default function AppSettingsPage() {
     }
 
     try {
-      await axiosInstance.patch('/users/setting', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      await fetchSettings(); // 저장 후 최신 데이터 다시 불러오기
+      await apiClient.patch<FormData, void>('/users/setting', formData);
+      setBotImageFile(null); // 저장 후 초기화
+      await fetchSettings();
       setShowSuccess(true);
     } catch (err) {
       console.error('설정 저장 실패:', err);
@@ -92,7 +109,7 @@ export default function AppSettingsPage() {
     <div className="p-4 space-y-6 flex flex-col items-center">
       <section className="bg-white w-full max-w-xl mx-auto rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
         <h2 className="text-xl font-bold mb-8 flex items-center gap-5">
-          <button onClick={() => (window.location.href = '/mypage')} className="text-lg">
+          <button onClick={() => router.push('/mypage')} className="text-lg">
             <FontAwesomeIcon icon={faArrowLeft} />
           </button>
           앱 설정
@@ -103,9 +120,9 @@ export default function AppSettingsPage() {
           <div className="flex items-center justify-between">
             <span className="text-base">다크 모드</span>
             <Switch
-              checked={darkMode}
+              checked={isDarkmode}
               onCheckedChange={async (checked) => {
-                setDarkMode(checked);
+                setIsDarkmode(checked);
                 await updateSettings({ isDarkmode: checked });
               }}
             />
@@ -115,9 +132,9 @@ export default function AppSettingsPage() {
           <div className="flex items-center justify-between">
             <span className="text-base">알림 수신</span>
             <Switch
-              checked={alarmOn}
+              checked={isAlarm}
               onCheckedChange={async (checked) => {
-                setAlarmOn(checked);
+                setIsAlarm(checked);
                 await updateSettings({ isAlarm: checked });
               }}
             />
@@ -143,8 +160,8 @@ export default function AppSettingsPage() {
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
-                    setImageFile(file); // File 객체 저장 (Zustand에는 저장하지 않음)
-                    updateSettings({}); // 바로 저장
+                    setBotImageFile(file);
+                    updateSettings();
                   }
                 }}
               />
@@ -168,11 +185,11 @@ export default function AppSettingsPage() {
                 <button
                   key={key}
                   onClick={async () => {
-                    setBotPersonality(key);
+                    setBotCustom(key);
                     await updateSettings({ botCustom: key });
                   }}
                   className={`border rounded p-4 text-left ${
-                    botPersonality === key ? 'border-orange-500 bg-orange-50' : 'border-gray-300'
+                    botCustom === key ? 'border-orange-500 bg-orange-50' : 'border-gray-300'
                   }`}
                 >
                   <div className="font-semibold">{label}</div>
@@ -181,7 +198,8 @@ export default function AppSettingsPage() {
               ))}
             </div>
           </div>
-          {/* alert 모달 */}
+
+          {/* 알림 모달 */}
           {showSuccess && <AlertModal message="설정이 저장되었습니다!" onClose={() => setShowSuccess(false)} />}
           {showError && <AlertModal message="설정 저장에 실패했습니다." onClose={() => setShowError(false)} />}
         </div>
