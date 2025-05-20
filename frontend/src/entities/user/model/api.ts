@@ -8,14 +8,9 @@ export async function getUserProfile(): Promise<UserProfile> {
 }
 
 // PATCH: 프로필 정보 업데이트 (FormData 사용)
-export async function updateUserProfile(formData: FormData): Promise<UserProfile | null> {
+export async function updateUserProfile(formData: FormData): Promise<void> {
   const res = await axiosInstance.patch('/users/profile', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
     validateStatus: (status) => status >= 200 && status < 300, // 204도 허용
   });
-
-  // 204 No Content → 본문이 없음
-  if (res.status === 204) return null;
-
-  return res.data;
 }

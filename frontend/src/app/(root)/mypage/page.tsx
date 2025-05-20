@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuthStore } from '@/app/store/authStore';
@@ -22,46 +22,25 @@ import {
 export default function MyPage() {
   const router = useRouter();
 
-  // Zustand setter 가져오기
-  const {
-    nickname,
-    profileImageUrl,
-    setNickname,
-    setAge,
-    setGender,
-    setCareer,
-    setMbti,
-    setProfileImageUrl,
-    reset: resetProfile,
-  } = useProfileStore();
+  // 상태 초기화만을 위한 resetProfile (로그아웃 시 사용)
+  const resetProfile = useProfileStore((state) => state.reset);
 
-  // 로그아웃
+  // 로그아웃 처리
   const handleLogout = () => {
-    useAuthStore.getState().clearToken(); // 인증 정보 초기화
-    resetProfile(); // 사용자 프로필 상태 초기화
-    localStorage.removeItem('user-profile-store'); // localstorage 사용자 프로필 제거
-    localStorage.removeItem('profile-image-preview'); // base64 미리보기도 제거(혹시 남아있을 경우)
+    useAuthStore.getState().clearToken();
+    resetProfile();
+    localStorage.removeItem('user-profile-store');
+    localStorage.removeItem('profile-image-preview');
     router.replace('/login');
   };
 
-  // Zustand에 동기화
+  // 사용자 프로필 불러오기 (react-query)
   const { data, isLoading } = useQuery<UserProfile, Error>({
     queryKey: ['userProfile'],
     queryFn: getUserProfile,
   });
 
-  useEffect(() => {
-    if (data) {
-      setNickname(data.nickname);
-      setAge(data.age);
-      setGender(data.gender);
-      setCareer(data.career);
-      setMbti(data.mbti);
-      setProfileImageUrl(data.profileImage);
-    }
-  }, [data, setNickname, setAge, setGender, setCareer, setMbti, setProfileImageUrl]);
-
-  if (isLoading) {
+  if (isLoading || !data) {
     return <div className="text-center text-gray-500 mt-10">로딩 중...</div>;
   }
 
@@ -72,14 +51,14 @@ export default function MyPage() {
         <div className="flex flex-col items-center mb-8">
           <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-orange-200 mb-2">
             <Image
-              src={profileImageUrl || '/profile.png'}
+              src={data.profileImage || '/profile.png'}
               alt="프로필 이미지"
               width={96}
               height={96}
               className="object-cover"
             />
           </div>
-          <div className="text-xl font-bold text-gray-900">{nickname || '내담이'}</div>
+          <div className="text-xl font-bold text-gray-900">{data.nickname || '내담이'}</div>
         </div>
 
         {/* 메뉴 리스트 */}

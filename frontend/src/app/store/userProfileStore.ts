@@ -10,6 +10,8 @@ interface ProfileState {
   mbti: MBTI;
   profileImage: File | null; // 업로드 전 임시 파일
   profileImageUrl: string | null; // 서버 업로드 후 URL (선택)
+
+  // 개별 setter
   setNickname: (nickname: string) => void;
   setAge: (age: Age) => void;
   setGender: (gender: Gender) => void;
@@ -17,9 +19,13 @@ interface ProfileState {
   setMbti: (mbti: MBTI) => void;
   setProfileImage: (file: File | null) => void;
   setProfileImageUrl: (url: string | null) => void;
+
+  // 통합 setter
+  setProfile: (profile: Partial<ProfileState>) => void;
+
+  // 초기화
   reset: () => void;
 }
-
 export const useProfileStore = create<ProfileState>()(
   persist(
     (set) => ({
@@ -30,6 +36,7 @@ export const useProfileStore = create<ProfileState>()(
       mbti: MBTI.UNKNOWN,
       profileImage: null,
       profileImageUrl: null,
+
       setNickname: (nickname) => set({ nickname }),
       setAge: (age) => set({ age }),
       setGender: (gender) => set({ gender }),
@@ -37,6 +44,10 @@ export const useProfileStore = create<ProfileState>()(
       setMbti: (mbti) => set({ mbti }),
       setProfileImage: (file) => set({ profileImage: file }),
       setProfileImageUrl: (url) => set({ profileImageUrl: url }),
+
+      // 통합 setter
+      setProfile: (profile) => set((state) => ({ ...state, ...profile })),
+
       reset: () =>
         set({
           nickname: '',
@@ -49,7 +60,7 @@ export const useProfileStore = create<ProfileState>()(
         }),
     }),
     {
-      name: 'user-profile-store', // localStorage key 이름
+      name: 'user-profile-store',
       partialize: (state) => ({
         nickname: state.nickname,
         age: state.age,
