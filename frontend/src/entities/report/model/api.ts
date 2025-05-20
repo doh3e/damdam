@@ -12,14 +12,16 @@ export const getReports = async ({
   end?: string;
   keyword?: string;
 }): Promise<Report[]> => {
-  return apiClient.get<Report[]>('/api/v1/damdam/reports', {
-    category,
-    start,
-    end,
-    keyword,
+  return apiClient.get<Report[]>('/reports', {
+    params: {
+      category,
+      start,
+      end,
+      keyword,
+    },
   });
 };
 
 export const getReportDetail = async (reportId: string): Promise<Report> => {
-  return apiClient.get<Report>(`reports/${reportId}`);
+  return apiClient.get<Report>(`/reports/${reportId}`);
 };
