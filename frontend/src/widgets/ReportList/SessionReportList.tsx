@@ -1,5 +1,6 @@
 'use client';
 import { SessionReport } from '@/entities/report/model/types';
+import Link from 'next/link';
 
 interface Props {
   reports: SessionReport[];
@@ -13,9 +14,11 @@ export function SessionReportList({ reports, isLoading }: Props) {
   return (
     <ul className="space-y-4">
       {reports.map((r) => (
-        <li key={r.sReportId} className="border p-2 rounded">
-          <div className="font-bold">{r.sReportTitle}</div>
-          <div className="text-sm text-gray-500">{new Date(r.createdAt + 'Z').toLocaleString('ko-KR')}</div>
+        <li key={r.sreportId} className="border p-2 rounded hover:bg-gray-50 transition">
+          <Link href={`/reports/${r.sreportId}`} className="block">
+            <div className="font-bold">{r.sreportTitle}</div>
+            <div className="text-sm text-gray-500">{new Date(r.createdAt + 'Z').toLocaleString('ko-KR')}</div>
+          </Link>
         </li>
       ))}
     </ul>
