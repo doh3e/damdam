@@ -42,7 +42,13 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   const hasRecommendations = message.recommendations !== undefined && message.recommendations.length > 0;
 
   // date-fns를 사용하여 시간 포맷팅 (오전/오후 hh:mm)
-  const formattedTime = format(new Date(message.timestamp), 'a hh:mm', { locale: ko });
+  let formattedTime = format(new Date(message.timestamp), 'a hh:mm', { locale: ko });
+
+  // "오전 12:" (자정)를 "오전 00:"으로 변경합니다.
+  // "오후 12:" (정오)는 그대로 유지합니다.
+  if (formattedTime.startsWith('오전 12:')) {
+    formattedTime = formattedTime.replace('오전 12:', '오전 00:');
+  }
 
   return (
     <div
@@ -73,7 +79,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
             'flex flex-col rounded-lg px-3 py-2 shadow-md break-words',
             isUserMessage
               ? 'bg-primary text-primary-foreground rounded-br-none' // 사용자 말풍선 (globals.css의 --color-primary 사용)
-              : 'bg-card text-card-foreground rounded-bl-none', // AI 말풍선 (globals.css의 --color-card 사용)
+              : 'bg-background text-card-foreground rounded-bl-none', // AI 말풍선 (globals.css의 --color-card 사용)
             {
               'ml-0': isUserMessage, // 사용자 메시지일 때 왼쪽 마진 없음
               'mr-0': isAiMessage, // AI 메시지일 때 오른쪽 마진 없음
