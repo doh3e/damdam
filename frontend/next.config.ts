@@ -32,6 +32,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  webpack: (config, { isServer }) => {
+    // 서버 빌드 시 globalObject 설정을 추가합니다.
+    if (isServer) {
+      config.output.globalObject = `typeof self !== 'undefined' ? self : this`;
+    }
+    return config;
+  },
 };
 
 /**
