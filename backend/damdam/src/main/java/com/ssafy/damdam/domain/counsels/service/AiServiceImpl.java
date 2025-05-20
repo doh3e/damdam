@@ -101,7 +101,7 @@ public class AiServiceImpl implements AiService {
 			.orElseThrow(() -> new UserException(USER_INFO_NOT_FOUND));
 		UserSetting setting = settingRepository.findById(userId)
 			.orElseThrow(() -> new UserException(USER_SETTING_NOT_FOUND));
-		// survey 처리
+
 		UserSurvey survey = surveyRepository.findById(userId).orElse(null);
 		int depression = -1, anxiety = -1, stress = -1;
 		Boolean isSuicidal = null;
@@ -115,7 +115,6 @@ public class AiServiceImpl implements AiService {
 			stressReason = normalizeEnumValue(survey.getStressReason());
 		}
 
-		// enum 필드 변환 전 null 체크
 		String rawAge = normalizeEnumValue(String.valueOf(infos.getAge()));
 		Age ageEnum = rawAge != null ? Age.valueOf(rawAge) : null;
 
@@ -145,9 +144,6 @@ public class AiServiceImpl implements AiService {
 			.emotion(emotion)
 			.build();
 
-		log.info("채팅에 들어갈 리퀘스트 정보들: " +
-				"닉네임 = {}, 메세지 = {}, 유저정보 = {}" +
-				nickname, input.getMessage(), userContext);
 		return llmChatClient.requestChatResponse(request);
 	}
 
@@ -155,7 +151,6 @@ public class AiServiceImpl implements AiService {
 	@Transactional
 	public LlmSummaryResponse getSessionReport(Long counsId) throws JsonProcessingException {
 
-		// 1. 레디스 세션 불러오기
 		CounselSession session = sessionRepository.findById(counsId)
 			.orElseThrow(() -> new RedisException(REDIS_SESSION_NOT_FOUND));
 
@@ -167,7 +162,6 @@ public class AiServiceImpl implements AiService {
 				.map(item -> objectMapper.convertValue(item, ChatMessageDto.class))
 				.toList();
 
-		// 2. 리스트화 후 LLM에 레포트 요청
 		LlmSummaryRequest request = LlmSummaryRequest.builder()
 			.counsId(counsId)
 			.userId(session.getUserId())
@@ -176,7 +170,6 @@ public class AiServiceImpl implements AiService {
 
 		LlmSummaryResponse llmResponse = llmSummaryClient.requestSummary(request);
 
-		// 3. 레디스에 있는 것들 S3에 json 형태로 업로드
 		String s3Url = s3FileUploadService.uploadFullText(request);
 		log.info("uploaded full chatting s3 url: {}", s3Url);
 		// 4. counseling entity에 s3url update
