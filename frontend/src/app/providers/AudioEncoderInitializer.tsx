@@ -37,17 +37,25 @@ const AudioEncoderInitializer = (): null => {
       if (typeof window !== 'undefined') {
         // 브라우저 환경인지 확실히 체크
         try {
+          // ================================ 에러 검토용 임시 주석처리 시작
           // 라이브러리 import를 useEffect 내부로 이동
-          const { register } = await import('extendable-media-recorder');
-          const { connect } = await import('extendable-media-recorder-wav-encoder');
+          // const { register } = await import('extendable-media-recorder');
+          // const { connect } = await import('extendable-media-recorder-wav-encoder');
 
-          // extendable-media-recorder-wav-encoder의 connect 함수를 호출하여 인코더 연결 설정을 가져옵니다.
-          const encoderConfig = await connect();
-          // extendable-media-recorder의 register 함수를 사용하여 WAV 인코더를 등록합니다.
-          await register(encoderConfig);
+          // // extendable-media-recorder-wav-encoder의 connect 함수를 호출하여 인코더 연결 설정을 가져옵니다.
+          // const encoderConfig = await connect();
+          // // extendable-media-recorder의 register 함수를 사용하여 WAV 인코더를 등록합니다.
+          // await register(encoderConfig);
 
-          console.log('WAV audio encoder registered successfully (Initializer).');
-          setWavEncoderReady(true); // 전역 상태 업데이트: 성공
+          // console.log('WAV audio encoder registered successfully (Initializer).');
+          // setWavEncoderReady(true); // 전역 상태 업데이트: 성공
+          // ================================에러 검토용 임시 주석처리 끝
+
+          // 테스트를 위해 임시로 true 또는 false로 설정하여 앱의 다른 부분에 미치는 영향 최소화
+          console.log(
+            '[Test] Skipping WAV encoder registration. Setting WavEncoderReady to true (or false for testing).'
+          );
+          setWavEncoderReady(true); // 또는 false로 설정하여 녹음 시도 시 에러 발생 유도
         } catch (error: any) {
           if (error?.message?.includes('already an encoder stored')) {
             console.warn('WAV audio encoder was already registered (Initializer).');
