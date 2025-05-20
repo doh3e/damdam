@@ -1,4 +1,5 @@
 import type { SessionReport, PeriodReport } from './types';
+import { apiClient } from '@/shared/api';
 
 interface GetReportsParams {
   category: 'session' | 'period';
@@ -20,3 +21,13 @@ export async function getReports({ category, start, end, keyword }: GetReportsPa
 
   return res.json() as Promise<SessionReport[] | PeriodReport[]>;
 }
+
+// getReportDetail
+export const getReportDetail = async (reportId: string): Promise<Report> => {
+  return apiClient.get<Report>(`/reports/${reportId}`);
+};
+
+// getReportDates (예시)
+export const getReportDates = async (): Promise<string[]> => {
+  return apiClient.get<string[]>('/reports/dates');
+};
