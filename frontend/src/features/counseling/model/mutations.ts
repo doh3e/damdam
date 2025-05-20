@@ -128,21 +128,22 @@ const uploadVoiceFile = async (payload: UploadVoiceFilePayload): Promise<UploadV
   const formData = new FormData();
   // Swagger 스펙에 따라 필드명을 'file'로 변경
   // filename이 제공되면 사용하고, 아니면 기본 파일명을 'voice.wav'로 사용
-  const finalFilename = filename || 'voice.wav';
+  const finalFilename = filename || 'voice.wav'; // .wav 또는 .webm 등 확장자 포함
   formData.append('file', audioFile, finalFilename);
 
   // Swagger 스펙에 따라 messageOrder를 쿼리 파라미터로 전달
   const endpoint = `/counsels/${counsId}/voice?messageOrder=${messageOrder}`;
 
-  // apiClient.post 호출 시 config 객체를 통해 Content-Type을 undefined로 설정
-  // 이렇게 하면 axios가 FormData를 기반으로 Content-Type을 'multipart/form-data'로 자동 설정합니다.
-  // axiosInstance.ts 에서 FormData인 경우 Content-Type 헤더를 삭제하도록 수정했으므로,
-  // 여기서는 별도의 headers 설정을 전달할 필요가 없습니다.
-  // config 인자가 옵셔널이므로 전달하지 않아도 됩니다.
+  // apiClient.post 호출 시 config 객체를 통해 Content-Type을 'multipart/form-data'로 명시적으로 설정합니다.
   return apiClient.post<FormData, UploadVoiceFileResponse>(
     endpoint,
     formData,
-    { timeout: 30000 } as import('axios').InternalAxiosRequestConfig // 타입 단언 추가
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: 30000,
+    } as import('axios').InternalAxiosRequestConfig // 타입 단언 추가
   );
 };
 
