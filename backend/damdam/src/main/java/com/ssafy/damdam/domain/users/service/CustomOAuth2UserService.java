@@ -1,7 +1,5 @@
 package com.ssafy.damdam.domain.users.service;
 
-import static com.ssafy.damdam.domain.users.exception.auth.AuthExceptionCode.*;
-
 import java.util.Optional;
 
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -19,7 +17,6 @@ import com.ssafy.damdam.domain.users.dto.auth.UserDto;
 import com.ssafy.damdam.domain.users.entity.UserInfo;
 import com.ssafy.damdam.domain.users.entity.UserSetting;
 import com.ssafy.damdam.domain.users.entity.Users;
-import com.ssafy.damdam.domain.users.exception.auth.AuthException;
 import com.ssafy.damdam.domain.users.repository.UserInfoRepository;
 import com.ssafy.damdam.domain.users.repository.UserSettingRepository;
 import com.ssafy.damdam.domain.users.repository.UsersRepository;
@@ -49,7 +46,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
 		String personalId = newUserDto.getPersonalId();
 
-		// 4. personalId로 기존 회원 조회
+		// 3. personalId로 기존 회원 조회
 		Optional<Users> byPersonal = usersRepository.findByPersonalId(personalId);
 		if (byPersonal.isPresent()) {
 			Users existing = byPersonal.get();
@@ -61,13 +58,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 			return new CustomOAuth2User(dto, defaultUser.getAttributes(), nameAttrKey);
 		}
 
-		// 5. personalId 불일치 → 이메일 중복 체크
-		String email = newUserDto.getEmail();
-		if (usersRepository.findByEmail(email).isPresent()) {
-			throw new AuthException(AUTH_EMAIL_ALREADY_EXISTS);
-		}
-
-		// 6. 신규 회원 가입 처리
+		// 4. 신규 회원 가입 처리
 		Users saved = usersRepository.save(newUserDto.toEntity());
 		userInfoRepository.save(UserInfo.createDefaultInfo(saved));
 		userSettingRepository.save(UserSetting.createDefaultSetting(saved));
