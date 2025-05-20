@@ -7,14 +7,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ssafy.damdam.domain.counsels.dto.*;
-import com.ssafy.damdam.global.aws.s3.S3FileUploadService;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ssafy.damdam.domain.counsels.dto.ChatOutputDto;
+import com.ssafy.damdam.domain.counsels.dto.ChatRecordDto;
+import com.ssafy.damdam.domain.counsels.dto.CounselingChatListDto;
+import com.ssafy.damdam.domain.counsels.dto.CounselingDto;
+import com.ssafy.damdam.domain.counsels.dto.LlmSummaryResponse;
+import com.ssafy.damdam.domain.counsels.dto.TranscriptDto;
 import com.ssafy.damdam.domain.counsels.entity.Counseling;
 import com.ssafy.damdam.domain.counsels.exception.CounsException;
 import com.ssafy.damdam.domain.counsels.repository.CounselingRepository;
@@ -22,6 +27,7 @@ import com.ssafy.damdam.domain.reports.entity.SessionReport;
 import com.ssafy.damdam.domain.reports.repository.SessionReportRepository;
 import com.ssafy.damdam.domain.users.entity.Users;
 import com.ssafy.damdam.domain.users.exception.auth.AuthException;
+import com.ssafy.damdam.global.aws.s3.S3FileUploadService;
 import com.ssafy.damdam.global.util.user.UserUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -82,11 +88,11 @@ public class CounselServiceImpl implements CounselService {
 		}
 
 		CounselingChatListDto.CounselingChatListDtoBuilder dtoBuilder = CounselingChatListDto.builder()
-				.counsId(counsId)
-				.counsTitle(counseling.getCounsTitle())
-				.createdAt(counseling.getCreatedAt())
-				.updatedAt(counseling.getUpdatedAt())
-				.isClosed(counseling.getIsClosed());
+			.counsId(counsId)
+			.counsTitle(counseling.getCounsTitle())
+			.createdAt(counseling.getCreatedAt())
+			.updatedAt(counseling.getUpdatedAt())
+			.isClosed(counseling.getIsClosed());
 
 		List<ChatOutputDto> messageList = Collections.emptyList();
 
@@ -96,37 +102,37 @@ public class CounselServiceImpl implements CounselService {
 			TranscriptDto transcript = s3FileUploadService.downloadTranscript(s3Link);
 
 			messageList = transcript.getMessageList().stream()
-					.map(r -> ChatOutputDto.builder()
-							.sender(r.getSender())
-							.message(r.getMessage())
-							.timestamp(r.getTimestamp())
-							.messageOrder(r.getMessageOrder())
-							.tokenCount(null)  // 필요 시 null 또는 값
-							.build())
-					.toList();
+				.map(r -> ChatOutputDto.builder()
+					.sender(r.getSender())
+					.message(r.getMessage())
+					.timestamp(r.getTimestamp())
+					.messageOrder(r.getMessageOrder())
+					.tokenCount(null)  // 필요 시 null 또는 값
+					.build())
+				.toList();
 		} else {
 			String listKey = "counsel:" + counsId + ":messages";
 			List<Object> raw = redisTemplate.opsForList().range(listKey, 0, -1);
 			List<ChatRecordDto> records = raw == null
-					? List.of()
-					: raw.stream()
-					.map(item -> objectMapper.convertValue(item, ChatRecordDto.class))
-					.toList();
+				? List.of()
+				: raw.stream()
+				.map(item -> objectMapper.convertValue(item, ChatRecordDto.class))
+				.toList();
 
 			messageList = records.stream()
-					.map(r -> ChatOutputDto.builder()
-							.sender(r.getSender())
-							.message(r.getMessage())
-							.timestamp(r.getTimestamp())
-							.tokenCount(null)
-							.messageOrder(r.getMessageOrder())
-							.build())
-					.toList();
+				.map(r -> ChatOutputDto.builder()
+					.sender(r.getSender())
+					.message(r.getMessage())
+					.timestamp(r.getTimestamp())
+					.tokenCount(null)
+					.messageOrder(r.getMessageOrder())
+					.build())
+				.toList();
 		}
 
 		return dtoBuilder
-				.messageList(messageList)
-				.build();
+			.messageList(messageList)
+			.build();
 	}
 
 	@Override
@@ -155,7 +161,7 @@ public class CounselServiceImpl implements CounselService {
 			throw new CounsException(NOT_YOUR_COUNSEL);
 		}
 
-		if (counseling.getS3Link() != null || !counseling.getS3Link().isBlank()) {
+		if (StringUtils.hasText(counseling.getS3Link())) {
 			s3FileUploadService.deleteTranscript(counseling.getS3Link());
 		}
 
