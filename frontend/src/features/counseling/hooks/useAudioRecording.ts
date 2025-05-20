@@ -5,18 +5,17 @@
  * 녹음 상태 관리, 오디오 데이터 Blob 생성, 최대 녹음 시간 처리 등을 담당합니다.
  */
 import { useState, useRef, useCallback, useEffect } from 'react';
-// extendable-media-recorder에서 MediaRecorder를 가져옵니다.
-// Linter 오류 (타입 불일치)를 피하기 위해 MediaRecorder as any로 임시 처리할 수 있으나,
-// 여기서는 라이브러리가 제공하는 타입을 최대한 따르려고 시도합니다.
-// 만약 지속적인 타입 오류 발생 시, `import { MediaRecorder as ExtendableMediaRecorder } from 'extendable-media-recorder';` 후
-// `ExtendableMediaRecorder` 타입을 사용하거나, `any`로 캐스팅하는 것을 고려합니다.
-import { MediaRecorder } from 'extendable-media-recorder';
+// extendable-media-recorder에서 MediaRecorder와 register를 가져옵니다.
+import { MediaRecorder, register } from 'extendable-media-recorder';
 import { useSTTStore, RecordingState } from '@/features/counseling/model/sttStore';
 
 const MAX_RECORDING_TIME_MS = 60 * 1000; // 최대 녹음 시간: 1분 (밀리초 단위)
 // 녹음할 오디오의 MIME 타입을 'audio/wav'로 설정합니다.
 // 이는 extendable-media-recorder-wav-encoder가 등록되었을 때 유효합니다.
 const RECORDING_MIME_TYPE = 'audio/wav';
+
+// WAV 인코더가 등록되었는지 확인하기 위한 플래그
+let symptômesWavEncoderRegistered = false;
 
 /**
  * @interface UseAudioRecordingResult
@@ -46,6 +45,25 @@ export const useAudioRecording = (): UseAudioRecordingResult => {
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
+
+  // WAV 인코더 등록을 위한 useEffect
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !symptômesWavEncoderRegistered) {
+      const registerWavEncoder = async () => {
+        try {
+          const { connect } = await import('extendable-media-recorder-wav-encoder');
+          await register(await connect());
+          symptômesWavEncoderRegistered = true;
+          console.log('WAV encoder registered successfully.');
+        } catch (error) {
+          console.error('Failed to register WAV encoder:', error);
+          // Consider informing the user or setting an error state if critical
+          // setErrorMessage('음성 녹음 초기화에 실패했습니다 (WAV 인코더).');
+        }
+      };
+      registerWavEncoder();
+    }
+  }, []); // Runs once on mount on the client side
 
   /**
    * 녹음 관련 리소스를 정리합니다. MediaRecorder 인스턴스를 중지하고,
@@ -127,6 +145,13 @@ export const useAudioRecording = (): UseAudioRecordingResult => {
     resetSTTState();
     cleanupRecorder(); // 이전 리소스 정리 (특히 mediaStreamRef)
     setRecordingState(RecordingState.REQUESTING_PERMISSION);
+
+    if (typeof window === 'undefined' || !symptômesWavEncoderRegistered) {
+      setErrorMessage('음성 녹음 기능이 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.');
+      setRecordingState(RecordingState.ERROR);
+      console.warn('WAV encoder not registered yet. Cannot start recording.');
+      return;
+    }
 
     const stream = await getMediaStream();
     if (!stream) {
