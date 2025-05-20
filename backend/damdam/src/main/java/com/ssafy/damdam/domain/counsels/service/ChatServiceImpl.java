@@ -3,6 +3,7 @@ package com.ssafy.damdam.domain.counsels.service;
 import static com.ssafy.damdam.global.redis.exception.RedisExceptionCode.*;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -65,6 +66,8 @@ public class ChatServiceImpl implements ChatService {
 		ChatInputDto input
 	) throws ExecutionException, InterruptedException {
 
+		ZoneId seoul = ZoneId.of("Asia/Seoul");
+
 		counselSessionRepository.findById(roomId)
 			.orElseGet(() -> {
 				log.info("[ChatService] 첫 세션 자동 생성:  roomId={}, userId={}",
@@ -85,7 +88,7 @@ public class ChatServiceImpl implements ChatService {
 			.isVoice(input.getIsVoice())
 			.messageOrder(input.getMessageOrder())
 			.message(input.getMessage())
-			.timestamp(LocalDateTime.now())
+			.timestamp(LocalDateTime.now(seoul))
 			.emotion(null)   // 아직 분석 전이므로 null
 			.build();
 
@@ -129,7 +132,7 @@ public class ChatServiceImpl implements ChatService {
 			.isVoice(false)
 			.messageOrder(input.getMessageOrder())
 			.message(botReply.getAiResponse())
-			.timestamp(LocalDateTime.now())
+			.timestamp(LocalDateTime.now(seoul))
 			.emotion(emotion)
 			.build();
 
@@ -139,7 +142,7 @@ public class ChatServiceImpl implements ChatService {
 		ChatOutputDto chatOutputDto = ChatOutputDto.builder()
 			.sender("AI")
 			.message(botReply.getAiResponse())
-			.timestamp(LocalDateTime.now())
+			.timestamp(LocalDateTime.now(seoul))
 			.tokenCount(session.getTokenCount())
 			.messageOrder(input.getMessageOrder())
 			.build();
@@ -156,6 +159,8 @@ public class ChatServiceImpl implements ChatService {
 		int messageOrder,
 		MultipartFile file
 	) throws ExecutionException, InterruptedException {
+
+		ZoneId seoul = ZoneId.of("Asia/Seoul");
 
 		String audioUrl = s3FileUploadService.uploadAudio(file, "audio");
 		log.info("S3 업로드 완료: roomId={}, messageOrder={}, url={}",
@@ -210,7 +215,7 @@ public class ChatServiceImpl implements ChatService {
 			.isVoice(true)
 			.messageOrder(messageOrder)
 			.message(botReply.getAiResponse())
-			.timestamp(LocalDateTime.now())
+			.timestamp(LocalDateTime.now(seoul))
 			.emotion(emotion)
 			.build();
 
@@ -220,7 +225,7 @@ public class ChatServiceImpl implements ChatService {
 		ChatOutputDto chatOutputDto = ChatOutputDto.builder()
 			.sender("AI")
 			.message(botReply.getAiResponse())
-			.timestamp(LocalDateTime.now())
+			.timestamp(LocalDateTime.now(seoul))
 			.tokenCount(session.getTokenCount())
 			.messageOrder(messageOrder)
 			.build();
