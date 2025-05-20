@@ -247,4 +247,14 @@ public class S3FileUploadService {
 			throw new UncheckedIOException(e);
 		}
 	}
+
+	public void deleteTranscript(String s3Link) {
+		String key = s3Link.replace(defaultUrl, "");
+		try {
+			s3AsyncClient.deleteObject(b -> b.bucket(bucket).key(key)).join();
+		} catch (Exception e) {
+			log.error("[S3] 삭제 실패: key={}", key, e);
+			throw new S3Exception(FILE_DELETE_FAIL);
+		}
+	}
 }

@@ -105,47 +105,55 @@ public class ChatServiceImpl implements ChatService {
 
 		EmotionDto emotion = future.get();
 
-		log.info("텍스트 감정 분석 완료: roomId={}, messageOrder={}, message={}," +
-				" happy={} angry={} neutral={} sadness={} other={}",
-			roomId, input.getMessageOrder(), input.getMessage(), emotion.getHappiness(),
-			emotion.getAngry(), emotion.getNeutral(),
-			emotion.getSadness(), emotion.getOther());
+		log.info("[AI] 텍스트 감정 분석 완료");
+
+		CounselSession session = counselSessionRepository.findById(roomId)
+				.orElseThrow(() -> new RedisException(REDIS_SESSION_NOT_FOUND));
 
 		// 유저 닉네임 호출
 		String nickname = usersRepository.findById(userId).get().getNickname();
+		LlmAiChatResponse botReply;
 
 		// llm 로직 호출
-		LlmAiChatResponse botReply = aiService.chatWithLlm(
-			roomId, userId, nickname, input, emotion
-		);
+		try {
+			botReply = aiService.chatWithLlm(
+					roomId, userId, nickname, input, emotion
+			);
 
-		// 세션 업데이트 (토큰 차감 + 마지막 감정 저장)
-		CounselSession session = counselSessionRepository.findById(roomId)
-			.orElseThrow(() -> new RedisException(REDIS_SESSION_NOT_FOUND));
-		updateSession(session, emotion, botReply);
-		session.setMessageOrder(input.getMessageOrder());
-		counselSessionRepository.save(session);
+			// 세션 업데이트 (토큰 차감 + 마지막 감정 저장)
+			updateSession(session, emotion, botReply);
+			session.setMessageOrder(input.getMessageOrder());
+			counselSessionRepository.save(session);
 
-		// 해당하는 레디스 방에 AI 응답 생성 (여기에는 LLM의 대답 + 감정 분석 결과 함께)
-		ChatMessageDto aiMsg = ChatMessageDto.builder()
-			.sender("AI")
-			.isVoice(false)
-			.messageOrder(input.getMessageOrder())
-			.message(botReply.getAiResponse())
-			.timestamp(LocalDateTime.now(seoul))
-			.emotion(emotion)
-			.build();
+			// 해당하는 레디스 방에 AI 응답 생성 (여기에는 LLM의 대답 + 감정 분석 결과 함께)
+			ChatMessageDto aiMsg = ChatMessageDto.builder()
+					.sender("AI")
+					.isVoice(false)
+					.messageOrder(input.getMessageOrder())
+					.message(botReply.getAiResponse())
+					.timestamp(LocalDateTime.now(seoul))
+					.emotion(emotion)
+					.build();
 
-		redisTemplate.opsForList().rightPush(listKey, aiMsg);
+			redisTemplate.opsForList().rightPush(listKey, aiMsg);
+
+		} catch (Exception e) {
+			log.error("[AI] LLM 호출 중 오류 발생: {}", e.getMessage());
+			// 이곳에 오류 발생 자체 응답 생성 (redis 저장 및 호출 x)
+			// output 자체 생성 후 websocket 전송
+			botReply = LlmAiChatResponse.builder()
+					.aiResponse("죄송합니다. 현재 AI 상담 서비스에 일시적인 오류가 있습니다. 잠시 후 다시 시도해 주세요.")
+					.build();
+		}
 
 		// WebSocket 전송 응답 생성 (여기에는 분석 결과 제외)
 		ChatOutputDto chatOutputDto = ChatOutputDto.builder()
-			.sender("AI")
-			.message(botReply.getAiResponse())
-			.timestamp(LocalDateTime.now(seoul))
-			.tokenCount(session.getTokenCount())
-			.messageOrder(input.getMessageOrder())
-			.build();
+				.sender("AI")
+				.message(botReply.getAiResponse())
+				.timestamp(LocalDateTime.now(seoul))
+				.tokenCount(session.getTokenCount())
+				.messageOrder(input.getMessageOrder())
+				.build();
 
 		messagingTemplate.convertAndSend(
 			"/sub/counsels/" + roomId + "/chat", chatOutputDto);
@@ -169,7 +177,7 @@ public class ChatServiceImpl implements ChatService {
 		// 받아온 file과 웹소켓 메세지(redis에 저장된)가 같은 대화를 매치시킴
 		// 같은 룸의 대화 전체를 탐색해서 같은 messageOrder를 가진 대화를 session으로 갖는다.
 		CounselSession session = counselSessionRepository.findById(roomId)
-			.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상담방입니다: " + roomId));
+			.orElseThrow(() -> new RedisException(REDIS_SESSION_NOT_FOUND));
 
 		String listKey = "counsel:" + roomId + ":messages";
 		List<Object> rawList = redisTemplate.opsForList().range(listKey, 0, -1);
@@ -177,7 +185,7 @@ public class ChatServiceImpl implements ChatService {
 			.map(item -> objectMapper.convertValue(item, ChatMessageDto.class))
 			.filter(dto -> dto.getMessageOrder() == messageOrder && "USER".equals(dto.getSender()))
 			.findFirst()
-			.orElseThrow(() -> new IllegalStateException("해당 순서의 사용자 메시지가 없습니다: " + messageOrder));
+			.orElseThrow(() -> new RedisException(MESSAGE_ORDER_NOT_FOUND));
 
 		// 존재한다면 음성 대화의 감정 추출
 		Future<EmotionDto> future = virtualThreadExecutor.submit(() ->
@@ -186,8 +194,7 @@ public class ChatServiceImpl implements ChatService {
 
 		EmotionDto emotion = future.get();
 
-		log.info("음성 감정 분석 완료: roomId={}, messageOrder={}, emotion={}",
-			roomId, messageOrder, emotion);
+		log.info("[AI] 음성 감정 분석 완료");
 
 		// 유저 닉네임 호출
 		String nickname = usersRepository.findById(userId).get().getNickname();
@@ -200,26 +207,37 @@ public class ChatServiceImpl implements ChatService {
 			.build();
 
 		// llm 로직 호출
-		LlmAiChatResponse botReply = aiService.chatWithLlm(
-			roomId, userId, nickname, input, emotion
-		);
+		LlmAiChatResponse botReply;
+		try {
+			botReply = aiService.chatWithLlm(
+					roomId, userId, nickname, input, emotion
+			);
 
-		// 세션 업데이트
-		updateSession(session, emotion, botReply);
-		session.setMessageOrder(messageOrder);
-		counselSessionRepository.save(session);
+			// 세션 업데이트
+			updateSession(session, emotion, botReply);
+			session.setMessageOrder(messageOrder);
+			counselSessionRepository.save(session);
 
-		// 레디스에 AI 응답 및 감정분석 결과 추가
-		ChatMessageDto aiMsg = ChatMessageDto.builder()
-			.sender("AI")
-			.isVoice(true)
-			.messageOrder(messageOrder)
-			.message(botReply.getAiResponse())
-			.timestamp(LocalDateTime.now(seoul))
-			.emotion(emotion)
-			.build();
+			// 레디스에 AI 응답 및 감정분석 결과 추가
+			ChatMessageDto aiMsg = ChatMessageDto.builder()
+					.sender("AI")
+					.isVoice(true)
+					.messageOrder(messageOrder)
+					.message(botReply.getAiResponse())
+					.timestamp(LocalDateTime.now(seoul))
+					.emotion(emotion)
+					.build();
 
-		redisTemplate.opsForList().rightPush(listKey, aiMsg);
+			redisTemplate.opsForList().rightPush(listKey, aiMsg);
+
+		} catch (Exception e) {
+			log.error("[AI] LLM 호출 중 오류 발생: {}", e.getMessage());
+			// 이곳에 오류 발생 자체 응답 생성 (redis 저장 및 호출 x)
+			// output 자체 생성 후 websocket 전송
+			botReply = LlmAiChatResponse.builder()
+					.aiResponse("죄송합니다. 현재 AI 상담 서비스에 일시적인 오류가 있습니다. 잠시 후 다시 시도해 주세요.")
+					.build();
+		}
 
 		// 웹소켓에 챗봇 응답 전달
 		ChatOutputDto chatOutputDto = ChatOutputDto.builder()
