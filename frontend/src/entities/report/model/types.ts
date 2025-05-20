@@ -1,15 +1,18 @@
-export interface Report {
-  userId: number;
-  nickname: string;
+// 상담별 레포트
+export interface SessionReport {
+  sReportId: number;
   counsId: number;
-  counsTitle: string;
-  summary: string;
-  analyze: string;
-  valence: string;
-  arousal: string;
+  sReportTitle: string;
   createdAt: string;
-  sreportId: number;
-  sreportTitle: string;
+}
+
+// 기간별 레포트
+export interface PeriodReport {
+  pReportId: number;
+  pReportTitle: string;
+  startDate: string;
+  endDate: string;
+  createdAt: string;
 }
 
 export interface ChatMessage {
