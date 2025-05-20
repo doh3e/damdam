@@ -30,6 +30,14 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'damdam-counseling-bucket.s3.ap-northeast-2.amazonaws.com',
+      },
+    ],
+  },
 };
 
 /**
