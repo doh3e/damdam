@@ -1,282 +1,222 @@
 /**
  * @file frontend/src/features/counseling/hooks/useAudioRecording.ts
- * @description MediaRecorder API를 사용하여 오디오 녹음 기능을 제공하는 커스텀 훅입니다.
- * `extendable-media-recorder`를 사용하여 WAV 형식으로 직접 녹음을 지원합니다.
- * 녹음 상태 관리, 오디오 데이터 Blob 생성, 최대 녹음 시간 처리 등을 담당합니다.
+ * @description react-media-recorder를 사용하여 오디오 녹음 기능을 제공하는 커스텀 훅입니다.
+ * 녹음 상태 관리, 오디오 데이터 Blob 생성 등을 담당합니다.
  */
 import { useState, useRef, useCallback, useEffect } from 'react';
-// import { MediaRecorder } from 'extendable-media-recorder'; // worker is not defined 문제 확인을 위한 임시 주석 처리
+import { useReactMediaRecorder } from 'react-media-recorder'; // 새 라이브러리 import
 import { useSTTStore, RecordingState } from '@/features/counseling/model/sttStore';
-import { useAppSetupStore } from '@/app/store/appSetupStore'; // 전역 스토어 import
 
 const MAX_RECORDING_TIME_MS = 60 * 1000; // 최대 녹음 시간: 1분 (밀리초 단위)
-// 녹음할 오디오의 MIME 타입을 'audio/wav'로 설정합니다.
-// 이는 extendable-media-recorder-wav-encoder가 등록되었을 때 유효합니다.
-const RECORDING_MIME_TYPE = 'audio/wav';
+const RECORDING_MIME_TYPE = 'audio/wav'; // 녹음 형식 (WAV)
 
-/**
- * @interface UseAudioRecordingResult
- * @description useAudioRecording 훅의 반환 값 인터페이스
- * @property {() => Promise<void>} startRecording - 녹음 시작 함수
- * @property {() => void} stopRecording - 녹음 중지 함수
- * @property {() => Promise<boolean>} requestMicrophonePermission - 마이크 권한 명시적 요청 함수
- */
-interface UseAudioRecordingResult {
+export interface UseAudioRecordingReturn {
+  recordingState: RecordingState;
   startRecording: () => Promise<void>;
-  stopRecording: () => void;
-  requestMicrophonePermission: () => Promise<boolean>;
+  stopRecording: () => Promise<void>;
+  pauseRecording?: () => void; // react-media-recorder는 pause/resume 지원
+  resumeRecording?: () => void;
+  recordingTime: number;
+  mediaBlobUrl: string | null; // 녹음된 오디오 파일의 URL
+  audioBlob: Blob | null; // 녹음된 오디오 Blob
+  error: string | null; // 녹음 중 발생한 에러
+  isRecording: boolean; // 현재 녹음 중인지 여부 (status === 'recording')
+  isPaused: boolean; // 현재 일시정지 중인지 여부 (status === 'paused')
+  isInactive: boolean; // 현재 비활성(초기) 상태인지 여부 (status === 'idle' || status === 'stopped')
 }
 
 /**
- * 오디오 녹음 기능을 위한 커스텀 React 훅.
- * `extendable-media-recorder`를 사용하여 마이크 입력을 WAV 형식으로 직접 녹음하고,
- * 녹음된 오디오를 Blob으로 제공합니다.
- * 녹음 상태는 `useSTTStore`를 통해 관리됩니다.
- * @returns {UseAudioRecordingResult} 녹음 시작/중지 함수 등을 포함하는 객체
+ * 오디오 녹음 관련 로직을 처리하는 커스텀 훅입니다.
+ * react-media-recorder의 useReactMediaRecorder를 기반으로 합니다.
+ *
+ * @returns {UseAudioRecordingReturn} 오디오 녹음 상태 및 제어 함수들을 포함하는 객체입니다.
  */
-export const useAudioRecording = (): UseAudioRecordingResult => {
-  const { setRecordingState, setAudioBlob, setErrorMessage, resetSTTState, recordingState } = useSTTStore();
-  // 전역 스토어에서 인코더 준비 상태 가져오기
-  const isWavEncoderGloballyReady = useAppSetupStore((state) => state.isWavEncoderReady);
+export const useAudioRecording = (): UseAudioRecordingReturn => {
+  const {
+    setRecordingState,
+    setAudioBlob,
+    setErrorMessage: setSttErrorMessage,
+    recordingState: sttRecordingState,
+    setSttResultText,
+  } = useSTTStore();
 
-  // MediaRecorder 인스턴스 참조. extendable-media-recorder의 MediaRecorder 타입을 사용합니다.
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [internalAudioBlob, setInternalAudioBlob] = useState<Blob | null>(null);
+  const [internalMediaBlobUrl, setInternalMediaBlobUrl] = useState<string | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  /**
-   * 녹음 관련 리소스를 정리합니다. MediaRecorder 인스턴스를 중지하고,
-   * MediaStream 트랙을 중지하며, 관련 참조들을 초기화합니다.
-   */
-  const cleanupRecorder = useCallback(() => {
-    // MediaRecorder 중지 및 초기화
-    if (mediaRecorderRef.current) {
-      if (mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
+  const handleStop = useCallback(
+    (blobUrl: string, blob: Blob) => {
+      console.log('녹음 중지됨, Blob URL:', blobUrl, 'Blob:', blob);
+      setInternalMediaBlobUrl(blobUrl);
+      setInternalAudioBlob(blob);
+      setAudioBlob(blob); // STT 스토어에도 Blob 저장
+      setRecordingState(RecordingState.STOPPED);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
       }
-      mediaRecorderRef.current = null;
-    }
-
-    // MediaStream 트랙 중지 및 초기화
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
-      mediaStreamRef.current = null;
-    }
-
-    // 오디오 청크 배열 초기화
-    audioChunksRef.current = [];
-
-    // 녹음 타이머 정리
-    if (recordingTimerRef.current) {
-      clearTimeout(recordingTimerRef.current);
-      recordingTimerRef.current = null;
-    }
-  }, []); // 의존성 배열이 비어있으므로, 이 함수는 컴포넌트 생애주기 동안 동일한 참조를 유지합니다.
-
-  /**
-   * 마이크 권한을 요청하고 MediaStream을 반환합니다.
-   * 성공 시 MediaStream을 반환하고, 실패 시 에러 메시지를 설정하고 null을 반환합니다.
-   * @async
-   * @returns {Promise<MediaStream | null>} 성공 시 MediaStream 객체, 실패 시 null.
-   */
-  const getMediaStream = async (): Promise<MediaStream | null> => {
-    try {
-      // 사용자에게 마이크 사용 권한을 요청합니다.
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaStreamRef.current = stream; // 스트림 참조 저장
-      return stream;
-    } catch (err) {
-      console.error('마이크 권한 요청 실패:', err);
-      setErrorMessage('마이크 권한이 필요합니다. 브라우저 설정을 확인해주세요.');
-      // setRecordingState(RecordingState.ERROR); // 호출부에서 상태 관리
-      return null;
-    }
-  };
-
-  /**
-   * 마이크 권한을 명시적으로 요청하는 함수입니다.
-   * 이 함수는 실제 녹음을 시작하기 전에 호출될 수 있습니다 (예: 사용자가 버튼을 클릭했을 때).
-   * @async
-   * @returns {Promise<boolean>} 권한 획득 성공 시 true, 실패 시 false.
-   */
-  const requestMicrophonePermission = async (): Promise<boolean> => {
-    setRecordingState(RecordingState.REQUESTING_PERMISSION);
-    const stream = await getMediaStream();
-    if (stream) {
-      // 권한 획득에 성공하면, 실제 녹음 시작 전까지 스트림을 사용하지 않으므로 트랙을 중지합니다.
-      // 이렇게 하면 브라우저에서 마이크 사용 표시등이 즉시 꺼집니다.
-      stream.getTracks().forEach((track) => track.stop());
-      mediaStreamRef.current = null; // 스트림 참조도 초기화
-      setRecordingState(RecordingState.IDLE); // 권한 확인 후 다시 대기 상태로 변경
-      return true;
-    }
-    // getMediaStream에서 null 반환 시 권한 실패로 간주
-    setRecordingState(RecordingState.ERROR); // 명시적으로 에러 상태 설정
-    return false;
-  };
-
-  /**
-   * 녹음을 시작합니다.
-   * 마이크 권한을 요청하고, `extendable-media-recorder`를 사용하여 WAV 형식으로 녹음을 설정합니다.
-   * @async
-   */
-  const startRecording = async (): Promise<void> => {
-    // 이전 녹음 관련 상태 및 데이터 초기화
-    resetSTTState();
-    cleanupRecorder(); // 이전 리소스 정리 (특히 mediaStreamRef)
-    setRecordingState(RecordingState.REQUESTING_PERMISSION);
-
-    if (!isWavEncoderGloballyReady) {
-      console.warn('[useAudioRecording] WAV encoder is not globally ready. Cannot start recording.');
-      setErrorMessage(
-        '음성 녹음 기능을 사용할 수 없습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요. (인코더 오류)'
-      );
-      setRecordingState(RecordingState.ERROR);
-      return;
-    }
-
-    const stream = await getMediaStream();
-    if (!stream) {
-      // getMediaStream 내부에서 에러 메시지를 설정했을 것이므로, 여기서는 상태만 변경합니다.
-      setRecordingState(RecordingState.ERROR);
-      return;
-    }
-
-    try {
-      setRecordingState(RecordingState.RECORDING);
-      // MediaRecorder 인스턴스를 생성합니다.
-      // extendable-media-recorder-wav-encoder가 등록되어 있다면,
-      // mimeType: 'audio/wav'로 설정하여 WAV 형식으로 직접 녹음합니다.
-      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: RECORDING_MIME_TYPE }) as any;
-      audioChunksRef.current = []; // 녹음 데이터 청크를 저장할 배열 초기화
-
-      /**
-       * MediaRecorder에서 'dataavailable' 이벤트 발생 시 호출될 핸들러입니다.
-       * 녹음 중 생성되는 오디오 데이터 청크를 audioChunksRef 배열에 추가합니다.
-       * @param {BlobEvent} event - 데이터 청크를 포함하는 BlobEvent 객체입니다.
-       */
-      const currentRecorder = mediaRecorderRef.current;
-      if (!currentRecorder) {
-        // 이 경우는 거의 발생하지 않지만, 타입 안정성을 위해 추가
-        setErrorMessage('MediaRecorder 초기화에 실패했습니다.');
-        setRecordingState(RecordingState.ERROR);
-        cleanupRecorder();
-        return;
-      }
-
-      currentRecorder.ondataavailable = (event: BlobEvent) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      /**
-       * MediaRecorder에서 'stop' 이벤트 발생 시 호출될 핸들러입니다.
-       * 녹음이 중지되면, 수집된 오디오 청크들을 합쳐 하나의 WAV Blob 객체를 생성합니다.
-       * 생성된 Blob과 녹음 상태를 Zustand 스토어에 업데이트합니다.
-       * 모든 녹음 관련 리소스를 정리합니다.
-       */
-      currentRecorder.onstop = () => {
-        // 녹음된 오디오 청크가 없는 경우 에러 처리
-        if (audioChunksRef.current.length === 0) {
-          console.warn('[useAudioRecording] No audio chunks recorded after stop.');
-          setErrorMessage('녹음된 오디오 데이터가 없습니다. 마이크를 확인해주세요.');
-          setRecordingState(RecordingState.ERROR);
-          cleanupRecorder(); // 리소스 정리
-          return;
-        }
-
-        // 수집된 오디오 청크들을 사용하여 'audio/wav' 타입의 Blob 객체를 생성합니다.
-        const audioBlob = new Blob(audioChunksRef.current, { type: RECORDING_MIME_TYPE });
-        console.log('[useAudioRecording] WAV Blob created:', audioBlob, 'size:', audioBlob.size);
-
-        // 생성된 Blob의 크기가 0인 경우 (매우 드물지만) 에러 처리
-        if (audioBlob.size === 0) {
-          console.warn('[useAudioRecording] Audio blob size is 0.');
-          setErrorMessage('녹음된 오디오 파일의 크기가 0입니다. 다시 시도해주세요.');
-          setRecordingState(RecordingState.ERROR);
-          setAudioBlob(null); // 스토어의 Blob도 null로 설정
-          cleanupRecorder(); // 리소스 정리
-          return;
-        }
-
-        setAudioBlob(audioBlob); // 스토어에 최종 WAV Blob 저장
-        setRecordingState(RecordingState.STOPPED); // 녹음 완료 및 STT 대기 상태로 변경
-
-        // 녹음이 정상적으로 완료되고 Blob이 생성된 후 리소스 정리
-        cleanupRecorder();
-      };
-
-      /**
-       * MediaRecorder에서 'error' 이벤트 발생 시 호출될 핸들러입니다.
-       * 녹음 중 에러 발생 시 상태를 업데이트하고 리소스를 정리합니다.
-       * @param {Event} event - 에러 이벤트 객체입니다. (MediaRecorderErrorEvent 타입 단언 가능)
-       */
-      currentRecorder.onerror = (event: Event) => {
-        // MediaRecorderErrorEvent 대신 ErrorEvent 또는 Event를 사용하거나, 필요한 경우 as any로 캐스팅합니다.
-        const error = (event as any).error || event; // 더 일반적인 오류 객체 접근 시도
-        console.error('MediaRecorder 에러:', error);
-        const errorMessage = error instanceof Error ? error.message : '알 수 없는 녹음 오류';
-        setErrorMessage(`녹음 중 오류가 발생했습니다: ${errorMessage}`);
-        setRecordingState(RecordingState.ERROR);
-        cleanupRecorder(); // 에러 발생 시 모든 리소스 정리
-      };
-
-      // 녹음 시작
-      currentRecorder.start();
-      console.log('[useAudioRecording] Recording started with MIME type:', RECORDING_MIME_TYPE);
-
-      // 최대 녹음 시간 타이머 설정
-      recordingTimerRef.current = setTimeout(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-          console.log('최대 녹음 시간(1분) 초과로 자동 중지됩니다.');
-          stopRecording(); // 내부적으로 onstop 핸들러 호출
-        }
-      }, MAX_RECORDING_TIME_MS);
-    } catch (err) {
-      console.error('녹음 시작 중 예외 발생:', err);
-      const errorMessage = err instanceof Error ? err.message : '알 수 없는 오류';
-      setErrorMessage(`녹음을 시작할 수 없습니다: ${errorMessage}`); // 백틱 확인
-      setRecordingState(RecordingState.ERROR);
-      cleanupRecorder(); // 예외 발생 시 모든 리소스 정리
-    }
-  };
-
-  /**
-   * 진행 중인 녹음을 중지합니다.
-   * MediaRecorder의 상태가 'recording'일 경우에만 stop() 메소드를 호출합니다.
-   * 녹음 중지 시 onstop 핸들러가 자동으로 호출되어 후속 처리를 수행합니다.
-   */
-  const stopRecording = useCallback(
-    () => {
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-        mediaRecorderRef.current.stop(); // onstop 핸들러가 호출됨
-      } else if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
-        // 만약 paused 상태를 사용하고 있다면, resume 후 stop
-        // mediaRecorderRef.current.resume();
-        mediaRecorderRef.current.stop();
-      }
-
-      if (recordingTimerRef.current) {
-        clearTimeout(recordingTimerRef.current);
-        recordingTimerRef.current = null;
-      }
-      // cleanupRecorder(); // onstop 핸들러 내부에서 호출되므로 여기서 중복 호출을 피할 수 있습니다.
-      // 혹은 stopRecording 호출 시 명시적으로 정리하고 싶다면 onstop에서는 상태 업데이트만 집중
+      setRecordingTime(0);
     },
-    [
-      /* setRecordingState, cleanupRecorder 등 외부 함수/상태 의존성 검토 */
-    ]
+    [setAudioBlob, setRecordingState]
   );
 
-  // 컴포넌트 언마운트 시 남아있을 수 있는 녹음 관련 리소스 정리
-  useEffect(() => {
-    return () => {
-      console.log('[useAudioRecording] Unmounting. Cleaning up recorder resources.');
-      cleanupRecorder();
-    };
-  }, [cleanupRecorder]);
+  const {
+    status,
+    startRecording: RMRStartRecording,
+    stopRecording: RMRStopRecording,
+    pauseRecording: RMRPauseRecording,
+    resumeRecording: RMRResumeRecording,
+    mediaBlobUrl: RMRMediaBlobUrl, // 직접적인 Blob URL 상태
+    error: RMRError,
+    clearBlobUrl: RMRClearBlobUrl, // Blob URL 초기화 함수
+  } = useReactMediaRecorder({
+    audio: true,
+    blobPropertyBag: { type: RECORDING_MIME_TYPE },
+    onStop: handleStop, // 녹음 중지 시 콜백
+    askPermissionOnMount: false, // 처음 마운트 시 권한 요청 안 함 (필요시 수동으로)
+  });
 
-  return { startRecording, stopRecording, requestMicrophonePermission };
+  useEffect(() => {
+    // RMRMediaBlobUrl이 변경되고, 그 값이 실제 URL일 때 (초기 null이 아닐 때)
+    // 그리고 status가 'stopped'일 때 (녹음이 완료되었을 때)
+    // 하지만 onStop 콜백에서 이미 처리하므로, 여기서는 중복 처리를 피하거나
+    // onStop을 사용하지 않는 경우 이펙트로 mediaBlobUrl 변경을 감지하여 처리할 수 있습니다.
+    // 현재는 onStop 콜백을 사용하므로 이 useEffect는 mediaBlobUrl을 직접 반영하는 용도로만 남겨두거나,
+    // 필요에 따라 onStop에서 처리하지 않는 로직(예: UI 업데이트)을 추가할 수 있습니다.
+    if (RMRMediaBlobUrl && status === 'stopped' && !internalMediaBlobUrl) {
+      // onStop이 먼저 호출되어 internalMediaBlobUrl이 설정되므로, 이 조건은 잘 발생하지 않음.
+      // 만약 onStop을 안쓰고 순수하게 mediaBlobUrl 상태 변화로만 제어한다면 필요.
+      console.log('RMRMediaBlobUrl 변경 감지 (stopped 상태):', RMRMediaBlobUrl);
+      // setInternalMediaBlobUrl(RMRMediaBlobUrl); // onStop에서 처리
+      // Blob 객체를 생성하는 로직이 필요할 수 있으나, onStop에서 blob을 직접 받음
+    }
+
+    // 에러 상태 업데이트
+    if (RMRError) {
+      let friendlyError = '알 수 없는 녹음 오류가 발생했습니다.';
+      switch (RMRError) {
+        case 'permission_denied':
+          friendlyError = '마이크 접근 권한이 거부되었습니다. 브라우저 설정을 확인해주세요.';
+          break;
+        case 'no_specified_media_found':
+          friendlyError = '사용 가능한 마이크 장치가 없습니다. 마이크 연결을 확인해주세요.';
+          break;
+        // 추가적인 에러 케이스들
+        default:
+          console.error('react-media-recorder error:', RMRError);
+      }
+      setSttErrorMessage(friendlyError);
+      setRecordingState(RecordingState.ERROR);
+    }
+  }, [RMRMediaBlobUrl, RMRError, status, setSttErrorMessage, setRecordingState, internalMediaBlobUrl]);
+
+  const startTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    setRecordingTime(0); // 타이머 시작 시 항상 0부터
+    timerRef.current = setInterval(() => {
+      setRecordingTime((prevTime) => {
+        if (prevTime >= MAX_RECORDING_TIME_MS / 1000 - 1) {
+          // -1을 하는 이유는 아래 RMRStopRecording이 호출되기 전에 시간이 한번 더 증가하는 것을 방지
+          RMRStopRecording(); // 최대 시간 도달 시 자동 중지
+          if (timerRef.current) clearInterval(timerRef.current);
+          return MAX_RECORDING_TIME_MS / 1000;
+        }
+        return prevTime + 1;
+      });
+    }, 1000);
+  }, [RMRStopRecording]);
+
+  const handleStartRecording = useCallback(async () => {
+    try {
+      console.log('녹음 시작 요청');
+      setSttErrorMessage(null); // 이전 에러 메시지 초기화
+      setInternalAudioBlob(null); // 이전 Blob 초기화
+      // setInternalMediaBlobUrl(null); // RMRClearBlobUrl이 이 역할을 할 수 있음
+      RMRClearBlobUrl(); // 기존 Blob URL 및 녹음 상태 초기화
+      setSttResultText(''); // 이전 STT 결과 초기화 (setSttRecognizedText -> setSttResultText 및 빈 문자열로 초기화)
+
+      // 권한 요청이 여기서 명시적으로 이루어지지 않음.
+      // useReactMediaRecorder가 내부적으로 처리하거나, askPermissionOnMount=true로 설정.
+      // 필요하다면 navigator.mediaDevices.getUserMedia를 먼저 호출하여 권한 확보 후 RMRStartRecording 호출.
+      // 하지만 useReactMediaRecorder가 이를 내부적으로 처리해줄 것으로 기대.
+      await RMRStartRecording(); // promise를 반환하지 않을 수 있음, 라이브러리 확인 필요
+      console.log('RMRStartRecording 호출 후, 현재 상태:', status); // 상태 변화는 비동기적일 수 있음
+      setRecordingState(RecordingState.RECORDING);
+      startTimer();
+    } catch (err) {
+      console.error('녹음 시작 중 에러:', err);
+      let message = '녹음 시작 중 오류가 발생했습니다.';
+      if (err instanceof Error) {
+        // react-media-recorder의 error 상태와는 별개로 startRecording 자체에서 에러가 날 경우
+        if (err.name === 'NotAllowedError') {
+          message = '마이크 접근 권한이 거부되었습니다. 브라우저 설정을 확인해주세요.';
+        } else if (err.name === 'NotFoundError') {
+          message = '사용 가능한 마이크 장치가 없습니다. 마이크 연결을 확인해주세요.';
+        }
+      }
+      setSttErrorMessage(message);
+      setRecordingState(RecordingState.ERROR);
+    }
+  }, [setSttErrorMessage, RMRClearBlobUrl, RMRStartRecording, setRecordingState, startTimer, status, setSttResultText]);
+
+  const handleStopRecording = useCallback(async () => {
+    console.log('녹음 중지 요청');
+    // RMRStopRecording은 onStop 콜백을 트리거함.
+    // onStop 콜백 내에서 상태 변경 및 타이머 정리가 이루어짐.
+    await RMRStopRecording(); // promise를 반환하지 않을 수 있음
+    // setRecordingState(RecordingState.STOPPED); // onStop에서 처리
+    // if (timerRef.current) clearInterval(timerRef.current); // onStop에서 처리
+    // setRecordingTime(0); // onStop에서 처리
+  }, [RMRStopRecording]);
+
+  const handlePauseRecording = useCallback(async () => {
+    if (status === 'recording') {
+      await RMRPauseRecording();
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      setRecordingState(RecordingState.PAUSED);
+      console.log('녹음 일시 중지됨');
+    }
+  }, [RMRPauseRecording, status, setRecordingState]);
+
+  const handleResumeRecording = useCallback(async () => {
+    if (status === 'paused') {
+      await RMRResumeRecording();
+      startTimer(); // 정지되었던 타이머 다시 시작
+      setRecordingState(RecordingState.RECORDING);
+      console.log('녹음 재개됨');
+    }
+  }, [RMRResumeRecording, status, startTimer, setRecordingState]);
+
+  // STT 스토어의 recordingState와 내부 status 동기화 (선택적)
+  // useReactMediaRecorder의 status를 직접 사용하는 것이 더 정확할 수 있음
+  useEffect(() => {
+    // console.log('RMR Status changed:', status);
+    // console.log('STT Store recordingState:', sttRecordingState);
+    // console.log('Internal Audio Blob:', internalAudioBlob);
+    // console.log('Internal Media Blob URL:', internalMediaBlobUrl);
+    // UI 상태를 STTStore와 동기화할 필요가 있다면 여기서 처리
+    // 예: if (status === 'recording' && sttRecordingState !== RecordingState.RECORDING) {
+    //   setRecordingState(RecordingState.RECORDING);
+    // }
+    // 하지만 대부분의 상태 업데이트는 각 핸들러 함수나 onStop 콜백에서 처리됨.
+  }, [status, sttRecordingState, internalAudioBlob, internalMediaBlobUrl, setRecordingState]);
+
+  return {
+    recordingState: sttRecordingState, // STT 스토어의 상태를 우선으로 반환하거나, RMR status 기반으로 변환
+    startRecording: handleStartRecording,
+    stopRecording: handleStopRecording,
+    pauseRecording: handlePauseRecording,
+    resumeRecording: handleResumeRecording,
+    recordingTime,
+    mediaBlobUrl: internalMediaBlobUrl || RMRMediaBlobUrl || null, // undefined일 경우 null 처리
+    audioBlob: internalAudioBlob, // onStop에서 설정된 Blob
+    error: RMRError || null, // react-media-recorder가 제공하는 에러 (undefined일 경우 null 처리)
+    isRecording: status === 'recording',
+    isPaused: status === 'paused',
+    isInactive: status === 'idle' || status === 'stopped' || status === 'acquiring_media', // acquiring_media도 비활성으로 간주
+  };
 };
