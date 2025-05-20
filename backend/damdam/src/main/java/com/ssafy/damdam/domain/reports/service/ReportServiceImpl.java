@@ -221,26 +221,23 @@ public class ReportServiceImpl implements ReportService {
 	@Transactional
 	public void updatePeriodReportTitle(Long pReportId, String pReportTitle) {
 		Users user = validateUser();
-
 		PeriodReport report = validatePeriodReport(pReportId);
-
-
+		report.updatePReport(pReportTitle);
 	}
 
 	@Override
 	@Transactional
 	public void deletePeriodReport(Long pReportId) {
 		Users user = validateUser();
-
 		PeriodReport report = validatePeriodReport(pReportId);
-
+		periodReportRepository.delete(report);
 	}
 
 	@Override
 	@Transactional
 	public Long createPeriodReport(PeriodReportInputDto periodReportInputDto) {
 		Users user = validateUser();
-
+		// spark 및 LLM과 연동하여 period report 생성
 		return 0L;
 	}
 }
