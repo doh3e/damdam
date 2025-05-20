@@ -20,9 +20,11 @@ export async function getReports({ category, start, end, keyword }: GetReportsPa
 }
 
 // getReportDetail
-// export const getReportDetail = async (reportId: string): Promise<Report> => {
-//   return apiClient.get<Report>(`/reports/${reportId}`);
-// };
+import { ReportDetailResponse } from './types';
+
+export const getReportDetail = async (reportId: string): Promise<ReportDetailResponse> => {
+  return apiClient.get(`/reports/${reportId}`);
+};
 
 // getReportDates (예시)
 // export const getReportDates = async (): Promise<string[]> => {
