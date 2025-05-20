@@ -5,7 +5,7 @@
  * 녹음 상태 관리, 오디오 데이터 Blob 생성, 최대 녹음 시간 처리 등을 담당합니다.
  */
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { MediaRecorder } from 'extendable-media-recorder';
+// import { MediaRecorder } from 'extendable-media-recorder'; // worker is not defined 문제 확인을 위한 임시 주석 처리
 import { useSTTStore, RecordingState } from '@/features/counseling/model/sttStore';
 import { useAppSetupStore } from '@/app/store/appSetupStore'; // 전역 스토어 import
 
