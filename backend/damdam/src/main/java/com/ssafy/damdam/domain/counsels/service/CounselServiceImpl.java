@@ -155,7 +155,7 @@ public class CounselServiceImpl implements CounselService {
 			throw new CounsException(NOT_YOUR_COUNSEL);
 		}
 
-		if (counseling.getS3Link() != null) {
+		if (counseling.getS3Link() != null || !counseling.getS3Link().isBlank()) {
 			s3FileUploadService.deleteTranscript(counseling.getS3Link());
 		}
 

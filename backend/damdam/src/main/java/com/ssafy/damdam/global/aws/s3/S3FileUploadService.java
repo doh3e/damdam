@@ -203,7 +203,6 @@ public class S3FileUploadService {
 				AsyncResponseTransformer.toBytes()
 			).join();
 
-			// 3) byte[] → String → DTO
 			String json = new String(resp.asByteArray(), StandardCharsets.UTF_8);
 			return objectMapper.readValue(json, TranscriptDto.class);
 
