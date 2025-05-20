@@ -8,7 +8,7 @@ import { Header } from '@/widgets/Header'; // Header 위젯 가져오기
 import { BottomNavigation } from '@/widgets/BottomNavigation'; // BottomNavigation 위젯 가져오기
 import QueryClientProviders from './providers/QueryClientProviders';
 import { ThemeProvider } from './providers/ThemeProvider';
-import AudioEncoderInitializer from './providers/AudioEncoderInitializer';
+import DynamicAudioEncoderInitializer from './providers/DynamicAudioEncoderInitializer'; // SSR 비활성화 컴포넌트 임포트
 import { config } from '@fortawesome/fontawesome-svg-core';
 import '@fortawesome/fontawesome-svg-core/styles.css';
 config.autoAddCss = false;
@@ -84,7 +84,7 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         {/* === Audio Encoder Initializer === */}
-        <AudioEncoderInitializer />
+        <DynamicAudioEncoderInitializer />
         {/* === 앱 전체 뷰 컨테이너 === */}
         {/* h-screen으로 높이 고정, overflow-hidden으로 내부 스크롤 제한 */}
         <div className="mx-auto flex h-screen max-w-screen-sm flex-col overflow-hidden bg-background shadow-md">
