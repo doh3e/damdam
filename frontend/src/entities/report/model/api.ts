@@ -9,25 +9,22 @@ interface GetReportsParams {
 }
 
 export async function getReports({ category, start, end, keyword }: GetReportsParams) {
-  const searchParams = new URLSearchParams({
+  const params = {
     category,
-    ...(start ? { start } : {}),
-    ...(end ? { end } : {}),
-    ...(keyword ? { keyword } : {}),
-  });
+    ...(start && { start }),
+    ...(end && { end }),
+    ...(keyword && { keyword }),
+  };
 
-  const res = await fetch(`/api/reports?${searchParams.toString()}`);
-  if (!res.ok) throw new Error('레포트 불러오기 실패');
-
-  return res.json() as Promise<SessionReport[] | PeriodReport[]>;
+  return apiClient.get<SessionReport[] | PeriodReport[]>('/reports', params);
 }
 
 // getReportDetail
-export const getReportDetail = async (reportId: string): Promise<Report> => {
-  return apiClient.get<Report>(`/reports/${reportId}`);
-};
+// export const getReportDetail = async (reportId: string): Promise<Report> => {
+//   return apiClient.get<Report>(`/reports/${reportId}`);
+// };
 
 // getReportDates (예시)
-export const getReportDates = async (): Promise<string[]> => {
-  return apiClient.get<string[]>('/reports/dates');
-};
+// export const getReportDates = async (): Promise<string[]> => {
+//   return apiClient.get<string[]>('/reports/dates');
+// };
