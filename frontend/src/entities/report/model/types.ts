@@ -21,15 +21,27 @@ export interface ChatMessage {
   time: string;
 }
 
-export interface ReportDetail {
-  id: string;
-  date: string;
-  time: string;
-  valence: number;
-  arousal: number;
-  emotionTrend: number[];
+export interface ReportDetailResponse {
+  userId: number;
+  nickname: string;
+  counsId: number;
+  counsTitle: string;
   summary: string;
   analyze: string;
-  keywords: string[];
-  chat: ChatMessage[];
+  valence: string; // e.g., 'neutral'
+  arousal: string; // e.g., 'low'
+  createdAt: string;
+  sreportId: number;
+  sreportTitle: string;
+  emotionList: {
+    timestamp: string;
+    messageOrder: number;
+    emotion: {
+      happiness: number;
+      sadness: number;
+      angry: number;
+      neutral: number;
+      other: number;
+    };
+  }[];
 }

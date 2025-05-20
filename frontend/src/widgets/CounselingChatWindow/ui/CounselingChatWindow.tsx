@@ -593,7 +593,10 @@ export function CounselingChatWindow() {
 
         {/* CardContent: 채팅 메시지 목록. flex-grow로 남은 공간 모두 차지, 내부에서 스크롤 처리. 배경색 변경 */}
         {/* p-0으로 변경하고, ChatMessageList 내부에서 패딩 및 스크롤 처리 */}
-        <CardContent className="flex-grow bg-light-gray dark:bg-gray-900 p-0" id="chat-message-list-container">
+        <CardContent
+          className="flex-grow bg-light-gray dark:bg-gray-900 p-0 overflow-hidden"
+          id="chat-message-list-container"
+        >
           {/* ChatMessageList 내부에서 h-full 및 overflow-y-auto 필요 */}
           <ChatMessageList messages={messages} />
         </CardContent>
