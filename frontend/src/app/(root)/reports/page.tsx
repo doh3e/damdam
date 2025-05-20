@@ -31,7 +31,7 @@ export default function ReportsPage() {
 
   return (
     <div className="bg-white min-h-screen max-w-xl mx-auto border rounded-xl shadow p-4">
-      <h2 className="font-bold text-lg mb-4">나의 상담</h2>
+      <h2 className="font-bold text-lg mb-4">나의 레포트</h2>
 
       {/* 탭 */}
       <div className="grid grid-cols-2 mb-4 overflow-hidden rounded-lg bg-gray-100 border border-gray-200 text-sm font-semibold">
@@ -44,7 +44,7 @@ export default function ReportsPage() {
             setSelectedDate(null);
           }}
         >
-          나의 과거 상담 내역
+          상담별 레포트
         </button>
         <button
           className={`px-3 py-1 rounded-lg font-semibold text-sm ${
@@ -81,9 +81,9 @@ export default function ReportsPage() {
         <>
           <span className="font-bold block mb-2">상담날짜 선택</span>
           <ReportCalendar selectedDate={selectedDate ?? new Date()} onSelectDate={setSelectedDate} />
-          <button onClick={() => setSelectedDate(null)} className="mt-2 text-sm text-blue-600">
+          {/* <button onClick={() => setSelectedDate(null)} className="mt-2 text-sm text-blue-600">
             전체 목록 보기
-          </button>
+          </button> */}
         </>
       )}
 

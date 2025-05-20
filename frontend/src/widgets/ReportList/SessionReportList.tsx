@@ -14,10 +14,15 @@ export function SessionReportList({ reports, isLoading }: Props) {
   return (
     <ul className="space-y-4">
       {reports.map((r) => (
-        <li key={r.sreportId} className="border p-2 rounded hover:bg-gray-50 transition">
-          <Link href={`/reports/${r.sreportId}`} className="block">
-            <div className="font-bold">{r.sreportTitle}</div>
-            <div className="text-sm text-gray-500">{new Date(r.createdAt + 'Z').toLocaleString('ko-KR')}</div>
+        <li
+          key={r.sreportId}
+          className="relative bg-[#fff7ed] rounded-xl p-4 transition-all duration-200 hover:bg-[#ffe3c1] hover:shadow-lg cursor-pointer"
+        >
+          {/* 좌측 연한 주황색 세로선 */}
+          <div className="absolute left-0 top-0 h-full w-1 bg-[#ff9134] rounded-s-xl" />
+          <Link href={`/reports/${r.sreportId}`} className="block pl-3">
+            <div className="font-bold leading-relaxed mb-3">{r.sreportTitle}</div>
+            <div className="text-xs text-gray-500">{new Date(r.createdAt + 'Z').toLocaleString('ko-KR')}</div>
           </Link>
         </li>
       ))}
