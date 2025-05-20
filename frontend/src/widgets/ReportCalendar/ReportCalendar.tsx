@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Calendar } from '@/shared/ui/calendar';
-import { getReportDates } from '@/entities/report/model/api';
+// import { getReportDates } from '@/entities/report/model/api';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 
@@ -10,14 +10,8 @@ interface ReportCalendarProps {
   onSelectDate: (date: Date) => void;
 }
 
+// 임시로 보고 날짜 하이라이트 없이 동작하도록 변경
 export function ReportCalendar({ selectedDate, onSelectDate }: ReportCalendarProps) {
-  const month = format(selectedDate, 'yyyy-MM');
-
-  const { data: reportDates = [] } = useQuery({
-    queryKey: ['reportDates', month],
-    queryFn: () => getReportDates(month),
-  });
-
   return (
     <div className="flex justify-center mb-4">
       <Calendar
@@ -25,17 +19,6 @@ export function ReportCalendar({ selectedDate, onSelectDate }: ReportCalendarPro
         selected={selectedDate}
         onSelect={(date: Date | undefined) => {
           if (date) onSelectDate(date);
-        }}
-        modifiers={{
-          hasReport: reportDates.map((d) => new Date(d)),
-        }}
-        modifiersStyles={{
-          hasReport: {
-            backgroundColor: '#FAE9DE',
-            color: '#DC5F53',
-            fontWeight: 'bold',
-            borderRadius: '50%',
-          },
         }}
         className="rounded border p-5"
       />
