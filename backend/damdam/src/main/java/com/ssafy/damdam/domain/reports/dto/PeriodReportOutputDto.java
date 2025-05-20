@@ -27,5 +27,5 @@ public class PeriodReportOutputDto {
 	private String summary;
 	private String worry;
 	private LocalDateTime createdAt;
-	private int counselCount;
+	private int counselTime;
 }

@@ -203,7 +203,6 @@ public class S3FileUploadService {
 				AsyncResponseTransformer.toBytes()
 			).join();
 
-			// 3) byte[] → String → DTO
 			String json = new String(resp.asByteArray(), StandardCharsets.UTF_8);
 			return objectMapper.readValue(json, TranscriptDto.class);
 
@@ -245,6 +244,16 @@ public class S3FileUploadService {
 		} catch (IOException e) {
 			log.error("[S3] 문의 파일 업로드 실패", e);
 			throw new UncheckedIOException(e);
+		}
+	}
+
+	public void deleteTranscript(String s3Link) {
+		String key = s3Link.replace(defaultUrl, "");
+		try {
+			s3AsyncClient.deleteObject(b -> b.bucket(bucket).key(key)).join();
+		} catch (Exception e) {
+			log.error("[S3] 삭제 실패: key={}", key, e);
+			throw new S3Exception(FILE_DELETE_FAIL);
 		}
 	}
 }

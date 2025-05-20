@@ -18,7 +18,8 @@ public enum S3ExceptionCode implements ExceptionCode {
 	IS_NOT_IMAGE(BAD_REQUEST, "S3-S-003", "이미지 형식이 아닙니다."),
 	IS_NOT_AUDIO(BAD_REQUEST, "S3-S-004", "오디오 형식이 아닙니다."),
 	JSON_SERIALIZATION_FAIL(BAD_REQUEST, "S3-S-005", "JSON 직렬화에 실패했습니다."),
-	FILE_DOWNLOAD_FAIL(BAD_REQUEST, "S3-S-006", "파일 다운로드에 실패했습니다.");
+	FILE_DOWNLOAD_FAIL(BAD_REQUEST, "S3-S-006", "파일 다운로드에 실패했습니다."),
+	FILE_DELETE_FAIL(BAD_REQUEST, "S3-S-007", "파일 삭제에 실패했습니다.");
 
 	private final HttpStatus httpStatus;
 	private final String code;

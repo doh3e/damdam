@@ -102,9 +102,7 @@ const SendMessageForm = ({
 
   const handleClearVoiceInput = useCallback(() => {
     setNewMessageInput('');
-    setAudioBlob(null);
-    setIsCurrentMessageFromVoice(false);
-    setSttResultText('');
+    resetSTTState();
 
     if (currentAudioRef.current) {
       currentAudioRef.current.pause();
@@ -113,7 +111,7 @@ const SendMessageForm = ({
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
-  }, []);
+  }, [resetSTTState]);
 
   const handleInputChange = useCallback(
     (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -186,10 +184,7 @@ const SendMessageForm = ({
           onError: (error) => {
             console.error('[STT useEffect] STT mutate onError:', error);
             setSttErrorMessageToStore(error.message || 'STT 변환에 실패했습니다.');
-            setRecordingState(RecordingState.ERROR);
-            setAudioBlob(null);
-            setMessageOrderForAudio(null);
-            setIsCurrentMessageFromVoice(false);
+            resetSTTState();
           },
         }
       );
@@ -210,8 +205,7 @@ const SendMessageForm = ({
     setSttErrorMessageToStore,
     messages,
     setMessageOrderForAudio,
-    setAudioBlob,
-    setIsCurrentMessageFromVoice,
+    resetSTTState,
   ]);
 
   const handleSubmit = useCallback(
@@ -219,7 +213,7 @@ const SendMessageForm = ({
       event?.preventDefault();
       if (!newMessageInput.trim() || !currentCounsId || !isWebSocketConnected || !sendUserMessage) {
         console.warn('[SendMessageForm] Submit prerequisites not met:', {
-          newMessageInput,
+          newMessageInput: newMessageInput.trim(),
           currentCounsId,
           isWebSocketConnected,
           sendUserMessageExists: !!sendUserMessage,
@@ -228,54 +222,54 @@ const SendMessageForm = ({
       }
 
       const trimmedMessage = newMessageInput.trim();
+      const localIsVoice = useSTTStore.getState().isCurrentMessageFromVoice;
+      const localAudioBlob = useSTTStore.getState().audioBlob;
+      const localMessageOrderForAudio = useSTTStore.getState().messageOrderForAudio;
+
       const userMessagesCount = messages.filter((message) => message.sender === SenderType.USER).length;
       const currentMessageOrder =
-        isCurrentMessageFromVoice && messageOrderForAudio != null ? messageOrderForAudio : userMessagesCount + 1;
+        localIsVoice && localMessageOrderForAudio != null ? localMessageOrderForAudio : userMessagesCount + 1;
 
       const payload: StompSendUserMessagePayload = {
         text: trimmedMessage,
         messageOrder: currentMessageOrder,
-        isVoice: isCurrentMessageFromVoice,
+        isVoice: localIsVoice,
       };
       sendUserMessage(payload);
       console.log('[SendMessageForm] Message sent via WebSocket:', payload);
 
-      if (audioBlob && isCurrentMessageFromVoice && currentCounsId) {
+      if (payload.isVoice && localAudioBlob && currentCounsId) {
         console.log(
           '[SendMessageForm] Uploading WAV audioBlob for messageOrder:',
           currentMessageOrder,
           'Blob:',
-          audioBlob
+          localAudioBlob
         );
         uploadVoiceMutation.mutate(
           {
             counsId: currentCounsId,
-            audioFile: audioBlob,
+            audioFile: localAudioBlob,
             messageOrder: currentMessageOrder,
+            filename: `voice_message_${currentCounsId}_${currentMessageOrder}.wav`,
           },
           {
-            onSuccess: (uploadData) => {
-              console.log('[SendMessageForm] WAV voice file uploaded successfully:', uploadData);
-              resetSTTState();
+            onSuccess: () => {
+              console.log(
+                `[SendMessageForm] WAV voice file uploaded successfully for messageOrder: ${currentMessageOrder}`
+              );
             },
-            onError: (uploadError) => {
-              console.error('[SendMessageForm] Failed to upload WAV voice file:', uploadError);
-              setSttErrorMessageToStore(`음성 파일 업로드에 실패했습니다: ${uploadError.message || '서버 오류'}`);
+            onError: (error) => {
+              console.error(
+                `[SendMessageForm] Failed to upload WAV voice file for messageOrder: ${currentMessageOrder}`,
+                error
+              );
             },
           }
-        );
-      } else if (isCurrentMessageFromVoice && !audioBlob) {
-        console.warn(
-          '[SendMessageForm] isCurrentMessageFromVoice is true, but audioBlob is null. Voice file will not be uploaded.'
         );
       }
 
       setNewMessageInput('');
-      if (isCurrentMessageFromVoice) {
-        // resetSTTState();
-      } else {
-        resetSTTState();
-      }
+      resetSTTState();
       textareaRef.current?.focus();
       if (onUserActivity) {
         onUserActivity();
@@ -287,12 +281,8 @@ const SendMessageForm = ({
       isWebSocketConnected,
       sendUserMessage,
       messages,
-      audioBlob,
-      isCurrentMessageFromVoice,
-      messageOrderForAudio,
       uploadVoiceMutation,
       resetSTTState,
-      setSttErrorMessageToStore,
       onUserActivity,
     ]
   );
@@ -351,10 +341,10 @@ const SendMessageForm = ({
               : !isWebSocketConnected
                 ? '연결 중...'
                 : recordingState === RecordingState.RECORDING
-                  ? '음성 녹음 중... 중지하려면 버튼을 누르세요.'
+                  ? '음성 녹음 중...'
                   : recordingState === RecordingState.PROCESSING_STT
                     ? '음성 처리 중...'
-                    : '메시지를 입력하세요... (Shift+Enter로 줄바꿈)'
+                    : '메시지를 입력하세요...'
           }
           className="w-full resize-none overflow-y-hidden rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pale-coral-pink dark:focus:ring-pale-coral-pink/80 pr-10 min-h-[40px]" // pr-10은 전송 버튼 공간 확보 (필요시)
           rows={1} // 초기에는 1줄로 시작

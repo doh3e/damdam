@@ -60,7 +60,7 @@ public class ReportController {
 	}
 
 	@PatchMapping("/{reportId}")
-	public ResponseEntity<?> updateSessionReportTitle(
+	public ResponseEntity<Void> updateSessionReportTitle(
 		@PathVariable Long reportId,
 		@RequestParam String sReportTitle
 	) {
@@ -69,7 +69,7 @@ public class ReportController {
 	}
 
 	@DeleteMapping("/{reportId}")
-	public ResponseEntity<?> deleteSessionReport(
+	public ResponseEntity<Void> deleteSessionReport(
 		@PathVariable Long reportId
 	) {
 		reportService.deleteSessionReport(reportId);
@@ -84,7 +84,7 @@ public class ReportController {
 	}
 
 	@PatchMapping("/periodic/{pReportId}")
-	public ResponseEntity<?> updatePeriodReportTitle(
+	public ResponseEntity<Void> updatePeriodReportTitle(
 		@PathVariable Long pReportId,
 		@RequestParam String pReportTitle
 	) {
@@ -93,7 +93,7 @@ public class ReportController {
 	}
 
 	@DeleteMapping("/periodic/{pReportId}")
-	public ResponseEntity<?> deletePeriodReport(
+	public ResponseEntity<Void> deletePeriodReport(
 		@PathVariable Long pReportId
 	) {
 		reportService.deletePeriodReport(pReportId);

@@ -5,13 +5,9 @@
  * 녹음 상태 관리, 오디오 데이터 Blob 생성, 최대 녹음 시간 처리 등을 담당합니다.
  */
 import { useState, useRef, useCallback, useEffect } from 'react';
-// extendable-media-recorder에서 MediaRecorder를 가져옵니다.
-// Linter 오류 (타입 불일치)를 피하기 위해 MediaRecorder as any로 임시 처리할 수 있으나,
-// 여기서는 라이브러리가 제공하는 타입을 최대한 따르려고 시도합니다.
-// 만약 지속적인 타입 오류 발생 시, `import { MediaRecorder as ExtendableMediaRecorder } from 'extendable-media-recorder';` 후
-// `ExtendableMediaRecorder` 타입을 사용하거나, `any`로 캐스팅하는 것을 고려합니다.
 import { MediaRecorder } from 'extendable-media-recorder';
 import { useSTTStore, RecordingState } from '@/features/counseling/model/sttStore';
+import { useAppSetupStore } from '@/app/store/appSetupStore'; // 전역 스토어 import
 
 const MAX_RECORDING_TIME_MS = 60 * 1000; // 최대 녹음 시간: 1분 (밀리초 단위)
 // 녹음할 오디오의 MIME 타입을 'audio/wav'로 설정합니다.
@@ -40,6 +36,8 @@ interface UseAudioRecordingResult {
  */
 export const useAudioRecording = (): UseAudioRecordingResult => {
   const { setRecordingState, setAudioBlob, setErrorMessage, resetSTTState, recordingState } = useSTTStore();
+  // 전역 스토어에서 인코더 준비 상태 가져오기
+  const isWavEncoderGloballyReady = useAppSetupStore((state) => state.isWavEncoderReady);
 
   // MediaRecorder 인스턴스 참조. extendable-media-recorder의 MediaRecorder 타입을 사용합니다.
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -91,7 +89,7 @@ export const useAudioRecording = (): UseAudioRecordingResult => {
     } catch (err) {
       console.error('마이크 권한 요청 실패:', err);
       setErrorMessage('마이크 권한이 필요합니다. 브라우저 설정을 확인해주세요.');
-      setRecordingState(RecordingState.ERROR);
+      // setRecordingState(RecordingState.ERROR); // 호출부에서 상태 관리
       return null;
     }
   };
@@ -113,7 +111,8 @@ export const useAudioRecording = (): UseAudioRecordingResult => {
       setRecordingState(RecordingState.IDLE); // 권한 확인 후 다시 대기 상태로 변경
       return true;
     }
-    // getMediaStream 내부에서 RecordingState.ERROR로 설정됨
+    // getMediaStream에서 null 반환 시 권한 실패로 간주
+    setRecordingState(RecordingState.ERROR); // 명시적으로 에러 상태 설정
     return false;
   };
 
@@ -128,9 +127,19 @@ export const useAudioRecording = (): UseAudioRecordingResult => {
     cleanupRecorder(); // 이전 리소스 정리 (특히 mediaStreamRef)
     setRecordingState(RecordingState.REQUESTING_PERMISSION);
 
+    if (!isWavEncoderGloballyReady) {
+      console.warn('[useAudioRecording] WAV encoder is not globally ready. Cannot start recording.');
+      setErrorMessage(
+        '음성 녹음 기능을 사용할 수 없습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요. (인코더 오류)'
+      );
+      setRecordingState(RecordingState.ERROR);
+      return;
+    }
+
     const stream = await getMediaStream();
     if (!stream) {
-      // getMediaStream 내부에서 에러 상태를 처리하므로, 여기서는 추가 작업 없이 반환합니다.
+      // getMediaStream 내부에서 에러 메시지를 설정했을 것이므로, 여기서는 상태만 변경합니다.
+      setRecordingState(RecordingState.ERROR);
       return;
     }
 
@@ -209,7 +218,7 @@ export const useAudioRecording = (): UseAudioRecordingResult => {
         const error = (event as any).error || event; // 더 일반적인 오류 객체 접근 시도
         console.error('MediaRecorder 에러:', error);
         const errorMessage = error instanceof Error ? error.message : '알 수 없는 녹음 오류';
-        setErrorMessage(`녹음 중 오류가 발생했습니다: ${errorMessage}`); // 백틱 확인
+        setErrorMessage(`녹음 중 오류가 발생했습니다: ${errorMessage}`);
         setRecordingState(RecordingState.ERROR);
         cleanupRecorder(); // 에러 발생 시 모든 리소스 정리
       };
@@ -239,23 +248,27 @@ export const useAudioRecording = (): UseAudioRecordingResult => {
    * MediaRecorder의 상태가 'recording'일 경우에만 stop() 메소드를 호출합니다.
    * 녹음 중지 시 onstop 핸들러가 자동으로 호출되어 후속 처리를 수행합니다.
    */
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      console.log('[useAudioRecording] stopRecording called. Current state: recording. Stopping recorder...');
-      mediaRecorderRef.current.stop(); // 이 호출로 인해 onstop 이벤트 핸들러가 트리거됩니다.
-      // 주의: 여기서 cleanupRecorder를 직접 호출하면 onstop 핸들러와 정리 로직이 중복되거나
-      // Blob 생성이 완료되기 전에 리소스가 정리될 수 있습니다.
-      // cleanupRecorder는 onstop 핸들러 내부 또는 onerror 핸들러 내부에서 호출하는 것이 안전합니다.
-    } else {
-      console.warn(
-        '[useAudioRecording] stopRecording called but not in recording state or mediaRecorder not ready. State:',
-        mediaRecorderRef.current?.state
-      );
-      // 이미 중지되었거나 녹음 중이 아닐 때는 추가적인 cleanup이 필요 없을 수 있지만,
-      // 만약을 위해 현재 상태를 확인하고 필요시 정리 로직을 호출할 수 있습니다.
-      // cleanupRecorder(); // 상태에 따라 선택적으로 호출
-    }
-  }, [cleanupRecorder]); // cleanupRecorder를 의존성 배열에 추가했지만, cleanupRecorder 자체는 불변
+  const stopRecording = useCallback(
+    () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop(); // onstop 핸들러가 호출됨
+      } else if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+        // 만약 paused 상태를 사용하고 있다면, resume 후 stop
+        // mediaRecorderRef.current.resume();
+        mediaRecorderRef.current.stop();
+      }
+
+      if (recordingTimerRef.current) {
+        clearTimeout(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+      // cleanupRecorder(); // onstop 핸들러 내부에서 호출되므로 여기서 중복 호출을 피할 수 있습니다.
+      // 혹은 stopRecording 호출 시 명시적으로 정리하고 싶다면 onstop에서는 상태 업데이트만 집중
+    },
+    [
+      /* setRecordingState, cleanupRecorder 등 외부 함수/상태 의존성 검토 */
+    ]
+  );
 
   // 컴포넌트 언마운트 시 남아있을 수 있는 녹음 관련 리소스 정리
   useEffect(() => {

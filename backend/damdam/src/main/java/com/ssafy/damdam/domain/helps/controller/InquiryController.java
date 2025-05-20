@@ -30,23 +30,23 @@ public class InquiryController {
 	private final InquiryService inquiryService;
 
 	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<?> createInquiry(
+	public ResponseEntity<Void> createInquiry(
 		@RequestPart("inquiry") InquiryInputDto inquiryinputDto,
 		@RequestPart(value = "file", required = false) MultipartFile file) {
 
 		inquiryService.createInquiry(inquiryinputDto, file);
 
-		return ResponseEntity.ok("문의가 등록되었습니다.");
+		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/{inquiryId}/answer")
-	public ResponseEntity<?> createInquiryAnswer(
+	public ResponseEntity<Void> createInquiryAnswer(
 		@PathVariable Long inquiryId,
 		@RequestBody AnswerInputDto answerInputDto) {
 
 		inquiryService.createInquiryAnswer(inquiryId, answerInputDto);
 
-		return ResponseEntity.ok("문의 답변이 완료되었습니다.");
+		return ResponseEntity.noContent().build();
 	}
 
 	@GetMapping("")

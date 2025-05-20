@@ -1,27 +1,32 @@
-import { apiClient } from '@/shared/api/axiosInstance';
-import type { Report } from './types';
+import type { SessionReport, PeriodReport } from './types';
+import { apiClient } from '@/shared/api';
 
-export const getReports = async ({
-  category,
-  start,
-  end,
-  keyword,
-}: {
-  category: '상담별' | '기간별';
+interface GetReportsParams {
+  category: 'session' | 'period';
   start?: string;
   end?: string;
   keyword?: string;
-}): Promise<Report[]> => {
-  return apiClient.get<Report[]>('/reports', {
-    params: {
-      category,
-      start,
-      end,
-      keyword,
-    },
-  });
+}
+
+export async function getReports({ category, start, end, keyword }: GetReportsParams) {
+  const params = {
+    category,
+    ...(start && { start }),
+    ...(end && { end }),
+    ...(keyword && { keyword }),
+  };
+
+  return apiClient.get<SessionReport[] | PeriodReport[]>('/reports', params);
+}
+
+// getReportDetail
+import { ReportDetailResponse } from './types';
+
+export const getReportDetail = async (reportId: string): Promise<ReportDetailResponse> => {
+  return apiClient.get(`/reports/${reportId}`);
 };
 
-export const getReportDetail = async (reportId: string): Promise<Report> => {
-  return apiClient.get<Report>(`/reports/${reportId}`);
-};
+// getReportDates (예시)
+// export const getReportDates = async (): Promise<string[]> => {
+//   return apiClient.get<string[]>('/reports/dates');
+// };

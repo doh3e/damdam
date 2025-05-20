@@ -103,7 +103,7 @@ public class CounselController {
 	}
 
 	@PatchMapping("/{counsId}")
-	public ResponseEntity<String> patchCounselTitle(
+	public ResponseEntity<Void> patchCounselTitle(
 		@PathVariable Long counsId,
 		@Valid @RequestBody PatchCounselTitleRequest req
 	) {
@@ -112,7 +112,7 @@ public class CounselController {
 	}
 
 	@DeleteMapping("/{counsId}")
-	public ResponseEntity<String> deleteCounsel(@PathVariable Long counsId) {
+	public ResponseEntity<Void> deleteCounsel(@PathVariable Long counsId) {
 		chatService.deleteRedisChatting(counsId);
 		counselService.deleteCounsel(counsId);
 		return ResponseEntity.noContent().build();
