@@ -11,6 +11,7 @@ import type { NextConfig } from 'next';
  */
 const nextConfig: NextConfig = {
   reactStrictMode: false,
+  transpilePackages: ['extendable-media-recorder', 'extendable-media-recorder-wav-encoder'],
   /**
    * 여기에 프로젝트별 Next.js 추가 설정을 작성할 수 있습니다.
    * 예: images, env, webpack, i18n (국제화를 사용하지 않을 경우 i18n: null 또는 생략)
