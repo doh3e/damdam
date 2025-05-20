@@ -1,15 +1,18 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 // import dynamic from 'next/dynamic'; // next/dynamic 제거
 
 // 기존 import 주석 처리
 // import { register } from 'extendable-media-recorder';
 // import { connect } from 'extendable-media-recorder-wav-encoder';
 
+// Zustand 스토어 import
+import { useAppSetupStore } from '@/app/store/appSetupStore'; // 경로 확인
+
 /**
  * @file frontend/src/app/providers/AudioEncoderInitializer.tsx
- * @description 애플리케이션 시작 시 WAV 오디오 인코더를 등록하는 클라이언트 컴포넌트입니다.
+ * @description 애플리케이션 시작 시 WAV 오디오 인코더를 등록하고, 그 상태를 전역으로 관리하는 클라이언트 컴포넌트입니다.
  * `extendable-media-recorder`가 WAV 형식으로 직접 녹음할 수 있도록 설정합니다.
  * 이 컴포넌트는 애플리케이션의 최상위 레벨(예: RootLayout)에서 한 번만 렌더링되어야 합니다.
  */
@@ -20,6 +23,11 @@ import { useEffect } from 'react';
  * @returns {null} 이 컴포넌트는 UI를 렌더링하지 않으므로 null을 반환합니다.
  */
 const AudioEncoderInitializer = (): null => {
+  // 전역 스토어에서 인코더 준비 상태를 업데이트하는 함수 가져오기
+  const setWavEncoderReady = useAppSetupStore((state) => state.setWavEncoderReady);
+  // 인코더 등록 시도 여부를 추적하기 위한 ref (Fast Refresh 대응)
+  const registrationAttemptedRef = useRef(false);
+
   useEffect(() => {
     /**
      * WAV 인코더를 비동기적으로 등록합니다.
@@ -37,16 +45,30 @@ const AudioEncoderInitializer = (): null => {
           const encoderConfig = await connect();
           // extendable-media-recorder의 register 함수를 사용하여 WAV 인코더를 등록합니다.
           await register(encoderConfig);
-          console.log('WAV audio encoder registered successfully.');
-        } catch (error) {
-          console.error('Failed to register WAV audio encoder:', error);
-          // 여기에 사용자에게 알림을 보내거나, 오류 리포팅 서비스를 호출하는 등의 추가적인 오류 처리 로직을 넣을 수 있습니다.
+
+          console.log('WAV audio encoder registered successfully (Initializer).');
+          setWavEncoderReady(true); // 전역 상태 업데이트: 성공
+        } catch (error: any) {
+          if (error && error.message && error.message.includes('already an encoder stored')) {
+            console.warn(
+              'WAV audio encoder was already registered (Initializer): Mime type conflict detected.',
+              error.message
+            );
+            setWavEncoderReady(true); // 이미 등록되어 있어도 준비된 상태로 간주
+          } else {
+            console.error('Failed to register WAV audio encoder (Initializer):', error);
+            setWavEncoderReady(false); // 실패 시 명시적으로 false 처리 (선택적)
+          }
         }
       }
     };
 
-    initializeAudioEncoder();
-  }, []); // 빈 의존성 배열을 사용하여 마운트 시 한 번만 실행되도록 합니다.
+    // registrationAttemptedRef를 사용하여 Fast Refresh 시에도 한 번만 초기화 시도
+    if (!registrationAttemptedRef.current) {
+      initializeAudioEncoder();
+      registrationAttemptedRef.current = true;
+    }
+  }, [setWavEncoderReady]); // setWavEncoderReady는 일반적으로 안정적인 의존성
 
   return null; // 이 컴포넌트는 UI를 직접 렌더링하지 않습니다.
 };

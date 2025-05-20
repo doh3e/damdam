@@ -341,10 +341,10 @@ const SendMessageForm = ({
               : !isWebSocketConnected
                 ? '연결 중...'
                 : recordingState === RecordingState.RECORDING
-                  ? '음성 녹음 중... 중지하려면 버튼을 누르세요.'
+                  ? '음성 녹음 중...'
                   : recordingState === RecordingState.PROCESSING_STT
                     ? '음성 처리 중...'
-                    : '메시지를 입력하세요... (Shift+Enter로 줄바꿈)'
+                    : '메시지를 입력하세요...'
           }
           className="w-full resize-none overflow-y-hidden rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pale-coral-pink dark:focus:ring-pale-coral-pink/80 pr-10 min-h-[40px]" // pr-10은 전송 버튼 공간 확보 (필요시)
           rows={1} // 초기에는 1줄로 시작
