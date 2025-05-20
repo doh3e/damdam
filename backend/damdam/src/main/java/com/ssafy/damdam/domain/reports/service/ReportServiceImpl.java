@@ -12,19 +12,19 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.ssafy.damdam.domain.counsels.dto.ChatRecordDto;
 import com.ssafy.damdam.domain.counsels.dto.CounselingDto;
+import com.ssafy.damdam.domain.counsels.dto.EmotionDto;
+import com.ssafy.damdam.domain.counsels.dto.TranscriptDto;
 import com.ssafy.damdam.domain.counsels.entity.Counseling;
 import com.ssafy.damdam.domain.counsels.repository.CounselingRepository;
+import com.ssafy.damdam.domain.reports.dto.*;
 import com.ssafy.damdam.domain.reports.entity.PeriodReport;
 import com.ssafy.damdam.domain.reports.exception.ReportException;
+import com.ssafy.damdam.global.aws.s3.S3FileUploadService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ssafy.damdam.domain.reports.dto.PeriodReportInputDto;
-import com.ssafy.damdam.domain.reports.dto.PeriodReportListDto;
-import com.ssafy.damdam.domain.reports.dto.PeriodReportOutputDto;
-import com.ssafy.damdam.domain.reports.dto.SessionReportListDto;
-import com.ssafy.damdam.domain.reports.dto.SessionReportOutputDto;
 import com.ssafy.damdam.domain.reports.entity.SessionReport;
 import com.ssafy.damdam.domain.reports.repository.PeriodReportRepository;
 import com.ssafy.damdam.domain.reports.repository.SessionReportRepository;
@@ -44,6 +44,7 @@ public class ReportServiceImpl implements ReportService {
 	private final PeriodReportRepository periodReportRepository;
 	private final SessionReportRepository sessionReportRepository;
 	private final CounselingRepository counselingRepository;
+	private final S3FileUploadService s3FileUploadService;
 	private final UserUtil userUtil;
 
 	// 유저 검증 메서드
@@ -136,8 +137,30 @@ public class ReportServiceImpl implements ReportService {
 	@Override
 	public SessionReportOutputDto getSessionReport(Long reportId) {
 		Users user = validateUser();
-
 		SessionReport report = validateSessionReport(reportId);
+
+		TranscriptDto transcript = s3FileUploadService.downloadTranscript(report.getCounseling().getS3Link());
+		Map<Integer, EmotionDto> emotionMap = transcript.getMessageList().stream()
+				.filter(r -> r.getEmotion() != null)                        // AI가 분석해준 것
+				.collect(Collectors.toMap(
+						ChatRecordDto::getMessageOrder,
+						ChatRecordDto::getEmotion,
+						(e1, e2) -> e1   // 혹시 중복 key 면 첫 값 유지
+				));
+
+		List<EmotionPerTimestamp> emotionList = transcript.getMessageList().stream()
+				.filter(r -> "USER".equals(r.getSender()))
+				.map(r -> {
+					EmotionDto emo = emotionMap.get(r.getMessageOrder());
+					if (emo == null) return null;
+					return EmotionPerTimestamp.builder()
+							.timestamp(r.getTimestamp())
+							.messageOrder(r.getMessageOrder())
+							.emotion(emo)
+							.build();
+				})
+				.filter(Objects::nonNull)
+				.toList();
 
 		return SessionReportOutputDto.builder()
 			.sReportId(report.getSReportId())
@@ -150,6 +173,7 @@ public class ReportServiceImpl implements ReportService {
 			.analyze(report.getAnalyze())
 			.valence(report.getValence())
 			.arousal(report.getArousal())
+			.emotionList(emotionList)
 			.createdAt(report.getCreatedAt())
 			.build();
 	}
@@ -187,14 +211,11 @@ public class ReportServiceImpl implements ReportService {
 		if (counselIds.isEmpty()) {
 			counselingDtoList = List.of();
 		} else {
-			// 4. 한 번의 쿼리로 모든 Counseling 엔티티 조회
 			List<Counseling> counselings = counselingRepository.findAllById(counselIds);
 
-			// 5. ID → 엔티티 맵핑 (순서 보장용)
 			Map<Long, Counseling> map = counselings.stream()
 					.collect(Collectors.toMap(Counseling::getCounsId, Function.identity()));
 
-			// 6. 원본 순서대로 DTO 변환
 			counselingDtoList = counselIds.stream()
 					.map(map::get)
 					.filter(Objects::nonNull)
