@@ -87,7 +87,7 @@ export default function ReportDetailPage() {
       <div className="text-center">
         <button
           onClick={handleGoToCounsel}
-          className="bg-orange-500 text-white px-4 py-2 rounded font-semibold hover:bg-orange-600"
+          className="bg-orange-500 text-white mt-5 px-4 py-2 rounded font-semibold hover:bg-orange-600"
         >
           전체 대화 기록 확인하기
         </button>

@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ReportCalendar } from '@/widgets/ReportCalendar/ReportCalendar';
 import { getReports } from '@/entities/report/model/api';
@@ -28,6 +28,13 @@ export default function ReportsPage() {
       }),
     enabled: true, // 두 카테고리 모두에서 작동
   });
+
+  const sortedReports = useMemo(() => {
+    const copied = [...reports];
+    return copied.sort((a, b) =>
+      sortOrder === '최신순' ? b.createdAt.localeCompare(a.createdAt) : a.createdAt.localeCompare(b.createdAt)
+    );
+  }, [reports, sortOrder]);
 
   return (
     <div className="bg-white min-h-screen max-w-xl mx-auto border rounded-xl shadow p-4">
@@ -65,7 +72,6 @@ export default function ReportsPage() {
         >
           <option value="최신순">최신순</option>
           <option value="오래된순">오래된순</option>
-          <option value="조회순">조회순</option>
         </select>
         <input
           className="border rounded px-2 py-1 text-sm flex-1"
@@ -89,9 +95,9 @@ export default function ReportsPage() {
 
       {/* 레포트 리스트 */}
       {category === '상담별' ? (
-        <SessionReportList reports={reports as SessionReport[]} isLoading={isLoading} />
+        <SessionReportList reports={sortedReports as SessionReport[]} isLoading={isLoading} />
       ) : (
-        <PeriodReportList reports={reports as PeriodReport[]} isLoading={isLoading} />
+        <PeriodReportList reports={sortedReports as PeriodReport[]} isLoading={isLoading} />
       )}
     </div>
   );
