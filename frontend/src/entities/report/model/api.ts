@@ -1,25 +1,25 @@
-import axiosInstance from '@/shared/api/axiosInstance';
-import { Report, ReportDetail } from './types';
+import { apiClient } from '@/shared/api/axiosInstance';
+import type { Report } from './types';
 
-// 전체 레포트 조회 (초기용)
-export async function getAllReports(): Promise<Report[]> {
-  const res = await axiosInstance.get(`/reports?category=전체&start=&end=&keyword=&page=1`);
-  return res.data;
-}
-// 특정 날짜의 레포트 목록 조회
-export async function getReportsByDate(date: string): Promise<Report[]> {
-  const res = await axiosInstance.get(`/reports?category=SESSION&start=${date}&end=${date}&keyword=&page=1`);
-  return res.data;
-}
+export const getReports = async ({
+  category,
+  start,
+  end,
+  keyword,
+}: {
+  category: '상담별' | '기간별';
+  start?: string;
+  end?: string;
+  keyword?: string;
+}): Promise<Report[]> => {
+  return apiClient.get<Report[]>('/api/v1/damdam/reports', {
+    category,
+    start,
+    end,
+    keyword,
+  });
+};
 
-// 레포트가 있는 날짜 목록 조회
-export async function getReportDates(month: string): Promise<string[]> {
-  const res = await axiosInstance.get(`/reports/dates?month=${month}`);
-  return res.data; // ["2025-05-13", "2025-05-15", ...]
-}
-
-// 레포트 상세 조회
-export async function getReportDetail(reportId: string): Promise<ReportDetail> {
-  const res = await axiosInstance.get(`/reports/${reportId}`);
-  return res.data;
-}
+export const getReportDetail = async (reportId: string): Promise<Report> => {
+  return apiClient.get<Report>(`reports/${reportId}`);
+};
