@@ -42,7 +42,13 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   const hasRecommendations = message.recommendations !== undefined && message.recommendations.length > 0;
 
   // date-fns를 사용하여 시간 포맷팅 (오전/오후 hh:mm)
-  const formattedTime = format(new Date(message.timestamp), 'a hh:mm', { locale: ko });
+  let formattedTime = format(new Date(message.timestamp), 'a hh:mm', { locale: ko });
+
+  // "오전 12:" (자정)를 "오전 00:"으로 변경합니다.
+  // "오후 12:" (정오)는 그대로 유지합니다.
+  if (formattedTime.startsWith('오전 12:')) {
+    formattedTime = formattedTime.replace('오전 12:', '오전 00:');
+  }
 
   return (
     <div
