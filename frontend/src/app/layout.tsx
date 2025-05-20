@@ -93,7 +93,7 @@ export default function RootLayout({
           {/* === 메인 콘텐츠 영역 === */}
           {/* flex-1으로 남은 공간 채우고, overflow-hidden으로 내부 스크롤 제한 */}
           {/* globals.css에 정의된 커스텀 스크롤바 스타일 적용 (페일 코랄 핑크) */}
-          <main className="flex-1 scrollbar-custom overflow-hidden">
+          <main className="flex-1 scrollbar-custom overflow-y-auto">
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
               <QueryClientProviders>{children}</QueryClientProviders>
             </ThemeProvider>

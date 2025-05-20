@@ -25,6 +25,7 @@ import { Terminal, AlertCircle, AlertTriangle, HelpCircle, LogOut } from 'lucide
 import { Button } from '@/shared/ui/button';
 import BackButton from '@/shared/ui/BackButton';
 import SessionEndModal from '@/features/counseling/ui/SessionEndModal';
+import { useSTTStore } from '@/features/counseling/model/sttStore';
 
 /** @constant {number} AUTO_SESSION_END_TIMEOUT - 사용자의 비활성 상태가 지속될 경우 자동으로 세션을 종료하는 시간 (밀리초 단위, 현재 10분). */
 const AUTO_SESSION_END_TIMEOUT = 10 * 60 * 1000;
@@ -54,6 +55,7 @@ export function CounselingChatWindow() {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { token } = useAuthStore(); // Zustand 스토어에서 사용자 인증 토큰을 가져옵니다.
+  const { resetSTTState } = useSTTStore(); // resetSTTState 액션 가져오기
 
   // Zustand 스토어에서 상담 관련 상태 및 액션들을 가져옵니다.
   const {
@@ -159,6 +161,19 @@ export function CounselingChatWindow() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionDetail]); // setMessages 등은 Zustand에서 안정적이므로 제외 가능
+
+  /**
+   * @effect 상담 세션 종료 상태 변경 감지 및 STT 상태 초기화.
+   *        - `storeIsCurrentSessionClosed`가 `true`로 변경되면 (즉, 세션이 종료되면),
+   *          `useSTTStore`의 `resetSTTState`를 호출하여 음성 입력 관련 상태 (audioBlob 등)를 초기화합니다.
+   *          이는 상담 종료 후 불필요한 STT 관련 로직 실행 (예: SendMessageForm의 STT useEffect)을 방지합니다.
+   */
+  useEffect(() => {
+    if (storeIsCurrentSessionClosed) {
+      console.log('[CounselingChatWindow] Session closed, resetting STT store state.');
+      resetSTTState();
+    }
+  }, [storeIsCurrentSessionClosed, resetSTTState]);
 
   // --- WebSocket Connection (useWebSocket Hook) ---
   /**
