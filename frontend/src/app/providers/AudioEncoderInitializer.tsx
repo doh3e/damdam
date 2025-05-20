@@ -34,12 +34,12 @@ const AudioEncoderInitializer = (): null => {
      * 이 함수는 컴포넌트가 마운트될 때 한 번만 실행됩니다.
      */
     const initializeAudioEncoder = async () => {
-      // 브라우저 환경에서만 실행되도록 명시적 확인
       if (typeof window !== 'undefined') {
+        // 브라우저 환경인지 확실히 체크
         try {
-          // 모듈을 동적으로 직접 import
-          const { connect } = await import('extendable-media-recorder-wav-encoder');
+          // 라이브러리 import를 useEffect 내부로 이동
           const { register } = await import('extendable-media-recorder');
+          const { connect } = await import('extendable-media-recorder-wav-encoder');
 
           // extendable-media-recorder-wav-encoder의 connect 함수를 호출하여 인코더 연결 설정을 가져옵니다.
           const encoderConfig = await connect();
@@ -49,15 +49,12 @@ const AudioEncoderInitializer = (): null => {
           console.log('WAV audio encoder registered successfully (Initializer).');
           setWavEncoderReady(true); // 전역 상태 업데이트: 성공
         } catch (error: any) {
-          if (error && error.message && error.message.includes('already an encoder stored')) {
-            console.warn(
-              'WAV audio encoder was already registered (Initializer): Mime type conflict detected.',
-              error.message
-            );
+          if (error?.message?.includes('already an encoder stored')) {
+            console.warn('WAV audio encoder was already registered (Initializer).');
             setWavEncoderReady(true); // 이미 등록되어 있어도 준비된 상태로 간주
           } else {
             console.error('Failed to register WAV audio encoder (Initializer):', error);
-            setWavEncoderReady(false); // 실패 시 명시적으로 false 처리 (선택적)
+            setWavEncoderReady(false); // 등록 실패 시 준비되지 않은 상태로 간주
           }
         }
       }

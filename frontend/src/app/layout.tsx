@@ -23,7 +23,6 @@ const nonoSans = Noto_Sans_KR({ subsets: ['latin'], variable: '--font-sans' });
 export const metadata: Metadata = {
   title: '담담 (DAMDAM) - AI 심리상담 챗봇 서비스',
   description: '언제 어디서나 편안하게 대화하며 마음의 짐을 덜어낼 수 있는 AI 심리상담 서비스',
-  manifest: '/manifest.json', // manifest.json 경로 추가
   icons: {
     // 선호하는 아이콘 추가 (예: apple-touch-icon)
     // apple: '/icons/icon-192x192.png', // 예시 경로, 실제 아이콘 경로로 수정해주세요.
