@@ -94,15 +94,19 @@ export default function UserProfileForm() {
       formData.append('mbti', mbti);
 
       // 1. PATCH: 서버에 저장 (204 No Content 응답)
-      const patchResult = await updateUserProfile(formData);
+      await updateUserProfile(formData);
+      console.log('프로필 patch 성공');
 
-      // 2. GET: 최신 프로필 정보 다시 받아오기
-      if (patchResult === null) {
-        console.log('204 No Content 응답으로 저장 성공!');
-      }
+      // 2. React Query 캐시 무효화 → useQuery 자동 재요청
+      await queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+
+      // 3. GET 요청 직접 재호출 → 상태 수동 동기화
       const updatedProfile = await getUserProfile();
 
-      // 3. Zustand 등 상태 동기화
+      if (!updatedProfile || !updatedProfile.nickname) {
+        throw new Error('프로필 정보를 불러오지 못했습니다.');
+      }
+      // 4. Zustand 등 상태 동기화
       setNickname(updatedProfile.nickname);
       setAge(updatedProfile.age);
       setGender(updatedProfile.gender);
@@ -111,17 +115,15 @@ export default function UserProfileForm() {
       setProfileImageUrl(updatedProfile.profileImage);
       setProfileImage(null);
 
-      // 4. 저장 성공 시 Base64 미리보기 삭제 (서버 이미지로 대체)
+      // 5. 저장 성공 시 Base64 미리보기 삭제 (서버 이미지로 대체)
       if (typeof window !== 'undefined') {
         localStorage.removeItem('profile-image-preview');
       }
 
-      // 5. React Query 캐시 무효화 (최신 데이터 반영)
-      await queryClient.invalidateQueries({ queryKey: ['userProfile'] });
-
+      // 6. 완료 알림
       setShowAlert(true);
     } catch (error) {
-      console.error('프로필 저장 에러:', error);
+      console.error('❌ 프로필 저장 에러:', error);
       setErrorAlert(true);
     }
   };
