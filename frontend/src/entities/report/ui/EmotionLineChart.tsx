@@ -1,54 +1,69 @@
 'use client';
 import React from 'react';
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
-
-interface EmotionLineChartProps {
-  data: number[];
-  labels?: string[];
+interface EmotionEntry {
+  messageOrder: number;
+  emotion: {
+    happiness: number;
+    sadness: number;
+    angry: number;
+    neutral: number;
+    other: number;
+  };
 }
 
-export function EmotionLineChart({ data, labels }: EmotionLineChartProps) {
-  const defaultLabels = labels || Array.from({ length: data.length }, (_, i) => `${(i + 1) * 5}분`);
+interface Props {
+  emotionList: EmotionEntry[];
+  focusEmotion?: keyof EmotionEntry['emotion'];
+}
 
-  const chartData = {
-    labels: defaultLabels,
-    datasets: [
-      {
-        label: '감정 점수',
-        data: data,
-        borderColor: '#DC5F53',
-        backgroundColor: 'rgba(220, 95, 83, 0.1)',
-        tension: 0.4,
-        pointBackgroundColor: '#DC5F53',
-      },
-    ],
-  };
+const emotionKeys = ['happiness', 'sadness', 'angry', 'neutral', 'other'] as const;
+type EmotionKey = (typeof emotionKeys)[number];
 
-  const options = {
-    responsive: true,
-    plugins: {
-      legend: { display: false },
-    },
-    scales: {
-      y: { beginAtZero: true, max: 100 },
-    },
-  };
+const emotionLabelMap: Record<EmotionKey, string> = {
+  happiness: '기쁨',
+  sadness: '슬픔',
+  angry: '분노',
+  neutral: '중립',
+  other: '기타',
+};
+
+const emotionColorMap: Record<EmotionKey, string> = {
+  happiness: '#f97316',
+  sadness: '#60a5fa',
+  angry: '#f43f5e',
+  neutral: '#a3a3a3',
+  other: '#34d399',
+};
+
+export default function EmotionLineChart({ emotionList, focusEmotion }: Props) {
+  const data = emotionList.map((e) => ({
+    name: `메시지${e.messageOrder}`,
+    ...e.emotion,
+  }));
+
+  const keysToRender = focusEmotion ? [focusEmotion] : emotionKeys;
 
   return (
-    <div className="h-48 bg-white rounded border">
-      <Line data={chartData} options={options} />
-    </div>
+    <ResponsiveContainer width="100%" height={240}>
+      <LineChart data={data}>
+        <XAxis dataKey="name" />
+        <YAxis domain={[0, 100]} />
+        <Tooltip />
+        <Legend />
+        {keysToRender.map((key) => (
+          <Line
+            key={key}
+            type="monotone"
+            dataKey={key}
+            name={emotionLabelMap[key]}
+            stroke={emotionColorMap[key]}
+            strokeWidth={2}
+            dot
+          />
+        ))}
+      </LineChart>
+    </ResponsiveContainer>
   );
 }
