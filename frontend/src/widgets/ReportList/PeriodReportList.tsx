@@ -13,8 +13,8 @@ export function PeriodReportList({ reports, isLoading }: Props) {
   return (
     <ul className="space-y-4">
       {reports.map((r) => (
-        <li key={r.pReportId} className="border p-2 rounded">
-          <div className="font-bold">{r.pReportTitle}</div>
+        <li key={r.preportId} className="border p-2 rounded">
+          <div className="font-bold">{r.preportTitle}</div>
           <div className="text-sm text-gray-500">
             {r.startDate} ~ {r.endDate}
           </div>
