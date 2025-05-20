@@ -53,4 +53,8 @@ public class PeriodReport extends BaseTimeEntity {
     @Column(name = "advice", columnDefinition="TEXT")
     private String advice;
 
+    public void updatePReport(String pReportTitle) {
+        this.pReportTitle = pReportTitle;
+    }
+
 }
