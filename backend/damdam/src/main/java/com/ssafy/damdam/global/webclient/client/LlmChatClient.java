@@ -19,26 +19,23 @@ public class LlmChatClient {
 	private final WebClient chatWebClient;
 
 	public LlmAiChatResponse requestChatResponse(LlmAiChatRequest request) {
-		try{
-			log.info("[LLM 요청 시작] payload={}", request);
+		try {
 			return chatWebClient.post()
-				.bodyValue(request)
-				.retrieve()
-				.onStatus(
-					HttpStatusCode::isError,
-					response -> response.bodyToMono(String.class)
-						.flatMap(body -> {
-							log.error("[LLM 에러] status={} body={}", response.statusCode(), body);
-							return Mono.error(new RuntimeException("LLM 호출 실패: " + response.statusCode()));
-						})
-				)
-				.bodyToMono(LlmAiChatResponse.class)
-				.block();
-		} catch (Exception e) {
-			log.error("[LLM 에러] {}", e.getMessage());
-			throw new RuntimeException("LLM 호출 실패: " + e.getMessage());
-		} finally {
-			log.info("[LLM 요청 종료]");
+					.bodyValue(request)
+					.retrieve()
+					.onStatus(HttpStatusCode::isError, resp ->
+							resp.bodyToMono(String.class)
+									.flatMap(body -> {
+										log.error("[LLM] status={} body={}", resp.statusCode(), body);
+										return Mono.error(new RuntimeException("LLM 호출 실패: " + resp.statusCode()));
+									})
+					)
+					.bodyToMono(LlmAiChatResponse.class)
+					.block();
+		} catch (RuntimeException e) {
+			log.error("[LLM] 호출 실패: {}", e.getMessage());
+			throw e;
 		}
 	}
 }
+
