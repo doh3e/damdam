@@ -1,26 +1,32 @@
 export interface Report {
-  id: string;
-  date: string;
-  time: string;
-  summary: string;
-  keywords: string[];
-}
-
-export interface ReportDetail {
-  id: string;
-  date: string;
-  time: string;
+  userId: number;
+  nickname: string;
+  counsId: number;
+  counsTitle: string;
   summary: string;
   analyze: string;
-  valence: number; // -1(부정) ~ 1(긍정)
-  arousal: number; // -1(저각성) ~ 1(고각성)
-  emotionTrend: number[];
-  keywords: string[];
-  chat: ChatMessage[];
+  valence: string;
+  arousal: string;
+  createdAt: string;
+  sreportId: number;
+  sreportTitle: string;
 }
 
 export interface ChatMessage {
   from: 'user' | 'bot';
   text: string;
   time: string;
+}
+
+export interface ReportDetail {
+  id: string;
+  date: string;
+  time: string;
+  valence: number;
+  arousal: number;
+  emotionTrend: number[];
+  summary: string;
+  analyze: string;
+  keywords: string[];
+  chat: ChatMessage[];
 }

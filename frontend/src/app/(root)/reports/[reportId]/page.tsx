@@ -4,23 +4,23 @@ import { useRouter, useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { ReportDetailSummary } from '@/widgets/ReportDetailSummary/ReportDetailSummary';
 import { getReportDetail } from '@/entities/report/model/api';
+import type { Report } from '@/entities/report/model/types';
+import { ReportDetail } from '@/entities/report/model/types';
 
 export default function ReportDetailPage() {
   const router = useRouter();
   const { reportId } = useParams();
 
-  // 레포트 상세 조회
-  const { data: report, isLoading } = useQuery({
+  const { data: report, isLoading } = useQuery<Report>({
     queryKey: ['reportDetail', reportId],
     queryFn: () => getReportDetail(reportId as string),
+    enabled: !!reportId,
   });
 
-  // 뒤로가기
   const handleBack = () => {
     router.push('/reports');
   };
 
-  // 채팅 기록 보기
   const handleViewChat = () => {
     router.push(`/reports/${reportId}/chat`);
   };
@@ -41,6 +41,19 @@ export default function ReportDetailPage() {
     );
   }
 
+  const mappedReport: ReportDetail = {
+    id: report.sreportId.toString(),
+    date: report.createdAt.split('T')[0],
+    time: report.createdAt.split('T')[1].slice(0, 5),
+    valence: parseFloat(report.valence),
+    arousal: parseFloat(report.arousal),
+    emotionTrend: [parseFloat(report.valence), parseFloat(report.arousal)],
+    summary: report.summary,
+    analyze: report.analyze,
+    keywords: [], // ✅ 일단 더미값
+    chat: [], // ✅ 일단 더미값
+  };
+
   return (
     <div className="bg-white min-h-screen max-w-xl mx-auto border rounded-xl shadow p-4">
       <button onClick={handleBack} className="mb-2 text-gray-400 hover:text-gray-600">
@@ -49,7 +62,7 @@ export default function ReportDetailPage() {
 
       <h2 className="font-bold text-lg mb-4">상담 세션 상세</h2>
 
-      <ReportDetailSummary report={report} onViewChat={handleViewChat} />
+      <ReportDetailSummary report={mappedReport} onViewChat={handleViewChat} />
     </div>
   );
 }
