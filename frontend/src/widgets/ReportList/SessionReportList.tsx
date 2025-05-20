@@ -15,7 +15,7 @@ export function SessionReportList({ reports, isLoading }: Props) {
       {reports.map((r) => (
         <li key={r.sReportId} className="border p-2 rounded">
           <div className="font-bold">{r.sReportTitle}</div>
-          <div className="text-sm text-gray-500">{new Date(r.createdAt).toLocaleString()}</div>
+          <div className="text-sm text-gray-500">{new Date(r.createdAt + 'Z').toLocaleString('ko-KR')}</div>
         </li>
       ))}
     </ul>

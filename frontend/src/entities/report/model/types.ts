@@ -1,15 +1,15 @@
 // 상담별 레포트
 export interface SessionReport {
-  sReportId: number;
+  sreportId: number;
   counsId: number;
-  sReportTitle: string;
+  sreportTitle: string;
   createdAt: string;
 }
 
 // 기간별 레포트
 export interface PeriodReport {
-  pReportId: number;
-  pReportTitle: string;
+  preportId: number;
+  preportTitle: string;
   startDate: string;
   endDate: string;
   createdAt: string;
