@@ -8,14 +8,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CounsOutputDto {
-
-	// 상담 상세 정보를 보여주는 dto
-	private Long counsId;
-	private LocalDateTime createdAt;
-	private LocalDateTime updatedAt;
-	private Boolean isClosed;
+@Builder
+public class ChatRecordDto {
+	private String sender;
+	private Boolean isVoice;
+	private int messageOrder;
+	private String message;
+	private LocalDateTime timestamp;
+	private EmotionDto emotion;
+	private int tokenCount;
 }

@@ -1,15 +1,14 @@
 FROM openjdk:21-jdk-slim
 
 WORKDIR /app
-
 COPY damdam/ ./damdam/
-
 WORKDIR /app/damdam
 
-RUN chmod +x ./gradlew
-RUN ./gradlew build -x test    # ⭐ test 빼고 build만
+RUN chmod +x ./gradlew  && \
+    ./gradlew build -x test --stacktrace --info  && \
+    cp build/libs/*SNAPSHOT.jar app.jar
 
-EXPOSE 8082
+EXPOSE 8080
 
-CMD ["java", "-jar", "build/libs/*.jar"]
-
+# debug 모드로 실행하도록 --debug 옵션 추가
+CMD ["java", "-jar", "app.jar", "--debug"]
