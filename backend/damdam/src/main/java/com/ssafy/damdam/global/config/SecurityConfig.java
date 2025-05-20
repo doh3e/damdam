@@ -99,7 +99,11 @@ public class SecurityConfig {
 			"http://localhost:3000",
 			"https://localhost:3000",
 			"http://k12s202.p.ssafy.io",
-			"https://k12s202.p.ssafy.io"
+			"https://k12s202.p.ssafy.io",
+			"http://damdam.kr",
+			"https://damdam.kr",
+			"http://www.damdam.kr",
+			"https://www.damdam.kr"
 		));
 		configuration.setAllowedMethods(Collections.singletonList("*"));
 		configuration.setAllowedHeaders(Collections.singletonList("*"));
