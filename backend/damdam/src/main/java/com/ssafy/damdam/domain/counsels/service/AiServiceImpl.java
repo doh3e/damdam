@@ -1,22 +1,17 @@
 package com.ssafy.damdam.domain.counsels.service;
 
-import static com.ssafy.damdam.domain.counsels.exception.CounsExceptionCode.COUNSEL_NOT_FOUND;
+import static com.ssafy.damdam.domain.counsels.exception.CounsExceptionCode.*;
 import static com.ssafy.damdam.domain.users.exception.user.UserExceptionCode.*;
 import static com.ssafy.damdam.global.redis.exception.RedisExceptionCode.*;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.ExecutorService;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ssafy.damdam.domain.counsels.entity.Counseling;
-import com.ssafy.damdam.domain.counsels.exception.CounsException;
-import com.ssafy.damdam.domain.counsels.repository.CounselingRepository;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.damdam.domain.counsels.dto.ChatInputDto;
 import com.ssafy.damdam.domain.counsels.dto.ChatMessageDto;
 import com.ssafy.damdam.domain.counsels.dto.EmotionDto;
@@ -25,6 +20,9 @@ import com.ssafy.damdam.domain.counsels.dto.LlmAiChatResponse;
 import com.ssafy.damdam.domain.counsels.dto.LlmSummaryRequest;
 import com.ssafy.damdam.domain.counsels.dto.LlmSummaryResponse;
 import com.ssafy.damdam.domain.counsels.dto.UserContextDto;
+import com.ssafy.damdam.domain.counsels.entity.Counseling;
+import com.ssafy.damdam.domain.counsels.exception.CounsException;
+import com.ssafy.damdam.domain.counsels.repository.CounselingRepository;
 import com.ssafy.damdam.domain.users.entity.Age;
 import com.ssafy.damdam.domain.users.entity.Gender;
 import com.ssafy.damdam.domain.users.entity.Mbti;
@@ -42,6 +40,7 @@ import com.ssafy.damdam.global.redis.exception.RedisException;
 import com.ssafy.damdam.global.webclient.client.AnalyzeAudioClient;
 import com.ssafy.damdam.global.webclient.client.AnalyzeTextClient;
 import com.ssafy.damdam.global.webclient.client.LlmChatClient;
+import com.ssafy.damdam.global.webclient.client.LlmPeriodClient;
 import com.ssafy.damdam.global.webclient.client.LlmSummaryClient;
 
 import lombok.RequiredArgsConstructor;
@@ -56,11 +55,11 @@ public class AiServiceImpl implements AiService {
 	private final UserSettingRepository settingRepository;
 	private final UserInfoRepository infoRepository;
 	private final UserSurveyRepository surveyRepository;
-	private final ExecutorService virtualThreadExecutor;
 	private final AnalyzeAudioClient analyzeAudioClient;
 	private final AnalyzeTextClient analyzeTextClient;
 	private final LlmChatClient llmChatClient;
 	private final LlmSummaryClient llmSummaryClient;
+	private final LlmPeriodClient llmPeriodClient;
 	private final RedisTemplate<String, Object> redisTemplate;
 	private final CounselSessionRepository sessionRepository;
 	private final S3FileUploadService s3FileUploadService;
@@ -157,10 +156,10 @@ public class AiServiceImpl implements AiService {
 		String listKey = "counsel:" + counsId + ":messages";
 		List<Object> rawList = redisTemplate.opsForList().range(listKey, 0, -1);
 		List<ChatMessageDto> messages = rawList == null
-				? List.of()
-				: rawList.stream()
-				.map(item -> objectMapper.convertValue(item, ChatMessageDto.class))
-				.toList();
+			? List.of()
+			: rawList.stream()
+			.map(item -> objectMapper.convertValue(item, ChatMessageDto.class))
+			.toList();
 
 		LlmSummaryRequest request = LlmSummaryRequest.builder()
 			.counsId(counsId)
