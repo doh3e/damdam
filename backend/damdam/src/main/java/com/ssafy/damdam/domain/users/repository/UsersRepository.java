@@ -14,7 +14,7 @@ public interface UsersRepository extends JpaRepository<Users, Long>, UsersReposi
 
 	Optional<Users> findByProviderAndPersonalId(Provider provider, String personalId);
 
-	Optional<com.ssafy.damdam.domain.users.entity.Users> findByPersonalId(String personalId);
+	Optional<Users> findByPersonalId(String personalId);
 
 	boolean existsByNickname(String nickName);
 
