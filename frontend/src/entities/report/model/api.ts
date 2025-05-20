@@ -1,6 +1,5 @@
 import { apiClient } from '@/shared/api/axiosInstance';
 import type { Report } from './types';
-
 export const getReports = async ({
   category,
   start,
