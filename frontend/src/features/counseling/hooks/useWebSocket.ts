@@ -540,7 +540,9 @@ export const useWebSocket = ({
   useEffect(() => {
     const prevCounsId = currentCounsIdRef.current;
     log(
-      `counsId 또는 주요 의존성 변경 감지: 이전 counsId '${prevCounsId}', 새 counsId '${counsId}'. 연결상태: ${stompClientRef.current?.active}, 클라이언트 활성: ${stompClientRef.current?.active}`
+      `counsId 또는 주요 의존성 변경 감지: 이전 counsId '${prevCounsId}', 새 counsId '${counsId}'. ` +
+        `연결상태: ${stompClientRef.current && typeof stompClientRef.current.active !== 'undefined' ? stompClientRef.current.active : 'N/A (또는 해제됨)'}, ` +
+        `클라이언트 활성: ${stompClientRef.current && typeof stompClientRef.current.active !== 'undefined' ? stompClientRef.current.active : 'N/A (또는 해제됨)'}`
     );
 
     if (counsId !== prevCounsId) {

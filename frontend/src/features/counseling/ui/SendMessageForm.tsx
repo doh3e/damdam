@@ -102,9 +102,7 @@ const SendMessageForm = ({
 
   const handleClearVoiceInput = useCallback(() => {
     setNewMessageInput('');
-    setAudioBlob(null);
-    setIsCurrentMessageFromVoice(false);
-    setSttResultText('');
+    resetSTTState();
 
     if (currentAudioRef.current) {
       currentAudioRef.current.pause();
@@ -113,7 +111,7 @@ const SendMessageForm = ({
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
-  }, []);
+  }, [resetSTTState]);
 
   const handleInputChange = useCallback(
     (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -186,10 +184,7 @@ const SendMessageForm = ({
           onError: (error) => {
             console.error('[STT useEffect] STT mutate onError:', error);
             setSttErrorMessageToStore(error.message || 'STT 변환에 실패했습니다.');
-            setRecordingState(RecordingState.ERROR);
-            setAudioBlob(null);
-            setMessageOrderForAudio(null);
-            setIsCurrentMessageFromVoice(false);
+            resetSTTState();
           },
         }
       );
@@ -210,8 +205,7 @@ const SendMessageForm = ({
     setSttErrorMessageToStore,
     messages,
     setMessageOrderForAudio,
-    setAudioBlob,
-    setIsCurrentMessageFromVoice,
+    resetSTTState,
   ]);
 
   const handleSubmit = useCallback(
@@ -219,7 +213,7 @@ const SendMessageForm = ({
       event?.preventDefault();
       if (!newMessageInput.trim() || !currentCounsId || !isWebSocketConnected || !sendUserMessage) {
         console.warn('[SendMessageForm] Submit prerequisites not met:', {
-          newMessageInput,
+          newMessageInput: newMessageInput.trim(),
           currentCounsId,
           isWebSocketConnected,
           sendUserMessageExists: !!sendUserMessage,
@@ -228,54 +222,54 @@ const SendMessageForm = ({
       }
 
       const trimmedMessage = newMessageInput.trim();
+      const localIsVoice = useSTTStore.getState().isCurrentMessageFromVoice;
+      const localAudioBlob = useSTTStore.getState().audioBlob;
+      const localMessageOrderForAudio = useSTTStore.getState().messageOrderForAudio;
+
       const userMessagesCount = messages.filter((message) => message.sender === SenderType.USER).length;
       const currentMessageOrder =
-        isCurrentMessageFromVoice && messageOrderForAudio != null ? messageOrderForAudio : userMessagesCount + 1;
+        localIsVoice && localMessageOrderForAudio != null ? localMessageOrderForAudio : userMessagesCount + 1;
 
       const payload: StompSendUserMessagePayload = {
         text: trimmedMessage,
         messageOrder: currentMessageOrder,
-        isVoice: isCurrentMessageFromVoice,
+        isVoice: localIsVoice,
       };
       sendUserMessage(payload);
       console.log('[SendMessageForm] Message sent via WebSocket:', payload);
 
-      if (audioBlob && isCurrentMessageFromVoice && currentCounsId) {
+      if (payload.isVoice && localAudioBlob && currentCounsId) {
         console.log(
           '[SendMessageForm] Uploading WAV audioBlob for messageOrder:',
           currentMessageOrder,
           'Blob:',
-          audioBlob
+          localAudioBlob
         );
         uploadVoiceMutation.mutate(
           {
             counsId: currentCounsId,
-            audioFile: audioBlob,
+            audioFile: localAudioBlob,
             messageOrder: currentMessageOrder,
+            filename: `voice_message_${currentCounsId}_${currentMessageOrder}.wav`,
           },
           {
-            onSuccess: (uploadData) => {
-              console.log('[SendMessageForm] WAV voice file uploaded successfully:', uploadData);
-              resetSTTState();
+            onSuccess: () => {
+              console.log(
+                `[SendMessageForm] WAV voice file uploaded successfully for messageOrder: ${currentMessageOrder}`
+              );
             },
-            onError: (uploadError) => {
-              console.error('[SendMessageForm] Failed to upload WAV voice file:', uploadError);
-              setSttErrorMessageToStore(`음성 파일 업로드에 실패했습니다: ${uploadError.message || '서버 오류'}`);
+            onError: (error) => {
+              console.error(
+                `[SendMessageForm] Failed to upload WAV voice file for messageOrder: ${currentMessageOrder}`,
+                error
+              );
             },
           }
-        );
-      } else if (isCurrentMessageFromVoice && !audioBlob) {
-        console.warn(
-          '[SendMessageForm] isCurrentMessageFromVoice is true, but audioBlob is null. Voice file will not be uploaded.'
         );
       }
 
       setNewMessageInput('');
-      if (isCurrentMessageFromVoice) {
-        // resetSTTState();
-      } else {
-        resetSTTState();
-      }
+      resetSTTState();
       textareaRef.current?.focus();
       if (onUserActivity) {
         onUserActivity();
@@ -287,12 +281,8 @@ const SendMessageForm = ({
       isWebSocketConnected,
       sendUserMessage,
       messages,
-      audioBlob,
-      isCurrentMessageFromVoice,
-      messageOrderForAudio,
       uploadVoiceMutation,
       resetSTTState,
-      setSttErrorMessageToStore,
       onUserActivity,
     ]
   );
