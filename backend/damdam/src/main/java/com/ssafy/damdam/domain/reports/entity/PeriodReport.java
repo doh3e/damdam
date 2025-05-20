@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -28,10 +29,10 @@ public class PeriodReport extends BaseTimeEntity {
     private String pReportTitle;
 
     @Column(name = "start_date", nullable = false)
-    private java.time.LocalDate startDate;
+    private LocalDate startDate;
 
     @Column(name = "end_date", nullable = false)
-    private java.time.LocalDate endDate;
+    private LocalDate endDate;
 
     @Column(name = "counsel_time", nullable = false, columnDefinition = "INT DEFAULT 0")
     private int counselTime;

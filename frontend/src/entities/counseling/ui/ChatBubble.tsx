@@ -86,7 +86,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
           )}
 
           {/* 메시지 텍스트 내용 - 추천 메시지 타입이 아니거나 텍스트 내용이 있는 경우만 표시 */}
-          {message.content && <p className="text-sm whitespace-pre-wrap">{message.content}</p>}
+          {message.message && <p className="text-sm whitespace-pre-wrap">{message.message}</p>}
 
           {/* 추천 콘텐츠 목록 렌더링 */}
           {hasRecommendations && (

@@ -1,6 +1,9 @@
 package com.ssafy.damdam.domain.users.controller;
 
 import com.ssafy.damdam.domain.users.dto.user.*;
+import com.ssafy.damdam.domain.users.entity.Age;
+import com.ssafy.damdam.domain.users.entity.Gender;
+import com.ssafy.damdam.domain.users.entity.Mbti;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,9 +32,22 @@ public class UserController {
 
 	@PatchMapping(value = "/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<Void> patchProfile(
-		@RequestPart(value = "profileInputDto", required = false) ProfileInputDto profileInputDto,
+		@RequestPart(value = "nickname", required = true) String nickname,
+		@RequestPart(value = "age", required = false) String age,
+		@RequestPart(value = "gender", required = false) String gender,
+		@RequestPart(value = "career", required = false) String career,
+		@RequestPart(value = "mbti", required = false) String mbti,
 		@RequestPart(value = "profileImage", required = false) MultipartFile file
 	) throws IOException {
+
+		ProfileInputDto profileInputDto = ProfileInputDto.builder()
+			.nickname(nickname)
+			.age(Age.valueOf(age))
+			.gender(Gender.valueOf(gender))
+			.career(career)
+			.mbti(Mbti.valueOf(mbti))
+			.build();
+
 		userService.editUserProfile(profileInputDto, file);
 		return ResponseEntity.noContent().build();
 	}
@@ -44,9 +60,18 @@ public class UserController {
 
 	@PatchMapping(value = "/setting", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<Void> patchSetting(
-			@RequestPart (value = "userSettingInputDto", required = false) UserSettingInputDto userSettingInputDto,
+			@RequestPart (value = "isDarkmode", required = true) Boolean isDarkmode,
+			@RequestPart (value = "isAlarm", required = true) Boolean isAlarm,
+			@RequestPart (value = "botCustom", required = false) String botCustom,
 			@RequestPart (value = "botImage", required = false) MultipartFile file
 	) throws IOException {
+
+		UserSettingInputDto userSettingInputDto = UserSettingInputDto.builder()
+			.isDarkmode(isDarkmode)
+			.isAlarm(isAlarm)
+			.botCustom(botCustom)
+			.build();
+
 		userService.editUserSetting(userSettingInputDto, file);
 		return ResponseEntity.noContent().build();
 	}

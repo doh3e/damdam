@@ -1,8 +1,13 @@
 'use client';
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuthStore } from '@/app/store/authStore';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import { getUserProfile } from '@/entities/user/model/api';
+import { useProfileStore } from '@/app/store/userProfileStore';
+import { UserProfile } from '@/entities/user/model/types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBullhorn,
@@ -13,33 +18,73 @@ import {
   faGear,
   faRightFromBracket,
 } from '@fortawesome/free-solid-svg-icons';
-const user = {
-  nickname: '내담이',
-  email: 'user@example.com',
-  profileImage: '/pixeldamdam.png', // 기본 이미지 경로, 실제 이미지는 usersprofile API 연동
-};
 
 export default function MyPage() {
   const router = useRouter();
+
+  // Zustand setter 가져오기
+  const {
+    nickname,
+    profileImageUrl,
+    setNickname,
+    setAge,
+    setGender,
+    setCareer,
+    setMbti,
+    setProfileImageUrl,
+    reset: resetProfile,
+  } = useProfileStore();
+
+  // 로그아웃
   const handleLogout = () => {
-    useAuthStore.getState().clearToken();
+    useAuthStore.getState().clearToken(); // 인증 정보 초기화
+    resetProfile(); // 사용자 프로필 상태 초기화
+    localStorage.removeItem('user-profile-store'); // localstorage 사용자 프로필 제거
+    localStorage.removeItem('profile-image-preview'); // base64 미리보기도 제거(혹시 남아있을 경우)
     router.replace('/login');
   };
+
+  // Zustand에 동기화
+  const { data, isLoading } = useQuery<UserProfile, Error>({
+    queryKey: ['userProfile'],
+    queryFn: getUserProfile,
+  });
+
+  useEffect(() => {
+    if (data) {
+      setNickname(data.nickname);
+      setAge(data.age);
+      setGender(data.gender);
+      setCareer(data.career);
+      setMbti(data.mbti);
+      setProfileImageUrl(data.profileImage);
+    }
+  }, [data, setNickname, setAge, setGender, setCareer, setMbti, setProfileImageUrl]);
+
+  if (isLoading) {
+    return <div className="text-center text-gray-500 mt-10">로딩 중...</div>;
+  }
+
   return (
     <div className="p-4 space-y-6 flex flex-col items-center">
-      {/* 프로필 영역 */}
       <section className="bg-white w-full max-w-xl mx-auto rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+        {/* 프로필 이미지 + 닉네임 */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-orange-200 mb-2">
-            <img src={user.profileImage} alt="프로필 이미지" width={96} height={96} className="object-cover" />
+            <Image
+              src={profileImageUrl || '/profile.png'}
+              alt="프로필 이미지"
+              width={96}
+              height={96}
+              className="object-cover"
+            />
           </div>
-          <div className="text-xl font-bold text-gray-900">{user.nickname}</div>
+          <div className="text-xl font-bold text-gray-900">{nickname || '내담이'}</div>
         </div>
 
         {/* 메뉴 리스트 */}
         <div className="w-full bg-white rounded-2xl shadow border border-gray-100 mb-8">
           <ul>
-            {/* 내정보관리 */}
             <li>
               <Link
                 href="/mypage/usersettings"
@@ -52,7 +97,6 @@ export default function MyPage() {
                 <FontAwesomeIcon icon={faChevronRight} />
               </Link>
             </li>
-            {/* 앱 설정 */}
             <li>
               <Link
                 href="/mypage/appsettings"
@@ -65,7 +109,6 @@ export default function MyPage() {
                 <FontAwesomeIcon icon={faChevronRight} />
               </Link>
             </li>
-            {/* 사전설문 */}
             <li>
               <Link
                 href="/signup/survey/1"
@@ -78,7 +121,6 @@ export default function MyPage() {
                 <FontAwesomeIcon icon={faChevronRight} />
               </Link>
             </li>
-            {/* 공지사항 */}
             <li>
               <Link
                 href="/mypage/notice"
@@ -91,7 +133,6 @@ export default function MyPage() {
                 <FontAwesomeIcon icon={faChevronRight} />
               </Link>
             </li>
-            {/* 문의하기 */}
             <li>
               <Link
                 href="/mypage/inquiries"
@@ -106,6 +147,7 @@ export default function MyPage() {
             </li>
           </ul>
         </div>
+
         {/* 로그아웃 버튼 */}
         <div className="w-full">
           <button

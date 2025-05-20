@@ -9,21 +9,13 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 
 @Configuration
-@EnableConfigurationProperties({LlmApiProperties.class, AudioApiProperties.class})
+@EnableConfigurationProperties({LlmApiProperties.class, AnalyzeApiProperties.class, SparkProperties.class})
 public class WebClientConfig {
 
     @Bean
-    public WebClient llmWebClient(LlmApiProperties props) {
+    public WebClient chatWebClient(LlmApiProperties props) {
         return WebClient.builder()
-                .baseUrl(props.getBaseUrl())
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .build();
-    }
-
-    @Bean
-    public WebClient audioWebClient(AudioApiProperties props) {
-        return WebClient.builder()
-                .baseUrl(props.getBaseUrl())
+                .baseUrl(props.getChatUrl())
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
     }
@@ -35,5 +27,30 @@ public class WebClientConfig {
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
     }
+
+    @Bean
+    public WebClient audioWebClient(AnalyzeApiProperties props) {
+        return WebClient.builder()
+                .baseUrl(props.getAudioUrl())
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+    }
+
+    @Bean
+    public WebClient textWebClient(AnalyzeApiProperties props) {
+        return WebClient.builder()
+                .baseUrl(props.getTextUrl())
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+    }
+
+    @Bean
+    public WebClient sparkWebClient(SparkProperties props) {
+        return WebClient.builder()
+                .baseUrl(props.getSparkUrl())
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+    }
+
 }
 

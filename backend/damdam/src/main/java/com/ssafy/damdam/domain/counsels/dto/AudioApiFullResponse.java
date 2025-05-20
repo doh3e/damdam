@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+// 감정분석 api에 음성분석 요청 시 풀로 받아오는 정보
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

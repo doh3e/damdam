@@ -1,6 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { useAuthStore } from '@/app/store/authStore';
 import { NAVER_LOGIN_URL, KAKAO_LOGIN_URL, GOOGLE_LOGIN_URL } from '@/shared/config';
 
 export default function LoginPage() {
@@ -53,7 +55,7 @@ export default function LoginPage() {
 
         {/* 하단 안내 */}
         <div className="w-full mt-8 text-xs text-center text-gray-400">
-          <a href="/signup/profile">소셜 계정으로 로그인하면 자동으로 회원가입이 진행됩니다.</a>
+          소셜 계정으로 로그인하면 자동으로 회원가입이 진행됩니다.
         </div>
       </div>
     </div>

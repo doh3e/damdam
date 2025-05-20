@@ -3,7 +3,8 @@ import { SurveySection } from '@/shared/types/survey';
 // 평가 항목: 우울 (PHQ-9)
 export const depressionSection: SurveySection = {
   category: 'depression',
-  description: '“지난 2주 동안 다음의 문제들로 인해서 얼마나 자주 방해를 받았나요?”',
+  description:
+    '📝 <span class="text-orange-500 font-bold">최근 2주간</span> 동안 다음의 문제들로 얼마나 자주 방해를 받았나요?',
   options: [
     { value: 0, label: '전혀없음' },
     { value: 1, label: '며칠간' },
@@ -29,7 +30,8 @@ export const depressionSection: SurveySection = {
 // 평가 항목: 불안 (GAD-7)
 export const anxietySection: SurveySection = {
   category: 'anxiety',
-  description: '“지난 2주 동안 다음의 문제들로 인해서 얼마나 자주 방해를 받았나요?”',
+  description:
+    '📝 <span class="text-orange-500 font-bold">최근 2주간</span> 동안 다음의 문제들로 얼마나 자주 방해를 받았나요?',
   options: [
     { value: 0, label: '전혀없음' },
     { value: 1, label: '며칠간' },
@@ -50,7 +52,8 @@ export const anxietySection: SurveySection = {
 // 평가 항목: 스트레스 (PSS)
 export const stressSection: SurveySection = {
   category: 'stress',
-  description: '“지난 30일 동안 들었던 기분이나 생각에 대해 여쭤볼게요!”',
+  description:
+    '📝 <span class="text-orange-500 font-bold">지난 30일</span> 동안 들었던 기분이나 생각에 대해 여쭤볼게요!',
   options: [
     { value: 0, label: '전혀 없음' },
     { value: 1, label: '거의 없음' },
@@ -62,11 +65,15 @@ export const stressSection: SurveySection = {
     { id: 'stress-1', text: '예상치 못한 일이 발생하여 기분이 좋지 않았던 적이 얼마나 있었나요?' },
     { id: 'stress-2', text: '살면서 중요한 일들을 뜻대로 하지 못한다고 느꼈던 적이 얼마나 있었나요?' },
     { id: 'stress-3', text: '불안하고 "스트레스를 받았던" 적이 얼마나 있었나요?' },
-    { id: 'stress-4', text: '개인적인 문제들을 처리하는 능력에 대해 자신감이 있었던 적이 얼마나 있었나요?' },
-    { id: 'stress-5', text: '일이 뜻대로 풀리는 것 같았던 적이 얼마나 있었나요?' },
+    {
+      id: 'stress-4',
+      reverse: true,
+      text: '개인적인 문제들을 처리하는 능력에 대해 자신감이 있었던 적이 얼마나 있었나요?',
+    },
+    { id: 'stress-5', reverse: true, text: '일이 뜻대로 풀리는 것 같았던 적이 얼마나 있었나요?' },
     { id: 'stress-6', text: '해야 하는 모든 일에 대처할 수 없었던 적이 얼마나 있었나요?' },
-    { id: 'stress-7', text: '생활에서 짜증을 조절할 수 있었던 적이 얼마나 있었나요?' },
-    { id: 'stress-8', text: '자신이 모든 상황을 잘 통제하고 있다고 느꼈던 적이 얼마나 있었나요?' },
+    { id: 'stress-7', reverse: true, text: '생활에서 짜증을 조절할 수 있었던 적이 얼마나 있었나요?' },
+    { id: 'stress-8', reverse: true, text: '자신이 모든 상황을 잘 통제하고 있다고 느꼈던 적이 얼마나 있었나요?' },
     { id: 'stress-9', text: '자신이 통제할 수 없는 일 때문에 화가 났던 적이 얼마나 있었나요?' },
     { id: 'stress-10', text: '힘든 일이 너무 많아져서 해결할 수 없을 것 같았던 적이 얼마나 있었나요?' },
   ],
@@ -75,7 +82,7 @@ export const stressSection: SurveySection = {
 // 평가 항목: 스트레스 요인
 export const stressReasonSection: SurveySection = {
   category: 'stressReason',
-  description: '“혹시 요즘 신경 쓰이는 일이나 생각들이 있다면 나눠볼래요?”',
+  description: '💬 <span class="text-orange-500 font-bold">요즘 신경 쓰이는 일</span>이나 생각들이 있다면 나눠볼래요?',
   options: [],
   questions: [],
 };

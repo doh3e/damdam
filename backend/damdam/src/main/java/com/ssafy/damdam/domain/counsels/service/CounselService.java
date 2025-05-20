@@ -2,6 +2,8 @@ package com.ssafy.damdam.domain.counsels.service;
 
 import java.util.List;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ssafy.damdam.domain.counsels.dto.CounselingChatListDto;
 import com.ssafy.damdam.domain.counsels.dto.CounselingDto;
 
 public interface CounselService {
@@ -10,7 +12,7 @@ public interface CounselService {
 
 	Long createCounsel();
 
-	CounselingDto getCounsel(Long id);
+	CounselingChatListDto getCounsel(Long counsId);
 
 	void patchCounsel(Long counsId, String counsTitle);
 
@@ -18,4 +20,5 @@ public interface CounselService {
 
 	void closeCounsel(Long counsId);
 
+	Long reportCounsel(Long counsId) throws JsonProcessingException;
 }

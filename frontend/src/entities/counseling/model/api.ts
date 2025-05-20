@@ -6,6 +6,7 @@
  */
 import { apiClient } from '@/shared/api/axiosInstance';
 import { CounselingSession, ChatMessage, MessageType } from './types';
+import { type ApiResponse } from '@/shared/types/api'; // ApiResponse 타입 임포트
 
 // TypeScript 타입 정의로 변경
 export type FetchPastCounselingSessionsParams = {
@@ -50,25 +51,23 @@ export interface CounselingSessionWithMessages {
  * @returns {Promise<CounselingSessionWithMessages>} 해당 상담 세션 정보 및 메시지 목록
  */
 export const fetchCounselingSessionDetails = async (
-  counsId: string,
-  messageParams?: { page?: number; limit?: number }
-): Promise<CounselingSessionWithMessages> => {
+  counsId: string
+  // messageParams?: { page?: number; limit?: number } // 현재 API에서는 사용되지 않음
+): Promise<CounselingSession> => {
   if (!counsId) throw new Error('Counseling ID (counsId) is required to fetch session details.');
 
-  const queryParams = new URLSearchParams();
-  if (messageParams?.page) queryParams.append('page', messageParams.page.toString());
-  if (messageParams?.limit) queryParams.append('limit', messageParams.limit.toString());
+  const endpoint = `/counsels/${counsId}`;
+  // API는 CounselingDto (CounselingSession과 유사)를 직접 반환
+  const sessionData = await apiClient.get<CounselingSession>(endpoint);
 
-  const endpoint = `/counsels/${counsId}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-  // API 응답이 세션 정보와 메시지를 함께 포함한다고 가정합니다.
-  // 실제 API 응답 구조에 따라 TResponse 타입을 정확히 명시해야 합니다.
-  // 예를 들어, 백엔드가 { counselingSession: {...}, messages: [...] } 형태로 반환한다면 그에 맞게 수정합니다.
-  // 우선은 CounselingSession 타입 내에 messages 필드가 있거나, 별도 필드로 온다고 가정하고 아래와 같이 구성합니다.
-  // 여기서는 API 명세서의 설명을 바탕으로 세션 정보와 메시지 목록을 함께 받는다고 가정합니다.
-  return apiClient.get<CounselingSessionWithMessages>(endpoint);
-  // 만약 API가 CounselingSession 객체 안에 messages: ChatMessage[]를 포함하여 반환한다면,
-  // 반환 타입을 Promise<CounselingSession>으로 하고, CounselingSession 인터페이스에 messages?: ChatMessage[] 를 추가해야 합니다.
-  // 현재는 명확한 분리를 위해 CounselingSessionWithMessages 타입을 사용합니다.
+  // messageList 필드가 없을 경우를 대비하여 기본값 제공 (타입상으로는 필수 필드임)
+  if (sessionData && typeof sessionData.messageList === 'undefined') {
+    // sessionData가 null이 아닌지도 확인
+    sessionData.messageList = [];
+  }
+
+  console.log('fetchCounselingSessionDetails API responseData (processed):', sessionData);
+  return sessionData;
 };
 
 // 사용자 ID는 JWT 토큰에서 추출하므로 요청 바디에서 userId 제거
@@ -164,6 +163,28 @@ export const createSessionReport = async (counsId: string): Promise<CreateSessio
   // 이 API는 요청 바디가 필요 없을 수 있습니다 (서버에서 해당 세션 정보로 자동 생성).
   // 응답 타입도 실제 백엔드 명세에 따라 달라질 수 있습니다 (예: 생성된 Report 객체 전체 또는 reportId만).
   return apiClient.post<undefined, CreateSessionReportResponse>(endpoint, undefined);
+};
+
+/**
+ * 지정된 상담 세션에 대한 레포트를 생성하고 해당 세션을 종료합니다.
+ *
+ * @param {string} counsId - 레포트를 생성하고 종료할 상담 세션의 ID.
+ * @returns {Promise<{ sreportId: number }>} 성공 시 생성된 레포트 ID를 포함하는 객체를 반환합니다.
+ * @throws {Error} API 요청 실패 시 에러를 발생시킵니다.
+ */
+export const createReportAndEndSession = async (counsId: string): Promise<{ sreportId: number }> => {
+  if (!counsId) {
+    throw new Error('레포트 생성 및 세션 종료를 위한 상담 ID가 제공되지 않았습니다.');
+  }
+  const endpoint = `/counsels/${counsId}/reports`;
+  console.log(`API 요청: POST ${endpoint}`);
+  // apiClient.post<TRequest, TResponse>(url, data)
+  // TRequest (요청 본문 타입)는 undefined, TResponse (응답 본문 타입)는 { sreportId: number }
+  // data (요청 본문 값)는 undefined
+  // apiClient.post는 응답 인터셉터에 의해 Promise<TResponse> (즉, Promise<{ sreportId: number }>)를 반환합니다.
+  const responseData = await apiClient.post<undefined, { sreportId: number }>(endpoint, undefined);
+  console.log('createReportAndEndSession API responseData:', responseData);
+  return responseData;
 };
 
 // sendChatMessageToServer 함수는 웹소켓으로 대체되므로 여기서는 주석 처리 또는 삭제합니다.

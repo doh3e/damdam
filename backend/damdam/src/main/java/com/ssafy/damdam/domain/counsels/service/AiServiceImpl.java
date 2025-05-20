@@ -1,28 +1,51 @@
 package com.ssafy.damdam.domain.counsels.service;
 
+import static com.ssafy.damdam.domain.counsels.exception.CounsExceptionCode.COUNSEL_NOT_FOUND;
+import static com.ssafy.damdam.domain.users.exception.user.UserExceptionCode.*;
+import static com.ssafy.damdam.global.redis.exception.RedisExceptionCode.*;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ssafy.damdam.domain.counsels.dto.*;
-import com.ssafy.damdam.domain.users.repository.UserInfoRepository;
-import com.ssafy.damdam.domain.users.repository.UserSettingRepository;
-import com.ssafy.damdam.domain.users.repository.UserSurveyRepository;
-import com.ssafy.damdam.global.redis.CounselSession;
-import com.ssafy.damdam.global.redis.CounselSessionRepository;
-import com.ssafy.damdam.global.webclient.client.AudioClient;
-
-import com.ssafy.damdam.global.webclient.client.LlmClient;
-import com.ssafy.damdam.global.webclient.client.SummaryClient;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
+import com.ssafy.damdam.domain.counsels.entity.Counseling;
+import com.ssafy.damdam.domain.counsels.exception.CounsException;
+import com.ssafy.damdam.domain.counsels.repository.CounselingRepository;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ssafy.damdam.domain.counsels.dto.ChatInputDto;
+import com.ssafy.damdam.domain.counsels.dto.ChatMessageDto;
+import com.ssafy.damdam.domain.counsels.dto.EmotionDto;
+import com.ssafy.damdam.domain.counsels.dto.LlmAiChatRequest;
+import com.ssafy.damdam.domain.counsels.dto.LlmAiChatResponse;
+import com.ssafy.damdam.domain.counsels.dto.LlmSummaryRequest;
+import com.ssafy.damdam.domain.counsels.dto.LlmSummaryResponse;
+import com.ssafy.damdam.domain.counsels.dto.UserContextDto;
+import com.ssafy.damdam.domain.users.entity.Age;
+import com.ssafy.damdam.domain.users.entity.Gender;
+import com.ssafy.damdam.domain.users.entity.Mbti;
+import com.ssafy.damdam.domain.users.entity.UserInfo;
+import com.ssafy.damdam.domain.users.entity.UserSetting;
+import com.ssafy.damdam.domain.users.entity.UserSurvey;
+import com.ssafy.damdam.domain.users.exception.user.UserException;
+import com.ssafy.damdam.domain.users.repository.UserInfoRepository;
+import com.ssafy.damdam.domain.users.repository.UserSettingRepository;
+import com.ssafy.damdam.domain.users.repository.UserSurveyRepository;
+import com.ssafy.damdam.global.aws.s3.S3FileUploadService;
+import com.ssafy.damdam.global.redis.CounselSession;
+import com.ssafy.damdam.global.redis.CounselSessionRepository;
+import com.ssafy.damdam.global.redis.exception.RedisException;
+import com.ssafy.damdam.global.webclient.client.AnalyzeAudioClient;
+import com.ssafy.damdam.global.webclient.client.AnalyzeTextClient;
+import com.ssafy.damdam.global.webclient.client.LlmChatClient;
+import com.ssafy.damdam.global.webclient.client.LlmSummaryClient;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -34,133 +57,137 @@ public class AiServiceImpl implements AiService {
 	private final UserInfoRepository infoRepository;
 	private final UserSurveyRepository surveyRepository;
 	private final ExecutorService virtualThreadExecutor;
-	private final AudioClient audioClient;
-	private final LlmClient llmClient;
-	private final SummaryClient summaryClient;
+	private final AnalyzeAudioClient analyzeAudioClient;
+	private final AnalyzeTextClient analyzeTextClient;
+	private final LlmChatClient llmChatClient;
+	private final LlmSummaryClient llmSummaryClient;
 	private final RedisTemplate<String, Object> redisTemplate;
 	private final CounselSessionRepository sessionRepository;
+	private final S3FileUploadService s3FileUploadService;
+	private final CounselingRepository counselingRepository;
 	private final ObjectMapper objectMapper;
-	private final SimpMessagingTemplate messagingTemplate;
 
-    @Override
-	@Transactional
-	public void analyzeAndSave(Long roomId, Long userId, String nickname, int messageOrder, String audioUrl) {
-		virtualThreadExecutor.submit(() -> {
-			try {
-				AudioAiResponse analysis = audioClient.analyzeAudio(audioUrl);
-				String listKey = "counsel:" + roomId + ":messages";
-				log.info("AI로 받아온 roomId: {}, userId: {}, messageOrder: {}, audioUrl: {}",
-						roomId, userId, messageOrder, audioUrl);
-
-				// 전체 리스트 조회
-				List<Object> allMessages = redisTemplate.opsForList().range(listKey, 0, -1);
-				Object raw = null;
-
-				for (Object item : allMessages) {
-					@SuppressWarnings("unchecked")
-					Map<String,Object> map = (Map<String,Object>) item;
-					String sender = (String) map.get("sender");
-					if ("AI".equals(sender)) continue;
-					Integer order = (Integer) map.get("messageOrder");
-					if (order != null && order == messageOrder) {
-						raw = item;
-						break;
-					}
-				}
-
-				if (raw == null) {
-					log.warn("[AiService] messageOrder {}에 해당하는 Redis 항목이 없습니다.", messageOrder);
-					return;
-				}
-
-				ChatInputDto input = objectMapper.convertValue(raw, ChatInputDto.class);
-
-
-				// 이하 기존 로직 유지...
-				CounselSession session = sessionRepository.findById(roomId)
-						.orElseGet(() -> {
-							CounselSession newSession = CounselSession.builder()
-									.counsId(roomId)
-									.userId(userId)
-									.tokenCount(20)
-									.sender("USER")
-									.isVoice(input.getIsVoice())
-									.message(input.getMessage())
-									.timestamp(LocalDateTime.now())
-									.build();
-							log.info("[AiService] 새로운 세션 생성: roomId={}, tokenCount=20", roomId);
-							return newSession;
-						});
-
-				session.setAngry(analysis.getAngry());
-				session.setHappiness(analysis.getHappiness());
-				session.setNeutral(analysis.getNeutral());
-				session.setSadness(analysis.getSadness());
-				session.setOther(analysis.getOther());
-				session.decrementToken();
-				sessionRepository.save(session);
-
-				ChatOutputDto response = ChatOutputDto.builder()
-						.sender("AI")
-						.message("현재 감정 상태는 '" + analysis.getEmotion() + "'입니다.")
-						.timestamp(LocalDateTime.now())
-						.tokenCount(session.getTokenCount())
-						.happiness(analysis.getHappiness())
-						.angry(analysis.getAngry())
-						.neutral(analysis.getNeutral())
-						.sadness(analysis.getSadness())
-						.other(analysis.getOther())
-						.messageOrder(messageOrder)
-						.build();
-
-				redisTemplate.opsForList().rightPush(listKey, response);
-				messagingTemplate.convertAndSend("/sub/counsels/" + roomId + "/chat", response);
-				log.info("[AiService] 감정 분석 및 AI 응답 전송 완료 - messageOrder: {}", messageOrder);
-
-			} catch (Exception e) {
-				log.error("[AiService] 감정 분석 중 예외 발생", e);
-			}
-		});
+	// 값이 없거나 특정되지 않은 경우 null화 하는 함수
+	private String normalizeEnumValue(String v) {
+		if (v == null || v.isBlank() || "UNKNOWN".equalsIgnoreCase(v))
+			return null;
+		return v.trim();
 	}
 
 	@Override
-	public ChatOutputDto chatWithLlm(
-			Long roomId,
-			Long userId,
-			String nickname,
-			ChatInputDto input
-	) {
-
-		log.info("chatwithllm service 진입 완료");
-
-		CounselSession session = sessionRepository.findById(roomId)
-				.orElseThrow(() -> new IllegalStateException("세션이 없습니다: " + roomId));
-
-		LlmAiChatRequest request = LlmAiChatRequest.builder()
-				.nickname(nickname)
-				.message(input.getMessage())
-				.build();
-
-		log.info("chatwithllm service request: {}", request);
-
-		LlmAiChatResponse response = llmClient.requestChatResponse(request);
-
-		String aiText = response != null
-				? response.getAiResponse()
-				: "죄송합니다, LLM 응답을 받아오는데 실패했습니다.";
-
-		session.decrementToken();
-		sessionRepository.save(session);
-
-		// 4) ChatOutputDto 에 담아서 리턴
-		return ChatOutputDto.builder()
-				.sender("AI")
-				.message(aiText)
-				.timestamp(LocalDateTime.now())
-				.messageOrder(input.getMessageOrder())
-				.tokenCount(session.getTokenCount())
-				.build();
+	@Transactional
+	public EmotionDto analyzeAudio(Long roomId, Long userId, int messageOrder, String audioUrl) {
+		return analyzeAudioClient.analyzeAudio(audioUrl);
 	}
 
+	@Override
+	public EmotionDto analyzingText(String message) {
+		return analyzeTextClient.analyzeText(message);
+	}
+
+	@Override
+	public LlmAiChatResponse chatWithLlm(
+		Long roomId,
+		Long userId,
+		String nickname,
+		ChatInputDto input,
+		EmotionDto emotion
+	) {
+
+		CounselSession session = sessionRepository.findById(roomId)
+			.orElseThrow(() -> new RedisException(REDIS_SESSION_NOT_FOUND));
+
+		UserInfo infos = infoRepository.findById(userId)
+			.orElseThrow(() -> new UserException(USER_INFO_NOT_FOUND));
+		UserSetting setting = settingRepository.findById(userId)
+			.orElseThrow(() -> new UserException(USER_SETTING_NOT_FOUND));
+		// survey 처리
+		UserSurvey survey = surveyRepository.findById(userId).orElse(null);
+		int depression = -1, anxiety = -1, stress = -1;
+		Boolean isSuicidal = null;
+		String stressReason = null;
+
+		if (survey != null) {
+			depression = survey.getDepression();
+			anxiety = survey.getAnxiety();
+			stress = survey.getStress();
+			isSuicidal = survey.getIsSuicidal();
+			stressReason = normalizeEnumValue(survey.getStressReason());
+		}
+
+		// enum 필드 변환 전 null 체크
+		String rawAge = normalizeEnumValue(String.valueOf(infos.getAge()));
+		Age ageEnum = rawAge != null ? Age.valueOf(rawAge) : null;
+
+		String rawMbti = normalizeEnumValue(String.valueOf(infos.getMbti()));
+		Mbti mbtiEnum = rawMbti != null ? Mbti.valueOf(rawMbti) : null;
+
+		String rawGender = normalizeEnumValue(String.valueOf(infos.getGender()));
+		Gender genderEnum = rawGender != null ? Gender.valueOf(rawGender) : null;
+
+		UserContextDto userContext = UserContextDto.builder()
+			.nickname(nickname)
+			.botCustom(normalizeEnumValue(setting.getBotCustom()))
+			.age(ageEnum)   // Age enum or null
+			.mbti(mbtiEnum)   // Mbti enum or null
+			.career(normalizeEnumValue(infos.getCareer()))
+			.gender(genderEnum)   // Gender enum or null
+			.depression(depression)
+			.anxiety(anxiety)
+			.stress(stress)
+			.isSuicidal(isSuicidal)
+			.stressReason(stressReason)
+			.build();
+
+		LlmAiChatRequest request = LlmAiChatRequest.builder()
+			.messageInput(input)
+			.userContext(userContext)
+			.emotion(emotion)
+			.build();
+
+		log.info("채팅에 들어갈 리퀘스트 정보들: " +
+				"닉네임 = {}, 메세지 = {}, 유저정보 = {}" +
+				nickname, input.getMessage(), userContext);
+		return llmChatClient.requestChatResponse(request);
+	}
+
+	@Override
+	@Transactional
+	public LlmSummaryResponse getSessionReport(Long counsId) throws JsonProcessingException {
+
+		// 1. 레디스 세션 불러오기
+		CounselSession session = sessionRepository.findById(counsId)
+			.orElseThrow(() -> new RedisException(REDIS_SESSION_NOT_FOUND));
+
+		String listKey = "counsel:" + counsId + ":messages";
+		List<Object> rawList = redisTemplate.opsForList().range(listKey, 0, -1);
+		List<ChatMessageDto> messages = rawList == null
+				? List.of()
+				: rawList.stream()
+				.map(item -> objectMapper.convertValue(item, ChatMessageDto.class))
+				.toList();
+
+		// 2. 리스트화 후 LLM에 레포트 요청
+		LlmSummaryRequest request = LlmSummaryRequest.builder()
+			.counsId(counsId)
+			.userId(session.getUserId())
+			.messageList(messages)
+			.build();
+
+		LlmSummaryResponse llmResponse = llmSummaryClient.requestSummary(request);
+
+		// 3. 레디스에 있는 것들 S3에 json 형태로 업로드
+		String s3Url = s3FileUploadService.uploadFullText(request);
+		log.info("uploaded full chatting s3 url: {}", s3Url);
+		// 4. counseling entity에 s3url update
+		Counseling counseling = counselingRepository.findById(counsId)
+			.orElseThrow(() -> new CounsException(COUNSEL_NOT_FOUND));
+
+		counseling.updateS3Link(s3Url);
+
+		// 5. DTO 반환
+
+		return llmResponse;
+	}
 
 }

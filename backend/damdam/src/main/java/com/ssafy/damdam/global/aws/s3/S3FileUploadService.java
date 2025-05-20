@@ -1,28 +1,38 @@
 package com.ssafy.damdam.global.aws.s3;
 
-import com.ssafy.damdam.global.aws.s3.exception.S3Exception;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import static com.ssafy.damdam.global.aws.s3.exception.S3ExceptionCode.*;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ssafy.damdam.domain.counsels.dto.LlmSummaryRequest;
+import com.ssafy.damdam.domain.counsels.dto.TranscriptDto;
+import com.ssafy.damdam.global.aws.s3.exception.S3Exception;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
+import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 import software.amazon.awssdk.transfer.s3.model.Upload;
 import software.amazon.awssdk.transfer.s3.model.UploadRequest;
-
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import static com.ssafy.damdam.global.aws.s3.exception.S3ExceptionCode.*;
 
 @Slf4j
 @Service
@@ -41,6 +51,7 @@ public class S3FileUploadService {
 	private final S3AsyncClient s3AsyncClient;
 	private final Tika tika;
 	private final ExecutorService virtualThreadExecutor;
+	private final ObjectMapper objectMapper;
 
 	/**
 	 * 이미지 파일을 S3에 업로드하고, 이전 파일이 있으면 삭제 후 새 URL을 반환합니다.
@@ -61,28 +72,28 @@ public class S3FileUploadService {
 		String s3Key = folder + "/" + saveFileName;
 
 		if (!ext.equalsIgnoreCase(".jpg")
-				&& !ext.equalsIgnoreCase(".jpeg")
-				&& !ext.equalsIgnoreCase(".png")) {
+			&& !ext.equalsIgnoreCase(".jpeg")
+			&& !ext.equalsIgnoreCase(".png")) {
 			throw new S3Exception(IS_NOT_IMAGE);
 		}
 
 		PutObjectRequest putReq = PutObjectRequest.builder()
-				.bucket(bucket)
-				.key(s3Key)
-				.contentType(tika.detect(uploadFile.getInputStream()))
-				.build();
+			.bucket(bucket)
+			.key(s3Key)
+			.contentType(tika.detect(uploadFile.getInputStream()))
+			.build();
 
 		Upload upload = transferManager.upload(
-				UploadRequest.builder()
-						.putObjectRequest(putReq)
-						.requestBody(
-								AsyncRequestBody.fromInputStream(
-										uploadFile.getInputStream(),
-										uploadFile.getSize(),
-										EXECUTOR
-								)
-						)
-						.build()
+			UploadRequest.builder()
+				.putObjectRequest(putReq)
+				.requestBody(
+					AsyncRequestBody.fromInputStream(
+						uploadFile.getInputStream(),
+						uploadFile.getSize(),
+						EXECUTOR
+					)
+				)
+				.build()
 		);
 
 		upload.completionFuture().join();
@@ -91,8 +102,7 @@ public class S3FileUploadService {
 			s3AsyncClient.deleteObject(b -> b.bucket(bucket).key(oldKey)).join();
 		}
 
-		String imageUrl = defaultUrl + s3Key;
-		return imageUrl;
+		return defaultUrl + s3Key;
 	}
 
 	private boolean isImage(MultipartFile file) {
@@ -119,22 +129,22 @@ public class S3FileUploadService {
 					}
 
 					PutObjectRequest putReq = PutObjectRequest.builder()
-							.bucket(bucket)
-							.key(s3Key)
-							.contentType(tika.detect(file.getInputStream()))
-							.build();
+						.bucket(bucket)
+						.key(s3Key)
+						.contentType(tika.detect(file.getInputStream()))
+						.build();
 
 					Upload upload = transferManager.upload(
-							UploadRequest.builder()
-									.putObjectRequest(putReq)
-									.requestBody(
-											AsyncRequestBody.fromInputStream(
-													file.getInputStream(),
-													file.getSize(),
-													EXECUTOR
-											)
-									)
-									.build()
+						UploadRequest.builder()
+							.putObjectRequest(putReq)
+							.requestBody(
+								AsyncRequestBody.fromInputStream(
+									file.getInputStream(),
+									file.getSize(),
+									EXECUTOR
+								)
+							)
+							.build()
 					);
 
 					upload.completionFuture().join();
@@ -151,4 +161,90 @@ public class S3FileUploadService {
 		}
 	}
 
+	public String uploadFullText(LlmSummaryRequest llmSummaryRequest) throws JsonProcessingException {
+		try {
+			String json = objectMapper.writeValueAsString(llmSummaryRequest);
+			byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+
+			String fileName = UUID.randomUUID() + ".json";
+			String s3Key = "origin_texts" + "/" + fileName;
+
+			PutObjectRequest putReq = PutObjectRequest.builder()
+				.bucket(bucket)
+				.key(s3Key)
+				.contentType("application/json")
+				.contentLength((long)bytes.length)
+				.build();
+
+			Upload upload = transferManager.upload(
+				UploadRequest.builder()
+					.putObjectRequest(putReq)
+					.requestBody(AsyncRequestBody.fromBytes(bytes))
+					.build()
+			);
+			upload.completionFuture().join();
+
+			return defaultUrl + s3Key;
+		} catch (JsonProcessingException e) {
+			log.error("[S3] JSON 직렬화 실패", e);
+			throw new S3Exception(JSON_SERIALIZATION_FAIL);
+		}
+	}
+
+	public TranscriptDto downloadTranscript(String s3Link) {
+		String key = s3Link.replace(defaultUrl, "");
+		try {
+			// 2) S3에서 bytes 단위로 가져오기 (동기 블록)
+			ResponseBytes<GetObjectResponse> resp = s3AsyncClient.getObject(
+				GetObjectRequest.builder()
+					.bucket(bucket)
+					.key(key)
+					.build(),
+				AsyncResponseTransformer.toBytes()
+			).join();
+
+			// 3) byte[] → String → DTO
+			String json = new String(resp.asByteArray(), StandardCharsets.UTF_8);
+			return objectMapper.readValue(json, TranscriptDto.class);
+
+		} catch (Exception e) {
+			log.error("[S3] 다운로드 실패: key={}", key, e);
+			throw new S3Exception(FILE_DOWNLOAD_FAIL);
+		}
+	}
+
+	public String uploadInquiryFile(MultipartFile file) {
+		try {
+			String origName = file.getOriginalFilename();
+			String ext = origName.substring(origName.lastIndexOf('.'));
+			String saveFileName = UUID.randomUUID().toString().replaceAll("-", "") + ext;
+			String s3Key = "inquiry/" + saveFileName;
+
+			PutObjectRequest putReq = PutObjectRequest.builder()
+				.bucket(bucket)
+				.key(s3Key)
+				.contentType(tika.detect(file.getInputStream()))
+				.build();
+
+			Upload upload = transferManager.upload(
+				UploadRequest.builder()
+					.putObjectRequest(putReq)
+					.requestBody(
+						AsyncRequestBody.fromInputStream(
+							file.getInputStream(),
+							file.getSize(),
+							EXECUTOR
+						)
+					)
+					.build()
+			);
+
+			upload.completionFuture().join();
+
+			return defaultUrl + s3Key;
+		} catch (IOException e) {
+			log.error("[S3] 문의 파일 업로드 실패", e);
+			throw new UncheckedIOException(e);
+		}
+	}
 }

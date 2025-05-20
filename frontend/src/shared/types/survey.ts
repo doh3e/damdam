@@ -4,6 +4,7 @@ export type SurveyCategory = 'depression' | 'anxiety' | 'stress' | 'stressReason
 export interface SurveyQuestion {
   id: string;
   text: string;
+  reverse?: boolean; // 역점수 여부
 }
 
 export interface SurveySection {
@@ -28,8 +29,18 @@ export function getCategoryScore(
   answers: number[][],
   sections: SurveySection[]
 ): number {
-  const idx = sections.findIndex((s) => s.category === category);
-  return answers[idx]?.reduce((sum, v) => sum + (v ?? 0), 0) ?? 0;
+  const section = sections.find((s) => s.category === category);
+  if (!section) return 0;
+
+  const maxScore = Math.max(...section.options.map((opt) => opt.value));
+
+  return (
+    answers[sections.indexOf(section)]?.reduce((sum, value, qIdx) => {
+      const question = section.questions[qIdx];
+      const adjustedValue = question?.reverse ? maxScore - value : value;
+      return sum + (adjustedValue ?? 0);
+    }, 0) ?? 0
+  );
 }
 
 // 우울 9번 문항(자살 위험) 체크 함수

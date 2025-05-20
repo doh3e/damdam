@@ -4,30 +4,22 @@ import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// 서버 처리 후 구독자(클라이언트)에게 전송할 메시지 정보
+// 서버 처리 후 서버 → 프론트에 전송할 정보들
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ChatOutputDto {
 	private String sender;
 	private String message;
-
 	private LocalDateTime timestamp;
-
-	private int tokenCount;
-
-	private int happiness;
-	private int angry;
-	private int neutral;
-	private int sadness;
-	private int other;
-
+	private Integer tokenCount;
 	private int messageOrder;
-
 }
