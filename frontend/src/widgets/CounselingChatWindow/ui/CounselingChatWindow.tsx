@@ -261,10 +261,12 @@ export function CounselingChatWindow() {
   const handleSendUserMessage = useCallback(
     (payload: StompSendUserMessagePayload) => {
       if (sendUserMessage) {
-        // 사용자 메시지 전송 직전에 AI 타이핑 상태를 true로 설정합니다.
-        setIsAiTyping(true);
+        // 1. 사용자의 메시지를 먼저 웹소켓으로 전송 (내부적으로 낙관적 업데이트 메시지가 스토어에 추가됨)
         sendUserMessage(payload);
-        setLastUserActivityTime(Date.now()); // 사용자 메시지 전송 시 활동 시간 업데이트
+        // 2. 사용자가 메시지를 보냈으므로 마지막 활동 시간 업데이트
+        setLastUserActivityTime(Date.now());
+        // 3. 그 다음 AI 타이핑 상태를 true로 설정 (스토어에서 로딩 플레이스홀더 추가)
+        setIsAiTyping(true);
       }
     },
     [sendUserMessage, setLastUserActivityTime, setIsAiTyping]
@@ -691,13 +693,6 @@ export function CounselingChatWindow() {
         >
           {/* ChatMessageList 내부에서 h-full 및 overflow-y-auto 필요 */}
           <ChatMessageList messages={messages} />
-          {/* AI 답변 생성 중 로딩 인디케이터 */}
-          {isAiTyping && (
-            <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin text-tomato-red dark:text-pale-coral-pink" />
-              <span>담담이가 답변 중입니다. 잠시만 기다려주세요!</span>
-            </div>
-          )}
         </CardContent>
 
         {/* CardFooter: 메시지 입력 폼. 배경색을 CardHeader와 동일하게, 패딩 조정 */}

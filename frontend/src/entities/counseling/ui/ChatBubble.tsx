@@ -11,7 +11,7 @@ import UserAvatar from '@/entities/user/ui/UserAvatar'; // 방금 만든 UserAva
 import { AiProfile } from '@/entities/user/model/types'; // AI 프로필 타입 임포트
 import { cn } from '@/shared/lib/utils'; // Tailwind CSS 클래스 병합 유틸리티
 import RecommendedContentItem from './RecommendedContentItem'; // 추천 콘텐츠 컴포넌트 임포트
-import { Volume2 } from 'lucide-react'; // 스피커 아이콘 import
+import { Volume2, Loader2 } from 'lucide-react'; // 스피커 아이콘 import
 
 /**
  * ChatBubble 컴포넌트의 Props 인터페이스
@@ -41,6 +41,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   const isAiMessage = message.sender === SenderType.AI;
   const isRecommendation = message.messageType === MessageType.RECOMMENDATION;
   const hasRecommendations = message.recommendations !== undefined && message.recommendations.length > 0;
+  const isLoadingPlaceholder = message.isLoadingPlaceholder === true;
 
   // date-fns를 사용하여 시간 포맷팅 (오전/오후 hh:mm)
   let formattedTime = format(new Date(message.timestamp), 'a hh:mm', { locale: ko });
@@ -93,32 +94,41 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
           )}
 
           {/* 메시지 텍스트 내용 - 추천 메시지 타입이 아니거나 텍스트 내용이 있는 경우만 표시 */}
-          {message.message && <p className="text-sm whitespace-pre-wrap">{message.message}</p>}
-
-          {/* 추천 콘텐츠 목록 렌더링 */}
-          {hasRecommendations && (
-            <div className={cn('mt-2', isRecommendation ? 'pt-0' : 'pt-2 border-t border-border/40')}>
-              {message.recommendations?.map((recommendation, index) => (
-                <RecommendedContentItem
-                  key={recommendation.id || `${index}-${recommendation.title}`}
-                  content={recommendation}
-                  className="mb-2 last:mb-0"
-                />
-              ))}
-
-              {/* 추천 콘텐츠가 많은 경우 "더 보기" 버튼 추가 가능 (필요시) */}
-              {message.recommendations && message.recommendations.length > 3 && isRecommendation && (
-                <p className="text-xs text-primary font-medium text-center cursor-pointer hover:underline mt-1">
-                  추천 콘텐츠 더 보기
-                </p>
-              )}
+          {isLoadingPlaceholder ? (
+            <div className="flex items-center justify-center py-2">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">담담이가 답변 중입니다...</span>
             </div>
+          ) : (
+            <>
+              {message.message && <p className="text-sm whitespace-pre-wrap">{message.message}</p>}
+
+              {/* 추천 콘텐츠 목록 렌더링 */}
+              {hasRecommendations && (
+                <div className={cn('mt-2', isRecommendation ? 'pt-0' : 'pt-2 border-t border-border/40')}>
+                  {message.recommendations?.map((recommendation, index) => (
+                    <RecommendedContentItem
+                      key={recommendation.id || `${index}-${recommendation.title}`}
+                      content={recommendation}
+                      className="mb-2 last:mb-0"
+                    />
+                  ))}
+
+                  {/* 추천 콘텐츠가 많은 경우 "더 보기" 버튼 추가 가능 (필요시) */}
+                  {message.recommendations && message.recommendations.length > 3 && isRecommendation && (
+                    <p className="text-xs text-primary font-medium text-center cursor-pointer hover:underline mt-1">
+                      추천 콘텐츠 더 보기
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
         <span className="text-xs text-muted-foreground self-end whitespace-nowrap">
-          {/* 사용자 메시지이고 음성 메시지인 경우 아이콘 표시 */}
-          {formattedTime}
-          {isUserMessage && message.isVoice && (
+          {/* 로딩 플레이스홀더가 아닐 때만 시간 표시 */}
+          {!isLoadingPlaceholder && formattedTime}
+          {isUserMessage && message.isVoice && !isLoadingPlaceholder && (
             <Volume2 size={14} className="ml-2 inline-block text-black dark:text-white" />
           )}
         </span>
