@@ -12,8 +12,21 @@ interface Props {
 
 export function SessionReportList({ reports, isLoading, onUpdate, onDelete }: Props) {
   if (isLoading) return <div>불러오는 중...</div>;
-  if (reports.length === 0) return <div>상담 내역이 없습니다.</div>;
-
+  if (reports.length === 0)
+    return (
+      <div className="flex flex-col items-center justify-center text-center text-gray-500 py-12">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-10 w-10 mb-3 text-gray-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2H5V5h14v10h-4v2m-6 0h6" />
+        </svg>
+        <p className="text-sm">상담 레포트가 없습니다.</p>
+      </div>
+    );
   return (
     <ul className="space-y-4">
       {reports.map((r) => (
