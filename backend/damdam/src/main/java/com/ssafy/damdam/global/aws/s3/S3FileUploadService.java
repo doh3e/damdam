@@ -29,6 +29,7 @@ import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 import software.amazon.awssdk.transfer.s3.model.Upload;
@@ -80,6 +81,7 @@ public class S3FileUploadService {
 		PutObjectRequest putReq = PutObjectRequest.builder()
 			.bucket(bucket)
 			.key(s3Key)
+			.acl(ObjectCannedACL.PUBLIC_READ)
 			.contentType(tika.detect(uploadFile.getInputStream()))
 			.build();
 
@@ -131,6 +133,7 @@ public class S3FileUploadService {
 					PutObjectRequest putReq = PutObjectRequest.builder()
 						.bucket(bucket)
 						.key(s3Key)
+						.acl(ObjectCannedACL.PUBLIC_READ)
 						.contentType(tika.detect(file.getInputStream()))
 						.build();
 
@@ -222,6 +225,7 @@ public class S3FileUploadService {
 			PutObjectRequest putReq = PutObjectRequest.builder()
 				.bucket(bucket)
 				.key(s3Key)
+				.acl(ObjectCannedACL.PUBLIC_READ)
 				.contentType(tika.detect(file.getInputStream()))
 				.build();
 
