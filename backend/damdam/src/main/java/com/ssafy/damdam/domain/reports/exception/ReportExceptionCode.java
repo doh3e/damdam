@@ -16,7 +16,7 @@ public enum ReportExceptionCode implements ExceptionCode {
 	REPORT_NOT_FOUND(NOT_FOUND, "RP-C-001", "존재하지 않는 레포트입니다."),
 	NOT_YOUR_REPORT(FORBIDDEN, "RP-C-002", "본인의 레포트 내역이 아닙니다."),
 	CATEGORY_DOES_NOT_EXIST(BAD_REQUEST, "RP-C-003", "존재하지 않는 카테고리입니다."),
-	CANT_CREATE_PERIOD_REPORT(BAD_REQUEST, "RP-C-004", "기간별 레포트를 생성할 수 있는 데이터가 없습니다");
+	CANT_CREATE_PERIOD_REPORT(BAD_REQUEST, "RP-C-004", "기간별 레포트를 생성할 수 있는 데이터가 없거나 부족합니다. (최소 2건 이상의 상담 필요)");
 
 	private final HttpStatus httpStatus;
 	private final String code;
