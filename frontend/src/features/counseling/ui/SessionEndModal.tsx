@@ -61,12 +61,14 @@ const SessionEndModal = ({
             상담이 종료됩니다.
           </DialogTitle>
           <br />
-          <DialogDescription className="text-sm text-[#222222]/80 dark:text-gray-300 mt-4 space-y-3">
-            <p>현재 상담 세션이 종료됩니다. 상담 내용에 대한 분석 레포트를 받아보시겠습니까?</p>
-            <p>레포트를 발행하면 상담 내용을 심층 분석하여 유용한 피드백을 제공해 드립니다.</p>
-            <p className="font-semibold text-[#DC5F53] pt-2">
-              "상담 종료하기"를 선택하시면 상담 내역이 삭제되며 레포트를 받아보실 수 없습니다.
-            </p>
+          <DialogDescription asChild className="text-sm text-[#222222]/80 dark:text-gray-300 mt-4 space-y-3">
+            <div>
+              <div>현재 상담 세션이 종료됩니다. 상담 내용에 대한 분석 레포트를 받아보시겠습니까?</div>
+              <div>레포트를 발행하면 상담 내용을 심층 분석하여 유용한 피드백을 제공해 드립니다.</div>
+              <div className="font-semibold text-[#DC5F53] pt-2">
+                "상담 종료하기"를 선택하시면 상담 내역이 삭제되며 레포트를 받아보실 수 없습니다.
+              </div>
+            </div>
           </DialogDescription>
         </DialogHeader>
 

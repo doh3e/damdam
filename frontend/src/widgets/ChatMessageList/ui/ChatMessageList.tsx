@@ -33,6 +33,11 @@ interface ChatMessageListProps {
 const ChatMessageList: React.FC<ChatMessageListProps> = ({ messages, aiProfile, autoScroll = true }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // 메시지 목록을 timestamp 기준으로 오름차순 정렬합니다.
+  const sortedMessages = React.useMemo(() => {
+    return [...messages].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  }, [messages]);
+
   useEffect(() => {
     if (autoScroll && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -45,15 +50,15 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ messages, aiProfile, 
       }
     }, 100);
     return () => clearTimeout(timer);
-  }, [messages, autoScroll]);
+  }, [messages, autoScroll]); // sortedMessages를 쓰면 messages가 바뀔 때마다 정렬이 일어나므로 messages를 유지
 
   return (
     <ScrollArea className="h-full w-full scrollbar-custom">
       <div className="p-4 space-y-4">
-        {messages.length === 0 ? (
-          <p className="text-center text-muted-foreground pt-4">대화를 시작해보세요.</p>
+        {sortedMessages.length === 0 ? (
+          <p className="text-center text-muted-foreground pt-4">반갑습니다! 당신의 이야기를 들려주세요.</p>
         ) : (
-          messages.map((message, index) => (
+          sortedMessages.map((message, index) => (
             <ChatBubble
               key={message.id || `${message.timestamp}-${message.messageOrder}-${message.sender}-${index}`}
               message={processMessageForDisplay(message)}

@@ -306,28 +306,30 @@ export const useWebSocket = ({
       counsId: currentCounsIdRef.current,
     });
 
-    if (disconnectingRef.current || !stompClientRef.current?.active) {
+    if (disconnectingRef.current || !stompClientRef.current || !stompClientRef.current.active) {
       log(
         disconnectingRef.current
-          ? '이미 연결 해제 작업 진행 중입니다.'
-          : 'STOMP 클라이언트가 활성 상태가 아닙니다. 추가 해제 안 함.'
+          ? '이미 연결 해제 작업 진행 중입니다. 추가 호출 무시.'
+          : !stompClientRef.current
+            ? 'STOMP 클라이언트가 존재하지 않습니다. 해제 작업 불필요.'
+            : 'STOMP 클라이언트가 활성 상태가 아닙니다. 추가 해제 안 함.'
       );
-      if (!stompClientRef.current?.active) {
+      if (!stompClientRef.current || !stompClientRef.current.active) {
         setIsConnected(false);
         if (setWebsocketStatus) setWebsocketStatus('disconnected');
-        connectingRef.current = false;
+        disconnectingRef.current = false;
       }
-      disconnectingRef.current = false;
       return;
     }
 
     disconnectingRef.current = true;
+    if (setWebsocketStatus) setWebsocketStatus('disconnected');
 
     if (subscriptionRef.current) {
       try {
         log('STOMP 구독 해지 시도...', subscriptionRef.current.id);
         subscriptionRef.current.unsubscribe();
-        log('STOMP 구독 해지 성공.');
+        log('STOMP 구독 해지 성공 (로컬).');
       } catch (subError) {
         log('STOMP 구독 해지 중 오류 발생:', subError);
       } finally {
@@ -338,17 +340,15 @@ export const useWebSocket = ({
     try {
       log('STOMP 클라이언트 비활성화 시도...');
       await stompClientRef.current.deactivate();
-      log('STOMP 클라이언트 비활성화 요청 성공 (실제 완료는 비동기적일 수 있음).');
+      log('STOMP 클라이언트 비활성화 요청 성공 (실제 완료는 onWebSocketClose 또는 에러 콜백에서 확인).');
     } catch (deactivateError) {
       log('STOMP 클라이언트 비활성화 중 오류:', deactivateError);
       handleStompError(deactivateError instanceof Error ? deactivateError.message : String(deactivateError), 'stomp');
     } finally {
       setIsConnected(false);
-      if (setWebsocketStatus) setWebsocketStatus('disconnected');
-      stompClientRef.current = null;
       connectingRef.current = false;
       disconnectingRef.current = false;
-      log('STOMP 연결 해제 작업 완료.');
+      log('STOMP 연결 해제 작업(disconnect 함수) 완료.');
     }
   }, [log, handleStompError, setWebsocketStatus]);
 
