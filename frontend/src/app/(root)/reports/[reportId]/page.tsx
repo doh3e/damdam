@@ -7,6 +7,8 @@ import EmotionCircle from '@/entities/report/ui/EmotionCircle';
 import EmotionLineChart from '@/entities/report/ui/EmotionLineChart';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 
 export default function ReportDetailPage() {
   const { reportId } = useParams();
@@ -41,9 +43,14 @@ export default function ReportDetailPage() {
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-xl shadow space-y-6">
       <div>
-        <h2 className="text-xl font-bold">상담 세션 상세</h2>
+        <div className='className="text-xl font-bold flex items-center gap-5'>
+          <button onClick={() => (window.location.href = '/reports')} className="text-lg">
+            <FontAwesomeIcon icon={faArrowLeft} />
+          </button>
+          <h2 className="text-xl font-bold">상담 세션 상세</h2>
+        </div>
         <div className="inline-block bg-orange-50 text-orange-600 font-bold text-xl py-1 mt-3 rounded-md shadow">
-          {report.counsTitle}
+          {report.sreportTitle}
         </div>
         <p className="text-sm text-gray-500 mt-1">
           {formattedDate} {formattedTime}
