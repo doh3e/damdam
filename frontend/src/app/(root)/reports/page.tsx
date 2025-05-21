@@ -88,6 +88,7 @@ export default function ReportsPage() {
         setPeriodReports((prev) =>
           prev.map((r) => (r.preportId === editTarget.id ? { ...r, preportTitle: newTitle.trim() } : r))
         );
+        queryClient.invalidateQueries({ queryKey: ['periodReportDetail', editTarget.id] });
       }
       queryClient.invalidateQueries({ queryKey: ['reports'] });
     } catch {
@@ -220,7 +221,7 @@ export default function ReportsPage() {
           </div>
           {/* 생성된 레포트 리스트 출력 */}
           <PeriodReportList
-            reports={periodReports}
+            reports={sortedReports as PeriodReport[]}
             isLoading={false}
             onUpdate={handlePeriodEditClick}
             onDelete={handlePeriodDeleteClick}

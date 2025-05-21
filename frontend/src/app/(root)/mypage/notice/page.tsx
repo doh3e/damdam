@@ -1,12 +1,11 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-import { useAuthStore } from '@/app/store/authStore';
-import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
-import axiosInstance from '@/shared/api/axiosInstance';
 import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/shared/api/axiosInstance';
+import { useRouter } from 'next/navigation';
 
 type Notice = {
   noticeId: number;
@@ -18,11 +17,10 @@ type Notice = {
 };
 
 const fetchNotices = async (): Promise<Notice[]> => {
-  const res = await axiosInstance.get('/helps/notice');
-  return res.data;
+  return apiClient.get<Notice[]>('/helps/notice');
 };
-
 export default function NoticeListPage() {
+  const router = useRouter();
   const {
     data: notices,
     isLoading,
@@ -37,7 +35,7 @@ export default function NoticeListPage() {
       {/* 공지사항 목록 */}
       <section className="bg-white w-full max-w-xl mx-auto rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
         <h2 className="text-xl font-bold mb-8 flex items-center gap-5">
-          <button onClick={() => (window.location.href = '/mypage')} className="text-lg">
+          <button onClick={() => router.back()} className="text-lg">
             <FontAwesomeIcon icon={faArrowLeft} />
           </button>
           공지사항
