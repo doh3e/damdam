@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import { useQueryClient, useQueries, type UseQueryResult } from '@tanstack/react-query';
+import Modal from '@/shared/ui/modal'; // modal 컴포넌트
 
 // Tanstack Query 훅 임포트 (과거 상담 목록 조회)
 import { useFetchPastCounselingSessions } from '@/entities/counseling/model/queries';
@@ -145,6 +146,28 @@ export function PastCounselingList() {
   };
 
   // 상담 세션 삭제 처리
+
+  const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<any>(null);
+  const handleConfirmDelete = () => {
+    if (!sessionToDelete?.counsId) return;
+    const sessionId = String(sessionToDelete.counsId);
+
+    deleteSession(sessionId, {
+      onSuccess: () => {
+        console.log('상담 세션이 삭제되었습니다.');
+        if (currentViewingCounsId === sessionId) {
+          router.push('/counseling');
+        }
+        setDeleteConfirmModalOpen(false);
+      },
+      onError: (error: Error) => {
+        console.error('상담 세션 삭제 실패:', error);
+        alert('상담 삭제 중 오류가 발생했습니다.');
+      },
+    });
+  };
+
   const handleDeleteSession = (e: React.MouseEvent, counsId: string | number) => {
     e.preventDefault(); // 링크 클릭 방지
     e.stopPropagation(); // 이벤트 버블링 방지
@@ -312,7 +335,13 @@ export function PastCounselingList() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={(e) => handleDeleteSession(e, session.counsId)}
+                          // onClick={(e) => handleDeleteSession(e, session.counsId)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setSessionToDelete(session);
+                            setDeleteConfirmModalOpen(true);
+                          }}
                           title="상담 삭제"
                           className="text-destructive hover:text-red-500"
                         >
@@ -336,7 +365,62 @@ export function PastCounselingList() {
       </CardContent>
 
       {/* 제목 수정 모달 */}
-      <Dialog open={titleEditModalOpen} onOpenChange={setTitleEditModalOpen}>
+      {titleEditModalOpen && (
+        <Modal
+          message="상담 제목 수정"
+          submessage="30자 이내로 새로운 제목을 입력해주세요"
+          onClose={() => setTitleEditModalOpen(false)}
+        >
+          <div className="w-full flex flex-col space-y-4">
+            <input
+              type="text"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              placeholder="새 제목 입력"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
+              maxLength={30}
+            />
+            <div className="flex justify-center space-x-2">
+              <button
+                onClick={() => setTitleEditModalOpen(false)}
+                className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 text-sm"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleTitleUpdate}
+                className="px-4 py-2 rounded-lg bg-[#e24b4b] text-white hover:scale-105 transition text-sm"
+                disabled={!newTitle.trim()}
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      {deleteConfirmModalOpen && (
+        <Modal
+          message="상담 기록 삭제"
+          submessage="정말로 이 상담 기록을 삭제하시겠습니까?<br/>삭제된 데이터는 복구할 수 없습니다."
+          onClose={() => setDeleteConfirmModalOpen(false)}
+        >
+          <div className="w-full flex justify-center space-x-2">
+            <button
+              onClick={() => setDeleteConfirmModalOpen(false)}
+              className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 text-sm"
+            >
+              취소
+            </button>
+            <button
+              onClick={handleConfirmDelete}
+              className="px-4 py-2 rounded-lg bg-[#e24b4b] text-white hover:scale-105 transition text-sm"
+            >
+              삭제
+            </button>
+          </div>
+        </Modal>
+      )}
+      {/* <Dialog open={titleEditModalOpen} onOpenChange={setTitleEditModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>상담 제목 수정</DialogTitle>
@@ -362,7 +446,7 @@ export function PastCounselingList() {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </Card>
   );
 }
