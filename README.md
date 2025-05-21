@@ -1,4 +1,4 @@
-# 🐕 모든 개발자의 공식문서 완전정복, DOCSHUND가 함께할게요! 🐕
+# 🔥 당신이 담담해지는 그 날까지, 담담(DAMDAM)과 함께 이야기해보세요! 🔥
 
 담담(DAMDAM)은 AI 심리상담 챗봇 서비스로, `AI 상담사와 채팅을 통해 상담`하고 내 상담을 분석하는
 `상담별, 기간별 레포트를 제공받을 수 있는` <span><img src="https://img.shields.io/badge/Spring Boot-6DB33F?style=flat-square&logo=springboot&logoColor=white"> <img src="https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=white"></span>
