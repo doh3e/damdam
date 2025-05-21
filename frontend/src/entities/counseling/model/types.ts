@@ -121,6 +121,10 @@ export interface CounselingSession {
   rating?: number;
   /** 세션 관련 키워드 또는 카테고리 (옵션) */
   keywords?: string[];
+  /** 세션 레포트 발행 여부 (옵션) */
+  hasSessionReport?: boolean;
+  /** 기간별 레포트 발행 여부 (옵션) */
+  hasPeriodReport?: boolean;
   /**
    * 채팅 메시지 목록.
    */

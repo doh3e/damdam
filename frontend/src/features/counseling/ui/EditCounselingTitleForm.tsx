@@ -99,15 +99,12 @@ const EditCounselingTitleForm = ({
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="counseling-title" className="text-right text-foreground">
-                제목
-              </Label>
+            <div className="flex justify-center items-center gap-4">
               <Input
                 id="counseling-title"
                 value={titleInput}
                 onChange={handleInputChange}
-                className="col-span-3 border-primary focus:ring-primary bg-light-gray"
+                className="w-3/4 border-primary focus:ring-primary bg-light-gray"
                 disabled={mutation.isPending}
                 autoFocus
               />
