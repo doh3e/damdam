@@ -562,18 +562,27 @@ export function CounselingChatWindow() {
   const isEffectivelyClosed = storeIsCurrentSessionClosed ?? sessionDetail.isClosed ?? false;
 
   // 모달의 '상담만 종료하기' 버튼 클릭 시 실행될 함수
-  const handleConfirmEndSession = () => {
+  const handleConfirmEndSession = async () => {
     if (!couns_id || isDeleteSessionPending || isCreateReportPending) return;
+    // 먼저 웹소켓 연결을 정상적으로 해제 시도
+    if (disconnectWebSocket) {
+      try {
+        await disconnectWebSocket();
+        console.log('[Modal] WebSocket disconnected successfully before ending session.');
+      } catch (wsError) {
+        console.log('[Modal] Error disconnecting WebSocket before ending session:', wsError);
+        // 웹소켓 해제 실패가 세션 종료를 막을 필요는 없을 수 있으므로, 로깅 후 계속 진행
+      }
+    }
+
     deleteSessionMutation(couns_id, {
-      onSuccess: async () => {
+      onSuccess: () => {
+        // onSuccess는 더 이상 async일 필요 없음
         console.log('[Modal] 상담 세션 삭제 성공 (counsels/{counsId} DELETE)');
         setIsCurrentSessionClosed(true); // Zustand 스토어 업데이트
         setCurrentSessionId(null); // 현재 세션 ID 초기화
-        if (disconnectWebSocket) {
-          await disconnectWebSocket();
-        }
 
-        // Tanstack Query 캐시에서 해당 세션 제거
+        // Tanstack Query 캐시에서 해당 세션 제거 및 목록 무효화
         queryClient.setQueryData<CounselingSession[]>(
           counselingQueryKeys.lists(),
           (oldData: CounselingSession[] | undefined) => {
@@ -583,10 +592,7 @@ export function CounselingChatWindow() {
           }
         );
         queryClient.removeQueries({ queryKey: counselingQueryKeys.detail(couns_id) });
-
-        // 캐시 무효화
-        // await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(couns_id) });
-        await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
+        queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
 
         setIsSessionEndModalOpen(false);
         router.push('/counseling');
@@ -600,20 +606,35 @@ export function CounselingChatWindow() {
   };
 
   // 모달의 '레포트 발행하기' 버튼 클릭 시 실행될 함수
-  const handleConfirmCreateReport = () => {
+  const handleConfirmCreateReport = async () => {
     if (!couns_id || isDeleteSessionPending || isCreateReportPending) return;
+
+    // 먼저 웹소켓 연결을 정상적으로 해제 시도
+    if (disconnectWebSocket) {
+      try {
+        await disconnectWebSocket();
+        console.log('[Modal] WebSocket disconnected successfully before creating report.');
+      } catch (wsError) {
+        console.log('[Modal] Error disconnecting WebSocket before creating report:', wsError);
+        // 웹소켓 해제 실패가 레포트 생성을 막을 필요는 없을 수 있으므로, 로깅 후 계속 진행
+      }
+    }
+
     createReportMutation(couns_id, {
-      onSuccess: async (data) => {
+      onSuccess: (data) => {
+        // onSuccess는 더 이상 async일 필요 없음
         console.log(
           '[Modal] 레포트 생성 및 세션 종료 성공 (counsels/{counsId}/reports POST). Report ID:',
           data.sreportId
         );
-        if (disconnectWebSocket) {
-          await disconnectWebSocket();
-        }
+        // setIsCurrentSessionClosed(true); // createReportMutation이 서버에서 세션을 닫으므로, 클라이언트 상태는 다음 페이지 로드 시 API 응답으로 갱신됨
+        // setCurrentSessionId(null); // 위와 동일
 
-        // 캐시 무효화
-        // await queryClient.invalidateQueries({ queryKey: ['reports'] });
+        // 캐시 무효화 (레포트 목록 및 관련 상담 세션 상세)
+        queryClient.invalidateQueries({ queryKey: ['reports'] }); // 'reports'는 예시 키, 실제 사용하는 쿼리 키로 변경 필요
+        queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(couns_id) });
+        queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() }); // 상담 목록도 업데이트 (세션 종료 상태 반영 등)
+
         setIsSessionEndModalOpen(false);
         router.push('/reports');
       },
