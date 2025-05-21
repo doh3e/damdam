@@ -37,7 +37,7 @@ interface STTResponseData {
  */
 const requestSTT = async (data: STTRequestData): Promise<STTResponseData> => {
   const formData = new FormData();
-  formData.append('audioFile', data.audioFile, 'recording.webm'); // 파일 이름 지정 (서버에서 사용될 수 있음)
+  formData.append('audioFile', data.audioFile, 'recording.wav');
 
   // Next.js API Route는 현재 도메인을 사용하므로 전체 URL을 명시할 필요는 없지만,
   // 명확성을 위해 또는 외부 API를 호출하는 경우 전체 URL을 사용합니다.
