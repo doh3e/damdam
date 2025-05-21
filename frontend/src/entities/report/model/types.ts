@@ -45,3 +45,32 @@ export interface ReportDetailResponse {
     };
   }[];
 }
+
+export interface PeriodReportCreateRequest {
+  startDate: string;
+  endDate: string;
+}
+
+export interface PeriodReportCreateResponse {
+  preportId: number;
+}
+
+export interface PeriodReportDetail {
+  preportId: number;
+  preportTitle: string;
+  startDate: string;
+  endDate: string;
+  createdAt: string;
+  counselTime: number;
+  advice: string;
+  compliment: string;
+  summary: string;
+  worry: string;
+  counselings: {
+    counsId: number;
+    counsTitle: string;
+    createdAt: string;
+    updatedAt: string;
+    isClosed: boolean;
+  }[];
+}

@@ -80,18 +80,32 @@ export default function AppSettingsPage() {
   const updateSettings = async (extra?: Record<string, string | boolean>) => {
     const formData = new FormData();
 
+    // 필수 항목
+    formData.append('isDarkmode', String(isDarkmode));
+    formData.append('isAlarm', String(isAlarm));
+    // 선택 항목
+    formData.append('botCustom', botCustom);
+
     if (botImageFile) {
       formData.append('botImage', botImageFile);
     }
 
-    formData.append('isDarkmode', String(isDarkmode));
-    formData.append('isAlarm', String(isAlarm));
-    formData.append('botCustom', botCustom);
-
     if (extra) {
       Object.entries(extra).forEach(([key, value]) => {
-        formData.append(key, String(value));
+        if (!['isDarkmode', 'isAlarm'].includes(key)) {
+          formData.set(key, String(value));
+        }
       });
+    }
+
+    // ✅ 콘솔로 FormData 전체 출력
+    console.log('--- FormData 전송 내용 ---');
+    for (const [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}: [File] name=${value.name}, type=${value.type}, size=${value.size} bytes`);
+      } else {
+        console.log(`${key}: ${value}`);
+      }
     }
 
     try {
@@ -149,6 +163,7 @@ export default function AppSettingsPage() {
                 alt="담담이 프로필"
                 fill
                 className="object-cover cursor-pointer"
+                unoptimized // 외부 S3 이미지일 경우 필수
                 onClick={() => document.getElementById('botImageInput')?.click()}
               />
 
@@ -157,11 +172,11 @@ export default function AppSettingsPage() {
                 id="botImageInput"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => {
+                onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (file) {
                     setBotImageFile(file);
-                    updateSettings();
+                    await updateSettings(); // set 이후 updateSettings 동기 처리
                   }
                 }}
               />

@@ -119,3 +119,44 @@
     display: none; /* Chrome, Safari, Opera */
   }
 }
+
+.rdp-root {
+  --rdp-accent-color: #ff9134;
+  --rdp-accent-background-color: #fff7ed;
+  --rdp-day-width: 40px;
+  --rdp-day-height: 40px;
+  --rdp-day_button-width: 40px;
+  --rdp-day_button-height: 40px;
+  --rdp-day_button-border-radius: 100%;
+  font-family: 'Pretendard', 'sans-serif';
+  background: #fff;
+  border: 2px solid #fae9de; /* 연한 베이지 테두리 */
+  border-radius: 16px;
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.04);
+  padding: 0.5rem 0.5rem !important;
+}
+
+.calendar-small.rdp-root {
+  --rdp-day-width: 35px;
+  --rdp-day-height: 35px;
+  --rdp-day_button-width: 28px;
+  --rdp-day_button-height: 28px;
+  --rdp-day_button-border-radius: 100%;
+  --rdp-caption-font-size: 1rem;
+  --rdp-cell-size: 28px;
+  font-size: 0.93rem; /* 폰트도 함께 축소 */
+  padding: 0.5rem 0.5rem !important;
+  /* 가장자리 테두리 추가 */
+  border: 2px solid #ffe2c3; /* 연한 주황색, color_palete.md 참고 */
+  border-radius: 20px;
+}
+.calendar-small .rdp-caption_label {
+  font-size: 1rem;
+}
+.calendar-small .rdp-head_cell {
+  font-size: 0.95rem;
+  padding-bottom: 0.25rem;
+}
+.calendar-small .rdp-day {
+  font-size: 0.95rem;
+}
