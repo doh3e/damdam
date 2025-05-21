@@ -26,8 +26,8 @@ export default function ReportsPage() {
   const [sortOrder, setSortOrder] = useState('최신순');
 
   const [periodReports, setPeriodReports] = useState<PeriodReportDetail[]>([]);
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [startDate, setStartDate] = useState<Date>(new Date());
+  const [endDate, setEndDate] = useState<Date>(new Date());
   const [isCreating, setIsCreating] = useState(false);
 
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
@@ -108,8 +108,8 @@ export default function ReportsPage() {
       return;
     }
 
-    const formattedStart = format(startDate, 'yyyy-MM-dd');
-    const formattedEnd = format(endDate, 'yyyy-MM-dd');
+    const formattedStart = format(startDate, 'yyyyMMdd');
+    const formattedEnd = format(endDate, 'yyyyMMdd');
 
     console.log('보내는 바디:', { startDate: formattedStart, endDate: formattedEnd });
 

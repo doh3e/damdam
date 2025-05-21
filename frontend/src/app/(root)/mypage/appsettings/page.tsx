@@ -56,6 +56,13 @@ export default function AppSettingsPage() {
       setIsAlarm(data.isAlarm);
       setBotImageUrl(data.botImage);
       setBotCustom(data.botCustom);
+
+      if (!data.botCustom) {
+        setBotCustom('kind');
+        await updateSettings({ botCustom: 'kind' });
+      } else {
+        setBotCustom(data.botCustom);
+      }
     } catch (err) {
       console.error('설정 불러오기 실패:', err);
     }
