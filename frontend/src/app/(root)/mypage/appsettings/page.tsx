@@ -136,29 +136,33 @@ export default function AppSettingsPage() {
         </h2>
 
         <div className="space-y-6">
-          {/* 다크 모드 */}
-          <div className="flex items-center justify-between">
-            <span className="text-base">다크 모드</span>
-            <Switch
-              checked={isDarkmode}
-              onCheckedChange={async (checked) => {
-                setIsDarkmode(checked);
-                await updateSettings({ isDarkmode: checked });
-              }}
-            />
-          </div>
+          {/* 다크 모드 숨김 */}
+          {false && (
+            <div className="flex items-center justify-between">
+              <span className="text-base">다크 모드</span>
+              <Switch
+                checked={isDarkmode}
+                onCheckedChange={async (checked) => {
+                  setIsDarkmode(checked);
+                  await updateSettings({ isDarkmode: checked });
+                }}
+              />
+            </div>
+          )}
 
-          {/* 알림 수신 */}
-          <div className="flex items-center justify-between">
-            <span className="text-base">알림 수신</span>
-            <Switch
-              checked={isAlarm}
-              onCheckedChange={async (checked) => {
-                setIsAlarm(checked);
-                await updateSettings({ isAlarm: checked });
-              }}
-            />
-          </div>
+          {/* 알림 수신 숨김 */}
+          {false && (
+            <div className="flex items-center justify-between">
+              <span className="text-base">알림 수신</span>
+              <Switch
+                checked={isAlarm}
+                onCheckedChange={async (checked) => {
+                  setIsAlarm(checked);
+                  await updateSettings({ isAlarm: checked });
+                }}
+              />
+            </div>
+          )}
 
           {/* 프로필 이미지 */}
           <div>
