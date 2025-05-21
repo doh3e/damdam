@@ -8,7 +8,11 @@ import { useCounselingStore } from '@/features/counseling/model/counselingStore'
 import { useAuthStore } from '@/app/store/authStore';
 import { useFetchCounselingSessionDetail, counselingQueryKeys } from '@/entities/counseling/model/queries';
 import { useWebSocket, type StompSendUserMessagePayload } from '@/features/counseling/hooks/useWebSocket';
-import { useCloseCounselingSession, useCreateReportAndEndSession } from '@/entities/counseling/model/mutations';
+import {
+  useCloseCounselingSession,
+  useCreateReportAndEndSession,
+  useDeleteCounselingSession,
+} from '@/entities/counseling/model/mutations';
 import type { ChatMessage } from '@/entities/counseling/model/types';
 import type { CounselingSession } from '@/entities/counseling/model/types';
 
@@ -234,7 +238,7 @@ export function CounselingChatWindow() {
 
   // --- Automatic Session Ending Logic ---
   /** @constant {function} closeSessionMutation - 상담 세션을 종료하는 Tanstack Query 뮤테이션 함수. */
-  const { mutate: closeSessionMutation, isPending: isCloseSessionPending } = useCloseCounselingSession();
+  const { mutate: deleteSessionMutation, isPending: isDeleteSessionPending } = useDeleteCounselingSession();
   const { mutate: createReportMutation, isPending: isCreateReportPending } = useCreateReportAndEndSession();
 
   /**
@@ -268,80 +272,77 @@ export function CounselingChatWindow() {
       if (remainingTime <= 0) {
         // 이미 시간 초과, 즉시 종료 처리
         console.log(`[AutoEnd] Session ${couns_id} automatically ended due to inactivity (already expired).`);
-        closeSessionMutation(couns_id, {
+        deleteSessionMutation(couns_id, {
           onSuccess: async () => {
-            console.log(`[AutoEnd] Session ${couns_id} successfully closed via mutation.`);
+            console.log(`[AutoEnd] Session ${couns_id} successfully deleted via mutation.`);
             if (disconnectWebSocket) {
               await disconnectWebSocket();
             }
-            setIsCurrentSessionClosed(true); // Zustand 스토어 업데이트
+            setIsCurrentSessionClosed(true); // Zustand 스토어 업데이트 (세션이 닫혔거나 삭제되었음을 의미)
+            setCurrentSessionId(null); // 현재 세션 ID 초기화
 
-            // Tanstack Query 캐시 직접 업데이트
+            // Tanstack Query 캐시에서 해당 세션 제거
             queryClient.setQueryData<CounselingSession[]>(
               counselingQueryKeys.lists(),
               (oldData: CounselingSession[] | undefined) => {
                 if (!oldData) return undefined;
                 const numericCounsId = couns_id ? Number(couns_id) : NaN;
-                return oldData.map((session) =>
-                  session.counsId === numericCounsId ? { ...session, isClosed: true } : session
-                );
+                return oldData.filter((session) => session.counsId !== numericCounsId);
               }
             );
-            queryClient.setQueryData<CounselingSession>(
-              counselingQueryKeys.detail(couns_id),
-              (oldData: CounselingSession | undefined) => {
-                if (!oldData) return undefined;
-                return { ...oldData, isClosed: true };
-              }
-            );
+            queryClient.removeQueries({ queryKey: counselingQueryKeys.detail(couns_id) });
 
-            // 캐시 무효화
-            await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(couns_id) });
+            // 캐시 무효화 (이미 목록에서 제거했으므로, lists() 무효화는 선택적)
+            // await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(couns_id) }); // 이미 removeQueries로 제거
             await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
-            router.push('/counseling'); // 자동 종료 후 상담 목록으로 이동
+
+            // 사용자가 현재 이 채팅방에 있을 경우에만 라우팅
+            // 현재 URL의 couns_id와 일치하는지 확인하는 더 정확한 방법이 필요할 수 있음 (예: router.asPath)
+            // 여기서는 컴포넌트 스코프의 couns_id가 유효하고, params.couns_id와 일치하는지 간단히 확인
+            const currentPathCounsId = Array.isArray(params.couns_id) ? params.couns_id[0] : params.couns_id;
+            if (couns_id && currentPathCounsId === couns_id) {
+              router.push('/counseling'); // 자동 종료 후 상담 목록으로 이동
+            }
           },
           onError: (error) => {
-            console.error(`[AutoEnd] Failed to close session ${couns_id} automatically:`, error);
+            console.error(`[AutoEnd] Failed to delete session ${couns_id} automatically:`, error);
           },
         });
       } else {
         // 시간 남음, 타이머 설정
         autoEndTimerRef.current = setTimeout(async () => {
           console.log(`[AutoEnd] Session ${couns_id} automatically ended due to inactivity (timer expired).`);
-          closeSessionMutation(couns_id, {
+          deleteSessionMutation(couns_id, {
             onSuccess: async () => {
-              console.log(`[AutoEnd] Session ${couns_id} successfully closed via mutation (timer).`);
+              console.log(`[AutoEnd] Session ${couns_id} successfully deleted via mutation (timer).`);
               if (disconnectWebSocket) {
                 await disconnectWebSocket();
               }
               setIsCurrentSessionClosed(true); // Zustand 스토어 업데이트
+              setCurrentSessionId(null); // 현재 세션 ID 초기화
 
-              // Tanstack Query 캐시 직접 업데이트
+              // Tanstack Query 캐시에서 해당 세션 제거
               queryClient.setQueryData<CounselingSession[]>(
                 counselingQueryKeys.lists(),
                 (oldData: CounselingSession[] | undefined) => {
                   if (!oldData) return undefined;
                   const numericCounsId = couns_id ? Number(couns_id) : NaN;
-                  return oldData.map((session) =>
-                    session.counsId === numericCounsId ? { ...session, isClosed: true } : session
-                  );
+                  return oldData.filter((session) => session.counsId !== numericCounsId);
                 }
               );
-              queryClient.setQueryData<CounselingSession>(
-                counselingQueryKeys.detail(couns_id),
-                (oldData: CounselingSession | undefined) => {
-                  if (!oldData) return undefined;
-                  return { ...oldData, isClosed: true };
-                }
-              );
+              queryClient.removeQueries({ queryKey: counselingQueryKeys.detail(couns_id) });
 
               // 캐시 무효화
-              await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(couns_id) });
+              // await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(couns_id) });
               await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
-              router.push('/counseling'); // 자동 종료 후 상담 목록으로 이동
+
+              const currentPathCounsId = Array.isArray(params.couns_id) ? params.couns_id[0] : params.couns_id;
+              if (couns_id && currentPathCounsId === couns_id) {
+                router.push('/counseling'); // 자동 종료 후 상담 목록으로 이동
+              }
             },
             onError: (error) => {
-              console.error(`[AutoEnd] Failed to close session ${couns_id} automatically (timer):`, error);
+              console.error(`[AutoEnd] Failed to delete session ${couns_id} automatically (timer):`, error);
             },
           });
         }, remainingTime);
@@ -362,7 +363,7 @@ export function CounselingChatWindow() {
     storeIsCurrentSessionClosed,
     lastUserActivityTime,
     token,
-    closeSessionMutation, // 뮤테이션 함수 직접 사용
+    deleteSessionMutation,
     disconnectWebSocket,
     queryClient,
     setIsCurrentSessionClosed,
@@ -514,20 +515,36 @@ export function CounselingChatWindow() {
 
   // 모달의 '상담만 종료하기' 버튼 클릭 시 실행될 함수
   const handleConfirmEndSession = () => {
-    if (!couns_id || isCloseSessionPending || isCreateReportPending) return;
-    closeSessionMutation(couns_id, {
+    if (!couns_id || isDeleteSessionPending || isCreateReportPending) return;
+    deleteSessionMutation(couns_id, {
       onSuccess: async () => {
-        console.log('[Modal] 상담 세션 종료 성공 (counsels/{counsId} POST)');
+        console.log('[Modal] 상담 세션 삭제 성공 (counsels/{counsId} DELETE)');
         setIsCurrentSessionClosed(true); // Zustand 스토어 업데이트
+        setCurrentSessionId(null); // 현재 세션 ID 초기화
         if (disconnectWebSocket) {
           await disconnectWebSocket();
         }
+
+        // Tanstack Query 캐시에서 해당 세션 제거
+        queryClient.setQueryData<CounselingSession[]>(
+          counselingQueryKeys.lists(),
+          (oldData: CounselingSession[] | undefined) => {
+            if (!oldData) return undefined;
+            const numericCounsId = couns_id ? Number(couns_id) : NaN;
+            return oldData.filter((session) => session.counsId !== numericCounsId);
+          }
+        );
+        queryClient.removeQueries({ queryKey: counselingQueryKeys.detail(couns_id) });
+
+        // 캐시 무효화
+        // await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(couns_id) });
+        await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
+
         setIsSessionEndModalOpen(false);
         router.push('/counseling');
-        return; // 명시적 void 반환 시도
       },
       onError: (error) => {
-        console.error('[Modal] 상담 세션 종료 실패:', error);
+        console.error('[Modal] 상담 세션 삭제 실패:', error);
         setIsSessionEndModalOpen(false);
         // 에러 토스트 메시지 등 표시 가능
       },
@@ -536,16 +553,18 @@ export function CounselingChatWindow() {
 
   // 모달의 '레포트 발행하기' 버튼 클릭 시 실행될 함수
   const handleConfirmCreateReport = () => {
-    if (!couns_id || isCloseSessionPending || isCreateReportPending) return;
+    if (!couns_id || isDeleteSessionPending || isCreateReportPending) return;
     createReportMutation(couns_id, {
-      onSuccess: async () => {
-        console.log('[Modal] 레포트 생성 및 세션 종료 성공 (counsels/{counsId}/reports POST)');
+      onSuccess: async (data) => {
+        console.log(
+          '[Modal] 레포트 생성 및 세션 종료 성공 (counsels/{counsId}/reports POST). Report ID:',
+          data.sreportId
+        );
         if (disconnectWebSocket) {
           await disconnectWebSocket();
         }
         setIsSessionEndModalOpen(false);
         router.push('/reports');
-        return; // 명시적 void 반환 시도
       },
       onError: (error) => {
         console.error('[Modal] 레포트 생성 및 세션 종료 실패:', error);
@@ -582,7 +601,7 @@ export function CounselingChatWindow() {
                 variant="destructive"
                 className="bg-tomato-red hover:bg-tomato-red/90 text-white dark:bg-pale-coral-pink dark:hover:bg-pale-coral-pink/90 dark:text-charcoal-black"
                 size="sm"
-                disabled={isCloseSessionPending || isCreateReportPending}
+                disabled={isDeleteSessionPending || isCreateReportPending}
               >
                 <LogOut size={16} className="mr-2" />
                 상담 종료
@@ -619,7 +638,7 @@ export function CounselingChatWindow() {
         onConfirmReport={handleConfirmCreateReport}
         onConfirmEnd={handleConfirmEndSession}
         isReportPending={isCreateReportPending}
-        isEndPending={isCloseSessionPending}
+        isEndPending={isDeleteSessionPending}
       />
     </>
   );
