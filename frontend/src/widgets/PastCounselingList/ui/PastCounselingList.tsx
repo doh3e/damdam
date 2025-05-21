@@ -248,117 +248,88 @@ export function PastCounselingList() {
       {/* 중앙: 과거 상담 목록 (스크롤 가능 영역) */}
       <CardContent className="flex-1 overflow-hidden p-0">
         <ScrollArea className="h-full w-full p-4">
-          {/* 1. 로딩 상태 처리 */}
-          {(isLoadingPastSessions || isLoadingReports) && ( // 로딩 상태 통합
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full rounded-lg" />
-              ))}
-            </div>
-          )}
-
-          {/* 2. 에러 상태 처리 */}
-          {isErrorPastSessions && ( // 에러 상태 변수 사용
-            <Alert variant="destructive">
-              <Terminal className="h-4 w-4" />
-              <AlertTitle>오류</AlertTitle>
+          {isLoadingPastSessions ? (
+            // 로딩 중 스켈레톤 UI
+            Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className="flex items-center space-x-3 p-3 mb-2 rounded-lg bg-muted">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-2 flex-grow">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
+            ))
+          ) : isErrorPastSessions ? (
+            // 에러 발생 시 알림
+            <Alert variant="destructive" className="m-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>오류 발생</AlertTitle>
               <AlertDescription>
-                상담 목록을 불러오는 중 오류가 발생했습니다.
-                {errorPastSessions?.message?.includes('신뢰할 수 없는 자격증명') ? ( // 에러 객체 변수 사용
-                  <div className="mt-2">
-                    <p>로그인이 필요합니다.</p>
-                    <Button variant="outline" size="sm" className="mt-2" onClick={handleAuthError}>
-                      로그인하기
-                    </Button>
-                  </div>
-                ) : (
-                  errorPastSessions?.message // 에러 객체 변수 사용
-                )}
+                상담 목록을 불러오는 중 오류가 발생했습니다: {errorPastSessions?.message || '알 수 없는 오류'}
               </AlertDescription>
             </Alert>
-          )}
+          ) : pastSessions && pastSessions.length > 0 ? (
+            // 상담 목록 렌더링
+            pastSessions.map((session) => {
+              const isReported = reportedCounsIdsSet.has(session.counsId);
+              const isActiveSession = currentViewingCounsId === String(session.counsId);
 
-          {/* 3. 데이터 로딩 성공 시 */}
-          {!isLoadingPastSessions && !isErrorPastSessions && (
-            <div className="space-y-2 min-h-[300px]">
-              {/* 3a. 목록이 비어있을 경우 */}
-              {pastSessions && pastSessions.length === 0 && (
-                <div className="text-center text-gray-500 dark:text-gray-400 py-10">
-                  <MessageSquareText className="mx-auto h-12 w-12 text-gray-400" />
-                  <p className="mt-2 text-sm">과거 상담 내역이 없습니다.</p>
-                  <p className="text-xs">새 상담을 시작해보세요.</p>
-                </div>
-              )}
-
-              {/* 3b. 목록이 있을 경우 */}
-              {pastSessions &&
-                pastSessions.length > 0 &&
-                pastSessions.map((session) => {
-                  // counsId가 있는지 확인하고 유효한 키 생성
-                  if (!session?.counsId) return null;
-
-                  const sessionIdString = String(session.counsId);
-                  const isActive = currentViewingCounsId === sessionIdString;
-                  const hasReport = reportedCounsIdsSet.has(session.counsId);
-
-                  return (
-                    <div key={sessionIdString} className="relative group mb-2">
-                      <Link
-                        href={`/counseling/${sessionIdString}`}
-                        className={`block rounded-lg transition-colors p-3 pr-16 ${
-                          isActive
-                            ? 'bg-primary/10 dark:bg-primary/20 ring-2 ring-primary'
-                            : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700'
-                        }`}
+              return (
+                <div key={session.counsId} className="flex items-center justify-between mb-2 group">
+                  <Link
+                    href={`/counseling/${session.counsId}`}
+                    passHref
+                    className="flex-grow" // Link가 영역을 차지하도록
+                  >
+                    <PastCounselingListItem session={session} isActive={isActiveSession} showTitle={true} />
+                  </Link>
+                  <div className="flex items-center space-x-1 opacity-100 transition-opacity pr-2">
+                    {isLoadingReports ? (
+                      <Skeleton className="h-6 w-12 rounded-md" /> // 버튼 영역 스켈레톤
+                    ) : isReported ? (
+                      // 레포트가 있는 경우: 수정 버튼만 표시 (오른쪽 끝)
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleOpenTitleEditModal(e, session)}
+                        title="상담 제목 수정"
+                        className="text-muted-foreground hover:text-primary"
                       >
-                        <h3 className="font-semibold text-sm truncate text-slate-800 dark:text-slate-100">
-                          {session.counsTitle || '제목 없음'}
-                        </h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {new Date(session.createdAt).toLocaleString('ko-KR', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
-                      </Link>
-                      {/* 버튼 영역: 오른쪽 상단에 위치 */}
-                      <div className="absolute top-1/2 right-3 transform -translate-y-1/2 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {isLoadingReports ? (
-                          <Skeleton className="h-7 w-14 rounded-md" />
-                        ) : hasReport ? (
-                          // 레포트가 있으면 제목 수정 버튼 (삭제 버튼 위치)
-                          <Button
-                            variant="ghost"
-                            size="icon" // icon_sm 대신 icon 사용 (Shadcn 기본 아이콘 버튼 크기)
-                            onClick={(e) => handleOpenTitleEditModal(e, session)}
-                            title="상담 제목 수정"
-                            className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 p-1" // 패딩 조정으로 크기 미세조정
-                          >
-                            <Edit size={16} />
-                          </Button>
-                        ) : (
-                          // 레포트가 없으면 삭제 버튼
-                          <Button
-                            variant="ghost"
-                            size="icon" // icon_sm 대신 icon 사용
-                            onClick={(e) => handleDeleteSession(e, session.counsId)}
-                            title="상담 기록 삭제"
-                            className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-1" // 패딩 조정
-                          >
-                            <Trash2 size={16} />
-                          </Button>
-                        )}
-                        {/* 원래 제목 수정 버튼이 별도로 있었다면, 그 위치는 여기서 고려하지 않음.
-                            요청은 "삭제 버튼이 없는 경우, 삭제 버튼 위치에 제목 수정 버튼" 이었음.
-                            만약 hasReport가 true일 때도 다른 위치에 제목 수정 버튼이 필요하다면 추가 구현 필요.
-                         */}
-                      </div>
-                    </div>
-                  );
-                })}
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      // 레포트가 없는 경우: 수정 버튼과 삭제 버튼 표시
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handleOpenTitleEditModal(e, session)}
+                          title="상담 제목 수정"
+                          className="text-muted-foreground hover:text-primary"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handleDeleteSession(e, session.counsId)}
+                          title="상담 삭제"
+                          className="text-destructive hover:text-red-500"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            // 상담 내역이 없는 경우
+            <div className="flex flex-col items-center justify-center h-full text-center p-6">
+              <MessageSquareText className="w-12 h-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium">상담 내역이 없습니다.</h3>
+              <p className="text-muted-foreground">새로운 상담을 시작해보세요!</p>
             </div>
           )}
         </ScrollArea>
@@ -371,15 +342,12 @@ export function PastCounselingList() {
             <DialogTitle>상담 제목 수정</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="title" className="text-right col-span-1">
-                제목
-              </label>
+            <div className="flex justify-center items-center gap-4">
               <Input
                 id="title"
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
-                className="col-span-3"
+                className="w-3/4"
                 maxLength={30}
                 placeholder="30자 이내로 입력해주세요"
               />
