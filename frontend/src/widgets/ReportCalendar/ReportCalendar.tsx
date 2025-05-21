@@ -1,17 +1,19 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Calendar } from '@/shared/ui/calendar';
-// import { getReportDates } from '@/entities/report/model/api';
-import { useQuery } from '@tanstack/react-query';
-import { format } from 'date-fns';
 
 interface ReportCalendarProps {
   selectedDate: Date;
   onSelectDate: (date: Date) => void;
+  type?: 'single' | 'range'; // 'single': 상담별 / 'range': 기간별
 }
 
-// 임시로 보고 날짜 하이라이트 없이 동작하도록 변경
-export function ReportCalendar({ selectedDate, onSelectDate }: ReportCalendarProps) {
+export function ReportCalendar({ selectedDate, onSelectDate, type = 'single' }: ReportCalendarProps) {
+  const calendarClass =
+    type === 'single'
+      ? '' // 기본 스타일
+      : 'calendar-small'; // 기간별 스타일
+
   return (
     <div className="flex justify-center mb-4">
       <Calendar
@@ -20,7 +22,7 @@ export function ReportCalendar({ selectedDate, onSelectDate }: ReportCalendarPro
         onSelect={(date: Date | undefined) => {
           if (date) onSelectDate(date);
         }}
-        className="rounded border p-5"
+        className={calendarClass}
       />
     </div>
   );
