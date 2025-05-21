@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import type { PeriodReport } from '@/entities/report/model/types';
+import Link from 'next/link';
 
 interface Props {
   reports: PeriodReport[];
@@ -17,11 +18,13 @@ export function PeriodReportList({ reports, isLoading, onUpdate, onDelete }: Pro
     <ul className="space-y-4">
       {reports.map((r) => (
         <li key={r.preportId} className="relative bg-[#f5f5f5] rounded-xl p-4 shadow hover:shadow-md transition">
-          <div className="font-bold text-base mb-1">{r.preportTitle}</div>
-          <div className="text-sm text-gray-600 mb-2">
-            {r.startDate} ~ {r.endDate}
-          </div>
-          <div className="text-xs text-gray-400">생성일: {new Date(r.createdAt).toLocaleString('ko-KR')}</div>
+          <Link href={`/reports/periodic/${r.preportId}`} className="block">
+            <div className="font-bold text-base mb-1">{r.preportTitle}</div>
+            <div className="text-sm text-gray-600 mb-2">
+              {r.startDate} ~ {r.endDate}
+            </div>
+            <div className="text-xs text-gray-400">생성일: {new Date(r.createdAt).toLocaleString('ko-KR')}</div>
+          </Link>
 
           {/* 버튼 영역 */}
           <div className="absolute top-3 right-3 flex gap-2">

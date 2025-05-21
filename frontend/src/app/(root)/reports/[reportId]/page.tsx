@@ -44,7 +44,7 @@ export default function ReportDetailPage() {
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-xl shadow space-y-6">
       <div>
         <div className='className="text-xl font-bold flex items-center gap-5'>
-          <button onClick={() => (window.location.href = '/reports')} className="text-lg">
+          <button onClick={() => router.back()} className="text-lg">
             <FontAwesomeIcon icon={faArrowLeft} />
           </button>
           <h2 className="text-xl font-bold">상담 세션 상세</h2>
