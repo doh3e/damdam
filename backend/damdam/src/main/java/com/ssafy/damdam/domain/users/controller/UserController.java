@@ -1,20 +1,33 @@
 package com.ssafy.damdam.domain.users.controller;
 
-import com.ssafy.damdam.domain.users.dto.user.*;
+import java.io.IOException;
+
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.ssafy.damdam.domain.users.dto.user.ProfileInputDto;
+import com.ssafy.damdam.domain.users.dto.user.ProfileOutputDto;
+import com.ssafy.damdam.domain.users.dto.user.UserSettingInputDto;
+import com.ssafy.damdam.domain.users.dto.user.UserSettingOutputDto;
+import com.ssafy.damdam.domain.users.dto.user.UserSurveyInputDto;
+import com.ssafy.damdam.domain.users.dto.user.UserSurveyOutputDto;
 import com.ssafy.damdam.domain.users.entity.Age;
 import com.ssafy.damdam.domain.users.entity.Gender;
 import com.ssafy.damdam.domain.users.entity.Mbti;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import com.ssafy.damdam.domain.users.service.UserService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -32,11 +45,11 @@ public class UserController {
 
 	@PatchMapping(value = "/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<Void> patchProfile(
-		@RequestPart(value = "nickname", required = true) String nickname,
-		@RequestPart(value = "age", required = false) String age,
-		@RequestPart(value = "gender", required = false) String gender,
-		@RequestPart(value = "career", required = false) String career,
-		@RequestPart(value = "mbti", required = false) String mbti,
+		@RequestParam(value = "nickname", required = true) String nickname,
+		@RequestParam(value = "age", required = false) String age,
+		@RequestParam(value = "gender", required = false) String gender,
+		@RequestParam(value = "career", required = false) String career,
+		@RequestParam(value = "mbti", required = false) String mbti,
 		@RequestPart(value = "profileImage", required = false) MultipartFile file
 	) throws IOException {
 
@@ -60,10 +73,10 @@ public class UserController {
 
 	@PatchMapping(value = "/setting", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<Void> patchSetting(
-			@RequestPart (value = "isDarkmode", required = true) Boolean isDarkmode,
-			@RequestPart (value = "isAlarm", required = true) Boolean isAlarm,
-			@RequestPart (value = "botCustom", required = false) String botCustom,
-			@RequestPart (value = "botImage", required = false) MultipartFile file
+		@RequestParam(value = "isDarkmode", required = true) Boolean isDarkmode,
+		@RequestParam(value = "isAlarm", required = true) Boolean isAlarm,
+		@RequestParam(value = "botCustom", required = false) String botCustom,
+		@RequestPart(value = "botImage", required = false) MultipartFile file
 	) throws IOException {
 
 		UserSettingInputDto userSettingInputDto = UserSettingInputDto.builder()
