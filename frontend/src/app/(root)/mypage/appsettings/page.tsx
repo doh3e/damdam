@@ -50,12 +50,12 @@ export default function AppSettingsPage() {
         botCustom: string;
       }>('/users/setting');
 
+      // zustand 저장
       setNickname(data.nickname);
       setEmail(data.email);
       setIsDarkmode(data.isDarkmode);
       setIsAlarm(data.isAlarm);
       setBotImageUrl(data.botImage);
-      setBotCustom(data.botCustom);
 
       if (!data.botCustom) {
         setBotCustom('kind');
@@ -83,17 +83,17 @@ export default function AppSettingsPage() {
     }
   }, [botImageFile, botImageUrl]);
 
-  // 설정 저장
-  const updateSettings = async (extra?: Record<string, string | boolean>) => {
-    const formData = new FormData();
+  // 설정 자동 저장
+  const updateSettings = async (extra?: Record<string, string | boolean>, extraImageFile?: File | null) => {
+    const formData = new FormData(); // formdata 생성
 
-    // 필수 항목
-    formData.append('isDarkmode', String(isDarkmode));
-    formData.append('isAlarm', String(isAlarm));
-    // 선택 항목
-    formData.append('botCustom', botCustom);
+    // extra에 값이 있으면 그걸 우선 사용, 없으면 상태값 사용
+    formData.append('isDarkmode', String(extra?.isDarkmode ?? isDarkmode));
+    formData.append('isAlarm', String(extra?.isAlarm ?? isAlarm));
 
-    if (botImageFile) {
+    if (extraImageFile) {
+      formData.append('botImage', extraImageFile); // 직접 받은 파일 우선
+    } else if (botImageFile) {
       formData.append('botImage', botImageFile);
     }
 
@@ -105,7 +105,7 @@ export default function AppSettingsPage() {
       });
     }
 
-    // ✅ 콘솔로 FormData 전체 출력
+    // 콘솔로 FormData 전체 출력
     console.log('--- FormData 전송 내용 ---');
     for (const [key, value] of formData.entries()) {
       if (value instanceof File) {
@@ -182,8 +182,8 @@ export default function AppSettingsPage() {
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (file) {
-                    setBotImageFile(file);
-                    await updateSettings(); // set 이후 updateSettings 동기 처리
+                    await updateSettings(undefined, file);
+                    setBotImageFile(null);
                   }
                 }}
               />
