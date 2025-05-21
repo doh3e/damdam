@@ -664,10 +664,11 @@ export function CounselingChatWindow() {
         <CardFooter className="p-3 border-t border-light-gray dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-800 z-10">
           <SendMessageForm
             currentCounsId={couns_id!}
-            disabled={isEffectivelyClosed || !isWebSocketConnected || isAiTyping} // 세션 종료 또는 웹소켓 미연결 또는 AI 답변 생성 중일 때 비활성화
+            disabled={isEffectivelyClosed || !isWebSocketConnected} // 세션 종료 또는 웹소켓 미연결일 경우 비활성화
             isWebSocketConnected={isWebSocketConnected} // isWebSocketConnected prop 전달 추가
             sendUserMessage={handleSendUserMessage} // 래핑된 메시지 전송 함수 전달
             onUserActivity={() => setLastUserActivityTime(Date.now())} // 사용자 입력 활동 시 시간 업데이트
+            isAiTyping={isAiTyping}
           />
         </CardFooter>
       </Card>

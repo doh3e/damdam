@@ -11,6 +11,7 @@ import UserAvatar from '@/entities/user/ui/UserAvatar'; // 방금 만든 UserAva
 import { AiProfile } from '@/entities/user/model/types'; // AI 프로필 타입 임포트
 import { cn } from '@/shared/lib/utils'; // Tailwind CSS 클래스 병합 유틸리티
 import RecommendedContentItem from './RecommendedContentItem'; // 추천 콘텐츠 컴포넌트 임포트
+import { Volume2 } from 'lucide-react'; // 스피커 아이콘 import
 
 /**
  * ChatBubble 컴포넌트의 Props 인터페이스
@@ -114,7 +115,13 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
             </div>
           )}
         </div>
-        <span className="text-xs text-muted-foreground self-end whitespace-nowrap">{formattedTime}</span>
+        <span className="text-xs text-muted-foreground self-end whitespace-nowrap">
+          {/* 사용자 메시지이고 음성 메시지인 경우 아이콘 표시 */}
+          {formattedTime}
+          {isUserMessage && message.isVoice && (
+            <Volume2 size={14} className="ml-2 inline-block text-black dark:text-white" />
+          )}
+        </span>
       </div>
     </div>
   );
