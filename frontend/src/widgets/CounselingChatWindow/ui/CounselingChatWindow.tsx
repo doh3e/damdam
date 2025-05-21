@@ -563,6 +563,9 @@ export function CounselingChatWindow() {
         if (disconnectWebSocket) {
           await disconnectWebSocket();
         }
+
+        // 캐시 무효화
+        // await queryClient.invalidateQueries({ queryKey: ['reports'] });
         setIsSessionEndModalOpen(false);
         router.push('/reports');
       },

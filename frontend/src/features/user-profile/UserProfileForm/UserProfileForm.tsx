@@ -224,7 +224,7 @@ export default function UserProfileForm() {
       </button>
 
       {/* 모달 */}
-      {showAlert && <AlertModal message="프로필이 성공적으로 저장되었습니다!" onClose={() => setShowAlert(false)} />}
+      {showAlert && <AlertModal message="성공적으로 저장되었습니다!" onClose={() => setShowAlert(false)} />}
       {showErrorAlert && <AlertModal message="저장에 실패하였습니다." onClose={() => setErrorAlert(false)} />}
     </form>
   );
