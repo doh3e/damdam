@@ -6,7 +6,7 @@
  * FSD 아키텍처에 따라 `features` 레이어의 `counseling` 슬라이스 내 `ui`에 위치합니다.
  */
 import { useState } from 'react';
-import { Pencil } from 'lucide-react';
+import { Edit } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import EditCounselingTitleForm from './EditCounselingTitleForm';
 
@@ -48,7 +48,7 @@ const EditCounselingTitleButton = ({
         aria-label="상담 제목 수정"
         title="상담 제목 수정"
       >
-        <Pencil className="h-4 w-4" />
+        <Edit className="h-4 w-4" />
       </Button>
 
       <EditCounselingTitleForm
