@@ -71,6 +71,8 @@ const SendMessageForm = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
+  const { setVoiceStateForMessage } = useCounselingStore.getState();
+
   // STT 결과가 변경되면 입력창에 반영
   useEffect(() => {
     const sttResult = useSTTStore.getState().sttResultText;
@@ -236,6 +238,12 @@ const SendMessageForm = ({
       };
       sendUserMessage(payload);
       console.log('[SendMessageForm] Message sent via WebSocket:', payload);
+
+      if (payload.isVoice && currentCounsId) {
+        const messageKey = `${currentCounsId}-${payload.messageOrder}`;
+        useCounselingStore.getState().setVoiceStateForMessage(messageKey, true);
+        console.log(`[SendMessageForm] Voice message state saved to map. Key: ${messageKey}`);
+      }
 
       if (payload.isVoice && localAudioBlob && currentCounsId) {
         console.log(

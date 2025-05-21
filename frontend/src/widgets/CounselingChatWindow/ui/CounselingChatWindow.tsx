@@ -66,16 +66,17 @@ export function CounselingChatWindow() {
 
   // Zustand 스토어에서 상담 관련 상태 및 액션들을 가져옵니다.
   const {
-    setCurrentSessionId, // 현재 활성화된 상담 세션 ID를 스토어에 설정하는 함수.
-    setMessages, // 현재 세션의 메시지 목록을 스토어에 설정하는 함수.
-    setIsCurrentSessionClosed, // 현재 세션의 종료 상태를 스토어에 설정하는 함수.
-    currentSessionId, // 스토어에 저장된 현재 상담 세션 ID.
+    setCurrentSessionId,
+    setMessages,
+    setIsCurrentSessionClosed,
+    currentSessionId,
     messages, // 스토어에 저장된 현재 세션의 메시지 목록.
-    isAiTyping, // AI가 현재 타이핑 중인지 여부.
-    isCurrentSessionClosed: storeIsCurrentSessionClosed, // 스토어에 저장된 현재 세션의 종료 상태.
-    lastUserActivityTime, // 현재 세션에서 마지막 사용자 활동 시간 (타임스탬프).
-    setLastUserActivityTime, // 마지막 사용자 활동 시간을 스토어에 설정하는 함수.
-    setIsAiTyping, // AI 타이핑 상태를 스토어에 설정하는 함수.
+    isAiTyping,
+    isCurrentSessionClosed: storeIsCurrentSessionClosed,
+    lastUserActivityTime,
+    setLastUserActivityTime,
+    setIsAiTyping,
+    voiceMessageMap, // isVoice 상태를 저장하는 맵
   } = useCounselingStore();
 
   /** @ref {NodeJS.Timeout | null} autoEndTimerRef - 자동 세션 종료를 위한 타이머 ID를 저장하는 ref. */
@@ -149,26 +150,44 @@ export function CounselingChatWindow() {
       const messagesFromServer = sessionDetail.messageList || [];
       const isClosedFromServer = sessionDetail.isClosed || false;
 
-      setMessages(
-        messagesFromServer.map(
-          (msg) =>
-            ({
-              ...msg,
-              id: msg.id || `${msg.timestamp}-${msg.messageOrder || Math.random()}`,
-              counsId: sessionDetail.counsId,
-            }) as ChatMessage
-        )
-      );
+      // Zustand 스토어의 현재 메시지 목록과 세션 ID를 가져옵니다.
+      const storeMessages = useCounselingStore.getState().messages;
+      const storeCurrentCounsId = useCounselingStore.getState().currentSessionId;
+
+      // 메시지 목록을 업데이트해야 하는 경우:
+      // 1. 스토어의 메시지 목록이 비어있을 때 (초기 로드)
+      // 2. API에서 가져온 세션 ID가 스토어의 현재 세션 ID와 다를 때 (다른 세션으로 막 전환된 경우)
+      // 3. 또는, API에서 가져온 세션 ID와 스토어의 세션 ID는 같지만, 스토어 메시지가 아직 없을 때 (새로고침 후 첫 로드)
+      if (
+        storeMessages.length === 0 ||
+        String(sessionDetail.counsId) !== storeCurrentCounsId ||
+        (String(sessionDetail.counsId) === storeCurrentCounsId && storeMessages.length === 0)
+      ) {
+        // voiceMessageMap을 사용하여 isVoice 상태 복원
+        const currentCounsIdStr = String(sessionDetail.counsId); // voiceMessageMap의 키와 일치시키기 위해 문자열로 변환
+        const messagesWithVoiceState = messagesFromServer.map((msg) => {
+          const messageKey = `${currentCounsIdStr}-${msg.messageOrder}`;
+          const knownIsVoice = voiceMessageMap[messageKey];
+
+          return {
+            ...msg,
+            id: msg.id || `${msg.timestamp}-${msg.messageOrder || Math.random()}`,
+            counsId: sessionDetail.counsId,
+            isVoice: knownIsVoice === true ? true : msg.isVoice,
+          } as ChatMessage;
+        });
+
+        setMessages(messagesWithVoiceState);
+      }
 
       setIsCurrentSessionClosed(isClosedFromServer);
 
       if (!isClosedFromServer) {
-        // 세션이 서버 기준으로 열려 있다면, 사용자 활동으로 간주하고 마지막 활동 시간 업데이트
         setLastUserActivityTime(Date.now());
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionDetail]); // setMessages 등은 Zustand에서 안정적이므로 제외 가능
+  }, [sessionDetail, voiceMessageMap]); // setMessages, setIsCurrentSessionClosed, setLastUserActivityTime는 의존성 배열에서 제거 (Zustand action)
 
   /**
    * @effect 상담 세션 종료 상태 변경 감지 및 STT 상태 초기화.
@@ -221,7 +240,7 @@ export function CounselingChatWindow() {
       !!token && !!couns_id && (storeIsCurrentSessionClosed === null || storeIsCurrentSessionClosed === false),
     isSessionClosed: storeIsCurrentSessionClosed === null ? false : storeIsCurrentSessionClosed, // 훅 내부에 세션 상태 전달
     debug: process.env.NODE_ENV === 'development',
-    onMessageReceived: () => {
+    onMessageReceived: useCallback(() => {
       // AI로부터 메시지를 수신하면 사용자가 활동한 것으로 간주하여 마지막 활동 시간을 업데이트.
       if (storeIsCurrentSessionClosed === null || storeIsCurrentSessionClosed === false) {
         setLastUserActivityTime(Date.now());
@@ -231,7 +250,7 @@ export function CounselingChatWindow() {
       // 우선 여기서 간단히 모든 메시지 수신 시 false로 설정합니다.
       // 특정 에러(messageOrder=20)도 AI의 '응답'으로 간주하여 타이핑 상태를 해제합니다.
       setIsAiTyping(false);
-    },
+    }, [storeIsCurrentSessionClosed, setLastUserActivityTime, setIsAiTyping]),
   });
 
   /**

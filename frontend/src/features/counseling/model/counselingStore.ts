@@ -4,7 +4,7 @@
  * FSD 아키텍처에 따라 `features` 레이어의 `counseling` 슬라이스 내 `model`에 위치합니다.
  */
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware'; // Zustand 개발자 도구 (선택 사항)
+import { devtools, persist, createJSONStorage } from 'zustand/middleware';
 import { type Client as StompClient, type StompSubscription } from '@stomp/stompjs'; // StompJs 대신 StompClient, StompSubscription 직접 임포트
 import { type ChatMessage, type CounselingSession } from '@/entities/counseling/model/types';
 
@@ -45,6 +45,7 @@ interface CounselingState {
   currentSessionDetails: CounselingSession | null;
   /** 마지막 사용자 활동 시간 */
   lastUserActivityTime: number | null;
+  voiceMessageMap: Record<string, boolean>; // 메시지 키(예: 'counsId-messageOrder')와 isVoice 상태 매핑
 }
 
 /**
@@ -75,6 +76,8 @@ interface CounselingActions {
   setCurrentSessionDetails: (session: CounselingSession | null) => void;
   /** 마지막 사용자 활동 시간을 설정합니다. */
   setLastUserActivityTime: (time: number | null) => void;
+  setVoiceStateForMessage: (messageKey: string, isVoice: boolean) => void;
+  clearVoiceStateForSession: (sessionId: string) => void;
 }
 
 /**
@@ -90,6 +93,7 @@ const initialState: CounselingState = {
   newMessageInput: '',
   currentSessionDetails: null,
   lastUserActivityTime: null,
+  voiceMessageMap: {}, // 초기 voiceMessageMap
 };
 
 /**
@@ -99,40 +103,88 @@ const initialState: CounselingState = {
  */
 export const useCounselingStore = create<CounselingState & CounselingActions>()(
   devtools(
-    // Zustand 개발자 도구 연동 (Redux DevTools Extension 필요)
-    (set, get) => ({
-      ...initialState,
+    persist(
+      (set, get) => ({
+        ...initialState,
 
-      setCurrentSessionId: (sessionId) => set({ currentSessionId: sessionId }),
+        setCurrentSessionId: (sessionId) => {
+          const oldSessionId = get().currentSessionId;
+          if (oldSessionId && oldSessionId !== sessionId) {
+            // 세션 ID가 변경되면, 메시지 목록과 AI 타이핑 상태를 초기화합니다.
+            // 다른 상태들은 CounselingChatWindow.tsx 또는 각 기능별 로직에서 관리됩니다.
+            set({
+              messages: [],
+              isAiTyping: false,
+              // currentSessionId는 아래에서 sessionId로 설정됩니다.
+              // isCurrentSessionClosed는 CounselingChatWindow의 useEffect에서 관리하므로 여기서 null이나 false로 설정하지 않습니다.
+              // websocketStatus는 웹소켓 연결 시도 시 변경됩니다.
+              // error는 에러 발생 시 설정됩니다.
+              // newMessageInput은 입력 필드에서 관리됩니다.
+              // currentSessionDetails는 API 응답으로 설정되므로 여기서 null로 설정하지 않습니다.
+              // lastUserActivityTime은 CounselingChatWindow의 useEffect에서 관리하므로 여기서 null로 설정하지 않습니다.
+            });
+          }
+          set({ currentSessionId: sessionId });
+        },
 
-      setIsCurrentSessionClosed: (isClosed) => set({ isCurrentSessionClosed: isClosed }),
+        setIsCurrentSessionClosed: (isClosed) => set({ isCurrentSessionClosed: isClosed }),
 
-      setMessages: (messages) => set({ messages }),
+        setMessages: (messages) => set({ messages }),
 
-      addMessage: (message) =>
-        set((state) => ({
-          messages: [...state.messages, message],
-        })),
+        addMessage: (message) =>
+          set((state) => ({
+            messages: [...state.messages, message],
+          })),
 
-      updateMessage: (messageId, updatedFields) =>
-        set((state) => ({
-          messages: state.messages.map((msg) => (msg.id === messageId ? { ...msg, ...updatedFields } : msg)),
-        })),
+        updateMessage: (messageId, updatedFields) =>
+          set((state) => ({
+            messages: state.messages.map((msg) => (msg.id === messageId ? { ...msg, ...updatedFields } : msg)),
+          })),
 
-      setWebsocketStatus: (status) => set({ websocketStatus: status }),
+        setWebsocketStatus: (status) => set({ websocketStatus: status }),
 
-      setIsAiTyping: (isTyping) => set({ isAiTyping: isTyping }),
+        setIsAiTyping: (isTyping) => set({ isAiTyping: isTyping }),
 
-      setError: (error) => set({ error }),
+        setError: (error) => set({ error }),
 
-      setNewMessageInput: (input) => set({ newMessageInput: input }),
+        setNewMessageInput: (input) => set({ newMessageInput: input }),
 
-      setCurrentSessionDetails: (session) => set({ currentSessionDetails: session }),
+        setCurrentSessionDetails: (session) => set({ currentSessionDetails: session }),
 
-      setLastUserActivityTime: (time) => set({ lastUserActivityTime: time }),
+        setLastUserActivityTime: (time) => set({ lastUserActivityTime: time }),
 
-      resetCounselingState: () => set(initialState),
-    }),
-    { name: 'CounselingStore' } // Redux DevTools에 표시될 스토어 이름
+        setVoiceStateForMessage: (messageKey, isVoice) =>
+          set((state) => ({
+            voiceMessageMap: {
+              ...state.voiceMessageMap,
+              [messageKey]: isVoice,
+            },
+          })),
+
+        clearVoiceStateForSession: (sessionId) =>
+          set((state) => {
+            const newMap = { ...state.voiceMessageMap };
+            for (const key in newMap) {
+              if (key.startsWith(`${sessionId}-`)) {
+                delete newMap[key];
+              }
+            }
+            return { voiceMessageMap: newMap };
+          }),
+
+        resetCounselingState: () => {
+          // voiceMessageMap은 세션 간 유지될 수 있으므로 reset 시 초기화하지 않거나,
+          // 필요시 명시적으로 현재 세션 ID에 해당하는 것만 지우도록 처리할 수 있습니다.
+          // 여기서는 initialState로 리셋하므로 voiceMessageMap도 초기화됩니다.
+          set(initialState);
+        },
+      }),
+      {
+        name: 'counseling-storage', // localStorage에 저장될 때 사용될 키 이름
+        storage: createJSONStorage(() => localStorage), // localStorage 사용
+        // partialize: (state) => ({ voiceMessageMap: state.voiceMessageMap }), // voiceMessageMap만 저장하려면 주석 해제
+      }
+    ),
+    { name: 'CounselingStore' }
   )
 );
