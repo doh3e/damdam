@@ -104,7 +104,6 @@ export default function AppSettingsPage() {
         }
       });
     }
-
     // 콘솔로 FormData 전체 출력
     console.log('--- FormData 전송 내용 ---');
     for (const [key, value] of formData.entries()) {

@@ -1,12 +1,10 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-import { useAuthStore } from '@/app/store/authStore';
-import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
-import axiosInstance from '@/shared/api/axiosInstance';
 import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/shared/api/axiosInstance';
 
 type Notice = {
   noticeId: number;
@@ -18,8 +16,7 @@ type Notice = {
 };
 
 const fetchNotices = async (): Promise<Notice[]> => {
-  const res = await axiosInstance.get('/helps/notice');
-  return res.data;
+  return apiClient.get<Notice[]>('/helps/notice');
 };
 
 export default function NoticeListPage() {
