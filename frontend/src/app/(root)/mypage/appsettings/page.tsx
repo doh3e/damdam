@@ -104,7 +104,6 @@ export default function AppSettingsPage() {
         }
       });
     }
-
     // 콘솔로 FormData 전체 출력
     console.log('--- FormData 전송 내용 ---');
     for (const [key, value] of formData.entries()) {
@@ -130,7 +129,7 @@ export default function AppSettingsPage() {
     <div className="p-4 space-y-6 flex flex-col items-center">
       <section className="bg-white w-full max-w-xl mx-auto rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
         <h2 className="text-xl font-bold mb-8 flex items-center gap-5">
-          <button onClick={() => router.push('/mypage')} className="text-lg">
+          <button onClick={() => router.back()} className="text-lg">
             <FontAwesomeIcon icon={faArrowLeft} />
           </button>
           앱 설정

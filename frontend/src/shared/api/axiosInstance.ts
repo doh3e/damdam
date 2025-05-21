@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../config';
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   // baseURL: 'http://localhost:3002/api/v1/damdam', // Mockoon 테스트용 임시 URL
-  timeout: 10000, // 요청 타임아웃 10초
+  timeout: 500000, // 요청 타임아웃 10초
   headers: {
     'Content-Type': 'application/json',
   },
