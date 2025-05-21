@@ -22,10 +22,10 @@ export default function EmotionCircle({ valence, arousal }: Props) {
           transform: 'translate(-50%, -50%)',
         }}
       />
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-xs text-gray-500">비각성</div>
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 text-xs text-gray-500">각성</div>
-      <div className="absolute left-0 top-1/2 -translate-y-1/2 text-xs text-gray-500">불쾌</div>
-      <div className="absolute right-0 top-1/2 -translate-y-1/2 text-xs text-gray-500">유쾌</div>
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-base text-gray-500">비각성</div>
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 text-base text-gray-500">각성</div>
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 text-base text-gray-500">불쾌</div>
+      <div className="absolute right-0 top-1/2 -translate-y-1/2 text-base text-gray-500">유쾌</div>
     </div>
   );
 }
