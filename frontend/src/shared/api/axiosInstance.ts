@@ -18,6 +18,24 @@ axiosInstance.interceptors.request.use(
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
+
+    // FormData인 경우 Content-Type 헤더를 삭제하여 Axios가 자동으로 설정하도록 함
+    if (config.data instanceof FormData) {
+      // Axios < v1.0.0 에서는 delete config.headers['Content-Type'];
+      // Axios >= v1.0.0 에서는 config.headers['Content-Type'] = null; 또는 undefined;
+      // 현재 Axios 버전 확인 후 적절한 방법 사용 필요. 우선 null로 설정 시도.
+      // 또는 더 확실하게는, config.headers 객체에서 'Content-Type' 키를 삭제합니다.
+      // delete (config.headers as any)['Content-Type']; // 일반적인 JS 객체처럼 삭제
+      // InternalAxiosRequestConfig['headers'] 타입은 AxiosHeaders 객체일 수 있으므로, set 메소드를 사용하거나 null로 설정
+      if (config.headers && typeof config.headers.set === 'function') {
+        // AxiosHeaders 인스턴스인 경우
+        config.headers.set('Content-Type', null); // 또는 undefined
+      } else if (config.headers) {
+        // 일반 객체인 경우
+        delete config.headers['Content-Type'];
+      }
+    }
+
     console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`, config);
     return config;
   },
