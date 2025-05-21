@@ -2,11 +2,16 @@
 
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useQueryClient, useQueries, type UseQueryResult } from '@tanstack/react-query';
+import Modal from '@/shared/ui/modal'; // modal 컴포넌트
 
 // Tanstack Query 훅 임포트 (과거 상담 목록 조회)
 import { useFetchPastCounselingSessions } from '@/entities/counseling/model/queries';
 import { useDeleteCounselingSession, useUpdateCounselingTitle } from '@/entities/counseling/model/mutations'; // 상담 세션 삭제/수정 뮤테이션
+import { useFetchReports, reportQueryKeys } from '@/entities/report/model/queries';
+import { getPeriodicReportDetail } from '@/entities/report/model/api'; // getPeriodicReportDetail 직접 임포트
+import type { SessionReport, PeriodReport, PeriodReportDetail } from '@/entities/report/model/types';
 
 // 엔티티(Entity) 컴포넌트 임포트
 import PastCounselingListItem from '@/entities/counseling/ui/PastCounselingListItem';
@@ -48,6 +53,7 @@ export function PastCounselingList() {
   // --- Hooks ---
   const params = useParams(); // 현재 URL 파라미터 가져오기
   const router = useRouter(); // 라우터 추가
+  const queryClient = useQueryClient();
   const { token } = useAuthStore(); // 인증 토큰 가져오기
   const { mutate: deleteSession } = useDeleteCounselingSession(); // 상담 세션 삭제 뮤테이션
   const { mutate: updateTitle } = useUpdateCounselingTitle(); // 상담 제목 수정 뮤테이션 추가
@@ -63,24 +69,76 @@ export function PastCounselingList() {
     ? currentViewingCounsIdParam[0]
     : currentViewingCounsIdParam;
 
-  // --- Tanstack Query ---
-  // 과거 상담 목록 조회 쿼리 (인증 상태에 따라 실행 여부 결정)
+  // --- Tanstack Query (과거 상담 목록) ---
   const {
     data: pastSessions, // 조회된 과거 상담 목록 데이터
-    isLoading, // 데이터 로딩 중 상태
-    isError, // 데이터 로딩 에러 발생 상태
-    error, // 발생한 에러 객체
-    // staleTime, gcTime 등은 두 번째 인자인 options 객체로 전달
+    isLoading: isLoadingPastSessions, // 로딩 상태 변수명 변경
+    isError: isErrorPastSessions, // 에러 상태 변수명 변경
+    error: errorPastSessions, // 에러 객체 변수명 변경
   } = useFetchPastCounselingSessions(
+    {},
     {
-      /* API 파라미터 객체 (필요시: page, limit 등) */
-    },
-    {
-      staleTime: 10 * 60 * 1000, // 10분 동안 데이터를 신선하게 유지
-      gcTime: 15 * 60 * 1000, // 15분 동안 캐시 유지
-      enabled: !!token, // 인증 토큰이 있을 때만 쿼리 실행
+      staleTime: 10 * 60 * 1000,
+      gcTime: 15 * 60 * 1000,
+      enabled: !!token,
     }
   );
+
+  // --- 레포트 데이터 조회 로직 ---
+  // 1. 세션 레포트 목록 조회
+  const { data: sessionReportsData, isLoading: isLoadingSessionReportsData } = useFetchReports(
+    { category: 'session' },
+    { enabled: !!token }
+  );
+
+  // 2. 기간별 레포트 목록 조회
+  const { data: periodReportsData, isLoading: isLoadingPeriodReportsData } = useFetchReports(
+    { category: 'period' },
+    { enabled: !!token }
+  );
+
+  // 3. 기간별 레포트 상세 정보 조회 (useQueries를 사용하여 동적으로 여러 쿼리 실행)
+  const periodReportDetailResults = useQueries<UseQueryResult<PeriodReportDetail, Error>[]>({
+    // useQueries 제네릭 타입 수정
+    queries: periodReportsData
+      ? (periodReportsData as PeriodReport[]).map((pReport) => ({
+          // periodReportsData 사용 및 타입 단언
+          queryKey: reportQueryKeys.periodicDetail(pReport.preportId),
+          queryFn: () => getPeriodicReportDetail(pReport.preportId),
+          enabled: !!token && !!pReport.preportId,
+        }))
+      : [],
+  });
+
+  // 4. 모든 레포트 정보를 취합하여 reportedCounsIds Set 업데이트 (useMemo 사용으로 최적화)
+  const reportedCounsIdsSet = useMemo(() => {
+    const newReportedCounsIds = new Set<number>();
+
+    if (sessionReportsData) {
+      (sessionReportsData as SessionReport[]).forEach((report) => {
+        if (report.counsId) {
+          newReportedCounsIds.add(report.counsId);
+        }
+      });
+    }
+
+    periodReportDetailResults.forEach((queryResult) => {
+      if (queryResult.isSuccess && queryResult.data) {
+        if (queryResult.data.counselings && Array.isArray(queryResult.data.counselings)) {
+          queryResult.data.counselings.forEach((counseling) => {
+            if (counseling.counsId) {
+              newReportedCounsIds.add(counseling.counsId);
+            }
+          });
+        }
+      }
+    });
+    return newReportedCounsIds;
+  }, [sessionReportsData, periodReportDetailResults]);
+
+  // 레포트 정보 로딩 중 상태
+  const isLoadingReports =
+    isLoadingSessionReportsData || isLoadingPeriodReportsData || periodReportDetailResults.some((q) => q.isLoading);
 
   // 인증 에러 처리: 인증 실패 시 로그인 페이지로 리디렉션
   const handleAuthError = () => {
@@ -88,6 +146,28 @@ export function PastCounselingList() {
   };
 
   // 상담 세션 삭제 처리
+
+  const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<any>(null);
+  const handleConfirmDelete = () => {
+    if (!sessionToDelete?.counsId) return;
+    const sessionId = String(sessionToDelete.counsId);
+
+    deleteSession(sessionId, {
+      onSuccess: () => {
+        console.log('상담 세션이 삭제되었습니다.');
+        if (currentViewingCounsId === sessionId) {
+          router.push('/counseling');
+        }
+        setDeleteConfirmModalOpen(false);
+      },
+      onError: (error: Error) => {
+        console.error('상담 세션 삭제 실패:', error);
+        alert('상담 삭제 중 오류가 발생했습니다.');
+      },
+    });
+  };
+
   const handleDeleteSession = (e: React.MouseEvent, counsId: string | number) => {
     e.preventDefault(); // 링크 클릭 방지
     e.stopPropagation(); // 이벤트 버블링 방지
@@ -191,119 +271,167 @@ export function PastCounselingList() {
       {/* 중앙: 과거 상담 목록 (스크롤 가능 영역) */}
       <CardContent className="flex-1 overflow-hidden p-0">
         <ScrollArea className="h-full w-full p-4">
-          {/* 1. 로딩 상태 처리 */}
-          {isLoading && (
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full rounded-lg" />
-              ))}
-            </div>
-          )}
-
-          {/* 2. 에러 상태 처리 */}
-          {isError && (
-            <Alert variant="destructive">
-              <Terminal className="h-4 w-4" />
-              <AlertTitle>오류</AlertTitle>
+          {isLoadingPastSessions ? (
+            // 로딩 중 스켈레톤 UI
+            Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className="flex items-center space-x-3 p-3 mb-2 rounded-lg bg-muted">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-2 flex-grow">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
+            ))
+          ) : isErrorPastSessions ? (
+            // 에러 발생 시 알림
+            <Alert variant="destructive" className="m-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>오류 발생</AlertTitle>
               <AlertDescription>
-                상담 목록을 불러오는 중 오류가 발생했습니다.
-                {error?.message?.includes('신뢰할 수 없는 자격증명') ? (
-                  <div className="mt-2">
-                    <p>로그인이 필요합니다.</p>
-                    <Button variant="outline" size="sm" className="mt-2" onClick={handleAuthError}>
-                      로그인하기
-                    </Button>
-                  </div>
-                ) : (
-                  error?.message
-                )}
+                상담 목록을 불러오는 중 오류가 발생했습니다: {errorPastSessions?.message || '알 수 없는 오류'}
               </AlertDescription>
             </Alert>
-          )}
+          ) : pastSessions && pastSessions.length > 0 ? (
+            // 상담 목록 렌더링
+            pastSessions.map((session) => {
+              const isReported = reportedCounsIdsSet.has(session.counsId);
+              const isActiveSession = currentViewingCounsId === String(session.counsId);
 
-          {/* 3. 데이터 로딩 성공 시 */}
-          {!isLoading && !isError && (
-            <div className="space-y-2 min-h-[300px]">
-              {/* 3a. 목록이 비어있을 경우 */}
-              {pastSessions && pastSessions.length === 0 && (
-                <div className="text-center text-gray-500 dark:text-gray-400 py-10">
-                  <MessageSquareText className="mx-auto h-12 w-12 text-gray-400" />
-                  <p className="mt-2 text-sm">과거 상담 내역이 없습니다.</p>
-                  <p className="text-xs">새 상담을 시작해보세요.</p>
-                </div>
-              )}
-
-              {/* 3b. 목록이 있을 경우 */}
-              {pastSessions &&
-                pastSessions.length > 0 &&
-                pastSessions.map((session) => {
-                  // counsId가 있는지 확인하고 유효한 키 생성
-                  if (!session?.counsId) return null;
-
-                  const sessionId = String(session.counsId);
-                  const isActive = currentViewingCounsId === sessionId;
-
-                  return (
-                    <div key={sessionId} className="relative mb-2">
-                      <div
-                        className={`block rounded-lg transition-colors pr-16 ${
-                          isActive
-                            ? 'bg-pale-coral-pink/30 dark:bg-pale-coral-pink/20'
-                            : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                        }`}
-                        onClick={() => router.push(`/counseling/${sessionId}`)}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <PastCounselingListItem
-                          session={session}
-                          isActive={isActive}
-                          showTitle={true} // 제목 표시 옵션 추가
-                        />
-                      </div>
-                      {/* 수정 버튼 */}
+              return (
+                <div key={session.counsId} className="flex items-center justify-between mb-2 group">
+                  <Link
+                    href={`/counseling/${session.counsId}`}
+                    passHref
+                    className="flex-grow" // Link가 영역을 차지하도록
+                  >
+                    <PastCounselingListItem session={session} isActive={isActiveSession} showTitle={true} />
+                  </Link>
+                  <div className="flex items-center space-x-1 opacity-100 transition-opacity pr-2">
+                    {isLoadingReports ? (
+                      <Skeleton className="h-6 w-12 rounded-md" /> // 버튼 영역 스켈레톤
+                    ) : isReported ? (
+                      // 레포트가 있는 경우: 수정 버튼만 표시 (오른쪽 끝)
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute top-1/2 right-14 transform -translate-y-1/2 h-6 w-6 rounded-full opacity-70 hover:opacity-100 hover:bg-blue-100 hover:text-blue-600 z-10"
                         onClick={(e) => handleOpenTitleEditModal(e, session)}
-                        title="상담 제목 수정하기"
+                        title="상담 제목 수정"
+                        className="text-muted-foreground hover:text-primary"
                       >
-                        <Edit size={16} />
+                        <Edit className="h-4 w-4" />
                       </Button>
-                      {/* 삭제 버튼 */}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-1/2 right-2 transform -translate-y-1/2 h-6 w-6 rounded-full opacity-70 hover:opacity-100 hover:bg-red-100 hover:text-red-600 z-10"
-                        onClick={(e) => handleDeleteSession(e, session.counsId)}
-                        title="상담 삭제하기"
-                      >
-                        <Trash2 size={16} />
-                      </Button>
-                    </div>
-                  );
-                })}
+                    ) : (
+                      // 레포트가 없는 경우: 수정 버튼과 삭제 버튼 표시
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handleOpenTitleEditModal(e, session)}
+                          title="상담 제목 수정"
+                          className="text-muted-foreground hover:text-primary"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          // onClick={(e) => handleDeleteSession(e, session.counsId)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setSessionToDelete(session);
+                            setDeleteConfirmModalOpen(true);
+                          }}
+                          title="상담 삭제"
+                          className="text-destructive hover:text-red-500"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            // 상담 내역이 없는 경우
+            <div className="flex flex-col items-center justify-center h-full text-center p-6">
+              <MessageSquareText className="w-12 h-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium">상담 내역이 없습니다.</h3>
+              <p className="text-muted-foreground">새로운 상담을 시작해보세요!</p>
             </div>
           )}
         </ScrollArea>
       </CardContent>
 
       {/* 제목 수정 모달 */}
-      <Dialog open={titleEditModalOpen} onOpenChange={setTitleEditModalOpen}>
+      {titleEditModalOpen && (
+        <Modal
+          message="상담 제목 수정"
+          submessage="30자 이내로 새로운 제목을 입력해주세요"
+          onClose={() => setTitleEditModalOpen(false)}
+        >
+          <div className="w-full flex flex-col space-y-4">
+            <input
+              type="text"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              placeholder="새 제목 입력"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
+              maxLength={30}
+            />
+            <div className="flex justify-center space-x-2">
+              <button
+                onClick={() => setTitleEditModalOpen(false)}
+                className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 text-sm"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleTitleUpdate}
+                className="px-4 py-2 rounded-lg bg-[#e24b4b] text-white hover:scale-105 transition text-sm"
+                disabled={!newTitle.trim()}
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      {deleteConfirmModalOpen && (
+        <Modal
+          message="상담 기록 삭제"
+          submessage="정말로 이 상담 기록을 삭제하시겠습니까?<br/>삭제된 데이터는 복구할 수 없습니다."
+          onClose={() => setDeleteConfirmModalOpen(false)}
+        >
+          <div className="w-full flex justify-center space-x-2">
+            <button
+              onClick={() => setDeleteConfirmModalOpen(false)}
+              className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 text-sm"
+            >
+              취소
+            </button>
+            <button
+              onClick={handleConfirmDelete}
+              className="px-4 py-2 rounded-lg bg-[#e24b4b] text-white hover:scale-105 transition text-sm"
+            >
+              삭제
+            </button>
+          </div>
+        </Modal>
+      )}
+      {/* <Dialog open={titleEditModalOpen} onOpenChange={setTitleEditModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>상담 제목 수정</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="title" className="text-right col-span-1">
-                제목
-              </label>
+            <div className="flex justify-center items-center gap-4">
               <Input
                 id="title"
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
-                className="col-span-3"
+                className="w-3/4"
                 maxLength={30}
                 placeholder="30자 이내로 입력해주세요"
               />
@@ -318,7 +446,7 @@ export function PastCounselingList() {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </Card>
   );
 }

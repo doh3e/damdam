@@ -89,11 +89,6 @@ export default function InquiryPage() {
     setFormError('');
   };
 
-  // 뒤로가기(목록으로)
-  const handleBack = () => {
-    setSelectedInquiryId(null);
-  };
-
   return (
     <div className="p-4 spac-y-6 flex flex-col items-center">
       {/* 문의 목록 */}
@@ -101,7 +96,7 @@ export default function InquiryPage() {
         <section className="bg-white w-full max-w-xl mx-auto rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
           <h2 className="text-xl font-bold mb-8 flex items-center justify-between">
             <span className="flex items-center gap-5">
-              <button onClick={() => (window.location.href = '/mypage')} className="text-lg">
+              <button onClick={() => router.back()} className="text-lg">
                 <FontAwesomeIcon icon={faArrowLeft} />
               </button>
               문의하기

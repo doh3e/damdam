@@ -61,13 +61,14 @@ const SessionEndModal = ({
             상담이 종료됩니다.
           </DialogTitle>
           <br />
-          <DialogDescription className="text-sm text-[#222222]/80 dark:text-gray-300 mt-2">
-            현재 상담 세션이 종료됩니다. 상담 내용에 대한 분석 레포트를 받아보시겠습니까? <br />
-            <span className="font-semibold text-[#DC5F53]">
-              "상담 종료하기"를 선택하시면 상담 내역을 삭제하고 레포트를 받아보실 수 없습니다.
-            </span>
-            <br />
-            레포트를 발행하면 상담 내용을 심층 분석하여 유용한 피드백을 제공해 드립니다.
+          <DialogDescription asChild className="text-sm text-[#222222]/80 dark:text-gray-300 mt-4 space-y-3">
+            <div>
+              <div>현재 상담 세션이 종료됩니다. 상담 내용에 대한 분석 레포트를 받아보시겠습니까?</div>
+              <div>레포트를 발행하면 상담 내용을 심층 분석하여 유용한 피드백을 제공해 드립니다.</div>
+              <div className="font-semibold text-[#DC5F53] pt-2">
+                "상담 종료하기"를 선택하시면 상담 내역이 삭제되며 레포트를 받아보실 수 없습니다.
+              </div>
+            </div>
           </DialogDescription>
         </DialogHeader>
 
@@ -77,7 +78,7 @@ const SessionEndModal = ({
             variant="outline"
             onClick={handleEndConfirm}
             disabled={isAnyPending}
-            className="w-full sm:w-auto border-[#7CA8D8] text-[#7CA8D8] hover:bg-[#7CA8D8]/10 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-900/50"
+            className="w-full sm:w-auto border-gray-300 text-gray-500 hover:bg-gray-100/50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
           >
             <LogOut size={18} className="mr-2" />
             {isEndPending ? '종료 중...' : '상담 종료하기'}
@@ -86,7 +87,7 @@ const SessionEndModal = ({
             type="button"
             onClick={handleReportConfirm}
             disabled={isAnyPending}
-            className="w-full sm:w-auto bg-[#F5B6AF] text-[#222222] hover:bg-[#F5B6AF]/90 dark:bg-pink-400 dark:text-white dark:hover:bg-pink-500"
+            className="w-full sm:w-auto bg-[#F5B6AF] text-[#222222] hover:bg-[#F5B6AF]/70 dark:bg-pink-400 dark:text-white dark:hover:bg-pink-500"
           >
             <FileText size={18} className="mr-2" />
             {isReportPending ? '발행 중...' : '레포트 발행하기'}

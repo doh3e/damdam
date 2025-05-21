@@ -8,6 +8,7 @@ import static com.ssafy.damdam.global.webclient.exception.WebClientExceptionCode
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -307,6 +308,15 @@ public class ReportServiceImpl implements ReportService {
 		DateTimeFormatter formatter = DateTimeFormatter.BASIC_ISO_DATE;
 		LocalDate start = LocalDate.parse(startDate, formatter);
 		LocalDate end = LocalDate.parse(endDate, formatter);
+
+		LocalDateTime startAt = start.atStartOfDay();             // 00:00:00
+		LocalDateTime endAt = end.atTime(LocalTime.MAX);
+		
+		long validCount = counselingRepository.countValidCounselings(userId, startAt, endAt);
+
+		if (validCount < 2) {
+			throw new ReportException(CANT_CREATE_PERIOD_REPORT);
+		}
 
 		SparkResponseDto rawResp = sparkClient.getRawResults(
 			userId, start, end

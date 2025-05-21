@@ -104,7 +104,6 @@ export default function AppSettingsPage() {
         }
       });
     }
-
     // 콘솔로 FormData 전체 출력
     console.log('--- FormData 전송 내용 ---');
     for (const [key, value] of formData.entries()) {
@@ -130,47 +129,58 @@ export default function AppSettingsPage() {
     <div className="p-4 space-y-6 flex flex-col items-center">
       <section className="bg-white w-full max-w-xl mx-auto rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
         <h2 className="text-xl font-bold mb-8 flex items-center gap-5">
-          <button onClick={() => router.push('/mypage')} className="text-lg">
+          <button onClick={() => router.back()} className="text-lg">
             <FontAwesomeIcon icon={faArrowLeft} />
           </button>
           앱 설정
         </h2>
 
         <div className="space-y-6">
-          {/* 다크 모드 */}
-          <div className="flex items-center justify-between">
-            <span className="text-base">다크 모드</span>
-            <Switch
-              checked={isDarkmode}
-              onCheckedChange={async (checked) => {
-                setIsDarkmode(checked);
-                await updateSettings({ isDarkmode: checked });
-              }}
-            />
-          </div>
+          {/* 다크 모드 숨김 */}
+          {false && (
+            <div className="flex items-center justify-between">
+              <span className="text-base">다크 모드</span>
+              <Switch
+                checked={isDarkmode}
+                onCheckedChange={async (checked) => {
+                  setIsDarkmode(checked);
+                  await updateSettings({ isDarkmode: checked });
+                }}
+              />
+            </div>
+          )}
 
-          {/* 알림 수신 */}
-          <div className="flex items-center justify-between">
-            <span className="text-base">알림 수신</span>
-            <Switch
-              checked={isAlarm}
-              onCheckedChange={async (checked) => {
-                setIsAlarm(checked);
-                await updateSettings({ isAlarm: checked });
-              }}
-            />
-          </div>
+          {/* 알림 수신 숨김 */}
+          {false && (
+            <div className="flex items-center justify-between">
+              <span className="text-base">알림 수신</span>
+              <Switch
+                checked={isAlarm}
+                onCheckedChange={async (checked) => {
+                  setIsAlarm(checked);
+                  await updateSettings({ isAlarm: checked });
+                }}
+              />
+            </div>
+          )}
 
           {/* 프로필 이미지 */}
           <div>
             <span className="font-semibold">담담이 프로필 이미지</span>
             <div className="relative w-24 h-24 rounded-full overflow-hidden border border-gray-300 my-2 group">
               <Image
-                src={preview || '/profile.png'}
+                src={
+                  preview
+                    ? preview.includes('damdam-counseling-bucket.s3')
+                      ? `${preview}?v=${Date.now()}`
+                      : preview
+                    : '/profile.png'
+                }
                 alt="담담이 프로필"
                 fill
                 className="object-cover cursor-pointer"
-                unoptimized // 외부 S3 이미지일 경우 필수
+                unoptimized
+                crossOrigin="anonymous"
                 onClick={() => document.getElementById('botImageInput')?.click()}
               />
 

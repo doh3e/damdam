@@ -25,7 +25,7 @@ import ChatMessageList from '@/widgets/ChatMessageList/ui/ChatMessageList';
 import { Card, CardHeader, CardContent, CardFooter } from '@/shared/ui/card';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
-import { Terminal, AlertCircle, AlertTriangle, HelpCircle, LogOut } from 'lucide-react';
+import { Terminal, AlertCircle, AlertTriangle, HelpCircle, LogOut, Loader2 } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import BackButton from '@/shared/ui/BackButton';
 import SessionEndModal from '@/features/counseling/ui/SessionEndModal';
@@ -61,17 +61,22 @@ export function CounselingChatWindow() {
   const { token } = useAuthStore(); // Zustand 스토어에서 사용자 인증 토큰을 가져옵니다.
   const { resetSTTState } = useSTTStore(); // resetSTTState 액션 가져오기
 
+  /** @ref {HTMLDivElement | null} chatContainerRef - 채팅 메시지 목록을 포함하는 CardContent 요소에 대한 ref. 스크롤 제어에 사용됩니다. */
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
   // Zustand 스토어에서 상담 관련 상태 및 액션들을 가져옵니다.
   const {
-    setCurrentSessionId, // 현재 활성화된 상담 세션 ID를 스토어에 설정하는 함수.
-    setMessages, // 현재 세션의 메시지 목록을 스토어에 설정하는 함수.
-    setIsCurrentSessionClosed, // 현재 세션의 종료 상태를 스토어에 설정하는 함수.
-    currentSessionId, // 스토어에 저장된 현재 상담 세션 ID.
+    setCurrentSessionId,
+    setMessages,
+    setIsCurrentSessionClosed,
+    currentSessionId,
     messages, // 스토어에 저장된 현재 세션의 메시지 목록.
-    isAiTyping, // AI가 현재 타이핑 중인지 여부.
-    isCurrentSessionClosed: storeIsCurrentSessionClosed, // 스토어에 저장된 현재 세션의 종료 상태.
-    lastUserActivityTime, // 현재 세션에서 마지막 사용자 활동 시간 (타임스탬프).
-    setLastUserActivityTime, // 마지막 사용자 활동 시간을 스토어에 설정하는 함수.
+    isAiTyping,
+    isCurrentSessionClosed: storeIsCurrentSessionClosed,
+    lastUserActivityTime,
+    setLastUserActivityTime,
+    setIsAiTyping,
+    voiceMessageMap, // isVoice 상태를 저장하는 맵
   } = useCounselingStore();
 
   /** @ref {NodeJS.Timeout | null} autoEndTimerRef - 자동 세션 종료를 위한 타이머 ID를 저장하는 ref. */
@@ -145,26 +150,44 @@ export function CounselingChatWindow() {
       const messagesFromServer = sessionDetail.messageList || [];
       const isClosedFromServer = sessionDetail.isClosed || false;
 
-      setMessages(
-        messagesFromServer.map(
-          (msg) =>
-            ({
-              ...msg,
-              id: msg.id || `${msg.timestamp}-${msg.messageOrder || Math.random()}`,
-              counsId: sessionDetail.counsId,
-            }) as ChatMessage
-        )
-      );
+      // Zustand 스토어의 현재 메시지 목록과 세션 ID를 가져옵니다.
+      const storeMessages = useCounselingStore.getState().messages;
+      const storeCurrentCounsId = useCounselingStore.getState().currentSessionId;
+
+      // 메시지 목록을 업데이트해야 하는 경우:
+      // 1. 스토어의 메시지 목록이 비어있을 때 (초기 로드)
+      // 2. API에서 가져온 세션 ID가 스토어의 현재 세션 ID와 다를 때 (다른 세션으로 막 전환된 경우)
+      // 3. 또는, API에서 가져온 세션 ID와 스토어의 세션 ID는 같지만, 스토어 메시지가 아직 없을 때 (새로고침 후 첫 로드)
+      if (
+        storeMessages.length === 0 ||
+        String(sessionDetail.counsId) !== storeCurrentCounsId ||
+        (String(sessionDetail.counsId) === storeCurrentCounsId && storeMessages.length === 0)
+      ) {
+        // voiceMessageMap을 사용하여 isVoice 상태 복원
+        const currentCounsIdStr = String(sessionDetail.counsId); // voiceMessageMap의 키와 일치시키기 위해 문자열로 변환
+        const messagesWithVoiceState = messagesFromServer.map((msg) => {
+          const messageKey = `${currentCounsIdStr}-${msg.messageOrder}`;
+          const knownIsVoice = voiceMessageMap[messageKey];
+
+          return {
+            ...msg,
+            id: msg.id || `${msg.timestamp}-${msg.messageOrder || Math.random()}`,
+            counsId: sessionDetail.counsId,
+            isVoice: knownIsVoice === true ? true : msg.isVoice,
+          } as ChatMessage;
+        });
+
+        setMessages(messagesWithVoiceState);
+      }
 
       setIsCurrentSessionClosed(isClosedFromServer);
 
       if (!isClosedFromServer) {
-        // 세션이 서버 기준으로 열려 있다면, 사용자 활동으로 간주하고 마지막 활동 시간 업데이트
         setLastUserActivityTime(Date.now());
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionDetail]); // setMessages 등은 Zustand에서 안정적이므로 제외 가능
+  }, [sessionDetail, voiceMessageMap]); // setMessages, setIsCurrentSessionClosed, setLastUserActivityTime는 의존성 배열에서 제거 (Zustand action)
 
   /**
    * @effect 상담 세션 종료 상태 변경 감지 및 STT 상태 초기화.
@@ -178,6 +201,24 @@ export function CounselingChatWindow() {
       resetSTTState();
     }
   }, [storeIsCurrentSessionClosed, resetSTTState]);
+
+  /**
+   * @effect 메시지 목록 (`messages`) 또는 AI 타이핑 상태 (`isAiTyping`)가 변경될 때 채팅 스크롤을 맨 아래로 이동시킵니다.
+   *         이를 통해 사용자는 항상 최신 메시지 또는 로딩 인디케이터를 볼 수 있습니다.
+   */
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      // CardContent 내부의 실제 스크롤 가능한 요소(ChatMessageList의 내부 div일 수도 있음)를 찾아야 할 수 있습니다.
+      // 우선 CardContent 자체를 스크ROLL 해봅니다.
+      // ChatMessageList가 자체적으로 스크롤을 가지고 있다면, 해당 컴포넌트 내부에서 이 로직을 처리하거나
+      // ChatMessageList 컴포넌트에 ref를 전달하여 직접 스크롤 제어해야 할 수 있습니다.
+      // 여기서는 CardContent (id="chat-message-list-container")를 기준으로 합니다.
+      const scrollableContainer = chatContainerRef.current; // document.getElementById('chat-message-list-container');
+      if (scrollableContainer) {
+        scrollableContainer.scrollTop = scrollableContainer.scrollHeight;
+      }
+    }
+  }, [messages, isAiTyping]);
 
   // --- WebSocket Connection (useWebSocket Hook) ---
   /**
@@ -199,27 +240,36 @@ export function CounselingChatWindow() {
       !!token && !!couns_id && (storeIsCurrentSessionClosed === null || storeIsCurrentSessionClosed === false),
     isSessionClosed: storeIsCurrentSessionClosed === null ? false : storeIsCurrentSessionClosed, // 훅 내부에 세션 상태 전달
     debug: process.env.NODE_ENV === 'development',
-    onMessageReceived: () => {
+    onMessageReceived: useCallback(() => {
       // AI로부터 메시지를 수신하면 사용자가 활동한 것으로 간주하여 마지막 활동 시간을 업데이트.
       if (storeIsCurrentSessionClosed === null || storeIsCurrentSessionClosed === false) {
         setLastUserActivityTime(Date.now());
       }
-    },
+      // AI 응답 수신 시 (성공 또는 messageOrder=20 에러 포함) isAiTyping을 false로 설정
+      // 이 로직은 useWebSocket 훅 내부의 onMessage 콜백에서 messageOrder를 확인 후 호출하는 것이 더 적절할 수 있으나,
+      // 우선 여기서 간단히 모든 메시지 수신 시 false로 설정합니다.
+      // 특정 에러(messageOrder=20)도 AI의 '응답'으로 간주하여 타이핑 상태를 해제합니다.
+      setIsAiTyping(false);
+    }, [storeIsCurrentSessionClosed, setLastUserActivityTime, setIsAiTyping]),
   });
 
   /**
    * @function handleSendUserMessage
-   * @description `sendUserMessage`를 래핑하여 메시지 전송 시 `lastUserActivityTime`을 업데이트하는 함수.
+   * @description `sendUserMessage`를 래핑하여 메시지 전송 시 `lastUserActivityTime`을 업데이트하고, `isAiTyping` 상태를 true로 설정하는 함수.
    * @param {StompSendUserMessagePayload} payload - 전송할 메시지 데이터.
    */
   const handleSendUserMessage = useCallback(
     (payload: StompSendUserMessagePayload) => {
       if (sendUserMessage) {
+        // 1. 사용자의 메시지를 먼저 웹소켓으로 전송 (내부적으로 낙관적 업데이트 메시지가 스토어에 추가됨)
         sendUserMessage(payload);
-        setLastUserActivityTime(Date.now()); // 사용자 메시지 전송 시 활동 시간 업데이트
+        // 2. 사용자가 메시지를 보냈으므로 마지막 활동 시간 업데이트
+        setLastUserActivityTime(Date.now());
+        // 3. 그 다음 AI 타이핑 상태를 true로 설정 (스토어에서 로딩 플레이스홀더 추가)
+        setIsAiTyping(true);
       }
     },
-    [sendUserMessage, setLastUserActivityTime]
+    [sendUserMessage, setLastUserActivityTime, setIsAiTyping]
   );
 
   /**
@@ -514,18 +564,27 @@ export function CounselingChatWindow() {
   const isEffectivelyClosed = storeIsCurrentSessionClosed ?? sessionDetail.isClosed ?? false;
 
   // 모달의 '상담만 종료하기' 버튼 클릭 시 실행될 함수
-  const handleConfirmEndSession = () => {
+  const handleConfirmEndSession = async () => {
     if (!couns_id || isDeleteSessionPending || isCreateReportPending) return;
+    // 먼저 웹소켓 연결을 정상적으로 해제 시도
+    if (disconnectWebSocket) {
+      try {
+        await disconnectWebSocket();
+        console.log('[Modal] WebSocket disconnected successfully before ending session.');
+      } catch (wsError) {
+        console.log('[Modal] Error disconnecting WebSocket before ending session:', wsError);
+        // 웹소켓 해제 실패가 세션 종료를 막을 필요는 없을 수 있으므로, 로깅 후 계속 진행
+      }
+    }
+
     deleteSessionMutation(couns_id, {
-      onSuccess: async () => {
+      onSuccess: () => {
+        // onSuccess는 더 이상 async일 필요 없음
         console.log('[Modal] 상담 세션 삭제 성공 (counsels/{counsId} DELETE)');
         setIsCurrentSessionClosed(true); // Zustand 스토어 업데이트
         setCurrentSessionId(null); // 현재 세션 ID 초기화
-        if (disconnectWebSocket) {
-          await disconnectWebSocket();
-        }
 
-        // Tanstack Query 캐시에서 해당 세션 제거
+        // Tanstack Query 캐시에서 해당 세션 제거 및 목록 무효화
         queryClient.setQueryData<CounselingSession[]>(
           counselingQueryKeys.lists(),
           (oldData: CounselingSession[] | undefined) => {
@@ -535,10 +594,7 @@ export function CounselingChatWindow() {
           }
         );
         queryClient.removeQueries({ queryKey: counselingQueryKeys.detail(couns_id) });
-
-        // 캐시 무효화
-        // await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(couns_id) });
-        await queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
+        queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() });
 
         setIsSessionEndModalOpen(false);
         router.push('/counseling');
@@ -552,17 +608,35 @@ export function CounselingChatWindow() {
   };
 
   // 모달의 '레포트 발행하기' 버튼 클릭 시 실행될 함수
-  const handleConfirmCreateReport = () => {
+  const handleConfirmCreateReport = async () => {
     if (!couns_id || isDeleteSessionPending || isCreateReportPending) return;
+
+    // 먼저 웹소켓 연결을 정상적으로 해제 시도
+    if (disconnectWebSocket) {
+      try {
+        await disconnectWebSocket();
+        console.log('[Modal] WebSocket disconnected successfully before creating report.');
+      } catch (wsError) {
+        console.log('[Modal] Error disconnecting WebSocket before creating report:', wsError);
+        // 웹소켓 해제 실패가 레포트 생성을 막을 필요는 없을 수 있으므로, 로깅 후 계속 진행
+      }
+    }
+
     createReportMutation(couns_id, {
-      onSuccess: async (data) => {
+      onSuccess: (data) => {
+        // onSuccess는 더 이상 async일 필요 없음
         console.log(
           '[Modal] 레포트 생성 및 세션 종료 성공 (counsels/{counsId}/reports POST). Report ID:',
           data.sreportId
         );
-        if (disconnectWebSocket) {
-          await disconnectWebSocket();
-        }
+        // setIsCurrentSessionClosed(true); // createReportMutation이 서버에서 세션을 닫으므로, 클라이언트 상태는 다음 페이지 로드 시 API 응답으로 갱신됨
+        // setCurrentSessionId(null); // 위와 동일
+
+        // 캐시 무효화 (레포트 목록 및 관련 상담 세션 상세)
+        queryClient.invalidateQueries({ queryKey: ['reports'] }); // 'reports'는 예시 키, 실제 사용하는 쿼리 키로 변경 필요
+        queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(couns_id) });
+        queryClient.invalidateQueries({ queryKey: counselingQueryKeys.lists() }); // 상담 목록도 업데이트 (세션 종료 상태 반영 등)
+
         setIsSessionEndModalOpen(false);
         router.push('/reports');
       },
@@ -613,7 +687,8 @@ export function CounselingChatWindow() {
         {/* CardContent: 채팅 메시지 목록. flex-grow로 남은 공간 모두 차지, 내부에서 스크롤 처리. 배경색 변경 */}
         {/* p-0으로 변경하고, ChatMessageList 내부에서 패딩 및 스크롤 처리 */}
         <CardContent
-          className="flex-grow bg-light-gray dark:bg-gray-900 p-0 overflow-hidden scrollbar-custom"
+          ref={chatContainerRef}
+          className="flex flex-col flex-grow bg-light-gray dark:bg-gray-900 p-0 overflow-hidden scrollbar-custom"
           id="chat-message-list-container"
         >
           {/* ChatMessageList 내부에서 h-full 및 overflow-y-auto 필요 */}
@@ -624,10 +699,11 @@ export function CounselingChatWindow() {
         <CardFooter className="p-3 border-t border-light-gray dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-800 z-10">
           <SendMessageForm
             currentCounsId={couns_id!}
-            disabled={isEffectivelyClosed || !isWebSocketConnected} // 세션 종료 또는 웹소켓 미연결 시 비활성화
+            disabled={isEffectivelyClosed || !isWebSocketConnected} // 세션 종료 또는 웹소켓 미연결일 경우 비활성화
             isWebSocketConnected={isWebSocketConnected} // isWebSocketConnected prop 전달 추가
             sendUserMessage={handleSendUserMessage} // 래핑된 메시지 전송 함수 전달
             onUserActivity={() => setLastUserActivityTime(Date.now())} // 사용자 입력 활동 시 시간 업데이트
+            isAiTyping={isAiTyping}
           />
         </CardFooter>
       </Card>

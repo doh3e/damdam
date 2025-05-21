@@ -79,6 +79,8 @@ export interface ChatMessage {
   metadata?: Record<string, any>;
   /** 메시지 로딩 상태 (클라이언트에서 낙관적 업데이트 시 사용) */
   isLoading?: boolean;
+  /** AI 응답 대기 중 임시 로딩 UI를 표시하기 위한 플래그 */
+  isLoadingPlaceholder?: boolean;
 }
 
 /**
@@ -121,6 +123,10 @@ export interface CounselingSession {
   rating?: number;
   /** 세션 관련 키워드 또는 카테고리 (옵션) */
   keywords?: string[];
+  /** 세션 레포트 발행 여부 (옵션) */
+  hasSessionReport?: boolean;
+  /** 기간별 레포트 발행 여부 (옵션) */
+  hasPeriodReport?: boolean;
   /**
    * 채팅 메시지 목록.
    */
