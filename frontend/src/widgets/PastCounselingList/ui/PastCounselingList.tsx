@@ -2,11 +2,15 @@
 
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useQueryClient, useQueries, type UseQueryResult } from '@tanstack/react-query';
 
 // Tanstack Query 훅 임포트 (과거 상담 목록 조회)
 import { useFetchPastCounselingSessions } from '@/entities/counseling/model/queries';
 import { useDeleteCounselingSession, useUpdateCounselingTitle } from '@/entities/counseling/model/mutations'; // 상담 세션 삭제/수정 뮤테이션
+import { useFetchReports, reportQueryKeys } from '@/entities/report/model/queries';
+import { getPeriodicReportDetail } from '@/entities/report/model/api'; // getPeriodicReportDetail 직접 임포트
+import type { SessionReport, PeriodReport, PeriodReportDetail } from '@/entities/report/model/types';
 
 // 엔티티(Entity) 컴포넌트 임포트
 import PastCounselingListItem from '@/entities/counseling/ui/PastCounselingListItem';
@@ -48,6 +52,7 @@ export function PastCounselingList() {
   // --- Hooks ---
   const params = useParams(); // 현재 URL 파라미터 가져오기
   const router = useRouter(); // 라우터 추가
+  const queryClient = useQueryClient();
   const { token } = useAuthStore(); // 인증 토큰 가져오기
   const { mutate: deleteSession } = useDeleteCounselingSession(); // 상담 세션 삭제 뮤테이션
   const { mutate: updateTitle } = useUpdateCounselingTitle(); // 상담 제목 수정 뮤테이션 추가
@@ -63,24 +68,76 @@ export function PastCounselingList() {
     ? currentViewingCounsIdParam[0]
     : currentViewingCounsIdParam;
 
-  // --- Tanstack Query ---
-  // 과거 상담 목록 조회 쿼리 (인증 상태에 따라 실행 여부 결정)
+  // --- Tanstack Query (과거 상담 목록) ---
   const {
     data: pastSessions, // 조회된 과거 상담 목록 데이터
-    isLoading, // 데이터 로딩 중 상태
-    isError, // 데이터 로딩 에러 발생 상태
-    error, // 발생한 에러 객체
-    // staleTime, gcTime 등은 두 번째 인자인 options 객체로 전달
+    isLoading: isLoadingPastSessions, // 로딩 상태 변수명 변경
+    isError: isErrorPastSessions, // 에러 상태 변수명 변경
+    error: errorPastSessions, // 에러 객체 변수명 변경
   } = useFetchPastCounselingSessions(
+    {},
     {
-      /* API 파라미터 객체 (필요시: page, limit 등) */
-    },
-    {
-      staleTime: 10 * 60 * 1000, // 10분 동안 데이터를 신선하게 유지
-      gcTime: 15 * 60 * 1000, // 15분 동안 캐시 유지
-      enabled: !!token, // 인증 토큰이 있을 때만 쿼리 실행
+      staleTime: 10 * 60 * 1000,
+      gcTime: 15 * 60 * 1000,
+      enabled: !!token,
     }
   );
+
+  // --- 레포트 데이터 조회 로직 ---
+  // 1. 세션 레포트 목록 조회
+  const { data: sessionReportsData, isLoading: isLoadingSessionReportsData } = useFetchReports(
+    { category: 'session' },
+    { enabled: !!token }
+  );
+
+  // 2. 기간별 레포트 목록 조회
+  const { data: periodReportsData, isLoading: isLoadingPeriodReportsData } = useFetchReports(
+    { category: 'period' },
+    { enabled: !!token }
+  );
+
+  // 3. 기간별 레포트 상세 정보 조회 (useQueries를 사용하여 동적으로 여러 쿼리 실행)
+  const periodReportDetailResults = useQueries<UseQueryResult<PeriodReportDetail, Error>[]>({
+    // useQueries 제네릭 타입 수정
+    queries: periodReportsData
+      ? (periodReportsData as PeriodReport[]).map((pReport) => ({
+          // periodReportsData 사용 및 타입 단언
+          queryKey: reportQueryKeys.periodicDetail(pReport.preportId),
+          queryFn: () => getPeriodicReportDetail(pReport.preportId),
+          enabled: !!token && !!pReport.preportId,
+        }))
+      : [],
+  });
+
+  // 4. 모든 레포트 정보를 취합하여 reportedCounsIds Set 업데이트 (useMemo 사용으로 최적화)
+  const reportedCounsIdsSet = useMemo(() => {
+    const newReportedCounsIds = new Set<number>();
+
+    if (sessionReportsData) {
+      (sessionReportsData as SessionReport[]).forEach((report) => {
+        if (report.counsId) {
+          newReportedCounsIds.add(report.counsId);
+        }
+      });
+    }
+
+    periodReportDetailResults.forEach((queryResult) => {
+      if (queryResult.isSuccess && queryResult.data) {
+        if (queryResult.data.counselings && Array.isArray(queryResult.data.counselings)) {
+          queryResult.data.counselings.forEach((counseling) => {
+            if (counseling.counsId) {
+              newReportedCounsIds.add(counseling.counsId);
+            }
+          });
+        }
+      }
+    });
+    return newReportedCounsIds;
+  }, [sessionReportsData, periodReportDetailResults]);
+
+  // 레포트 정보 로딩 중 상태
+  const isLoadingReports =
+    isLoadingSessionReportsData || isLoadingPeriodReportsData || periodReportDetailResults.some((q) => q.isLoading);
 
   // 인증 에러 처리: 인증 실패 시 로그인 페이지로 리디렉션
   const handleAuthError = () => {
@@ -192,7 +249,7 @@ export function PastCounselingList() {
       <CardContent className="flex-1 overflow-hidden p-0">
         <ScrollArea className="h-full w-full p-4">
           {/* 1. 로딩 상태 처리 */}
-          {isLoading && (
+          {(isLoadingPastSessions || isLoadingReports) && ( // 로딩 상태 통합
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
                 <Skeleton key={i} className="h-16 w-full rounded-lg" />
@@ -201,13 +258,13 @@ export function PastCounselingList() {
           )}
 
           {/* 2. 에러 상태 처리 */}
-          {isError && (
+          {isErrorPastSessions && ( // 에러 상태 변수 사용
             <Alert variant="destructive">
               <Terminal className="h-4 w-4" />
               <AlertTitle>오류</AlertTitle>
               <AlertDescription>
                 상담 목록을 불러오는 중 오류가 발생했습니다.
-                {error?.message?.includes('신뢰할 수 없는 자격증명') ? (
+                {errorPastSessions?.message?.includes('신뢰할 수 없는 자격증명') ? ( // 에러 객체 변수 사용
                   <div className="mt-2">
                     <p>로그인이 필요합니다.</p>
                     <Button variant="outline" size="sm" className="mt-2" onClick={handleAuthError}>
@@ -215,14 +272,14 @@ export function PastCounselingList() {
                     </Button>
                   </div>
                 ) : (
-                  error?.message
+                  errorPastSessions?.message // 에러 객체 변수 사용
                 )}
               </AlertDescription>
             </Alert>
           )}
 
           {/* 3. 데이터 로딩 성공 시 */}
-          {!isLoading && !isError && (
+          {!isLoadingPastSessions && !isErrorPastSessions && (
             <div className="space-y-2 min-h-[300px]">
               {/* 3a. 목록이 비어있을 경우 */}
               {pastSessions && pastSessions.length === 0 && (
@@ -240,46 +297,65 @@ export function PastCounselingList() {
                   // counsId가 있는지 확인하고 유효한 키 생성
                   if (!session?.counsId) return null;
 
-                  const sessionId = String(session.counsId);
-                  const isActive = currentViewingCounsId === sessionId;
+                  const sessionIdString = String(session.counsId);
+                  const isActive = currentViewingCounsId === sessionIdString;
+                  const hasReport = reportedCounsIdsSet.has(session.counsId);
 
                   return (
-                    <div key={sessionId} className="relative mb-2">
-                      <div
-                        className={`block rounded-lg transition-colors pr-16 ${
+                    <div key={sessionIdString} className="relative group mb-2">
+                      <Link
+                        href={`/counseling/${sessionIdString}`}
+                        className={`block rounded-lg transition-colors p-3 pr-16 ${
                           isActive
-                            ? 'bg-pale-coral-pink/30 dark:bg-pale-coral-pink/20'
-                            : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                            ? 'bg-primary/10 dark:bg-primary/20 ring-2 ring-primary'
+                            : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700'
                         }`}
-                        onClick={() => router.push(`/counseling/${sessionId}`)}
-                        style={{ cursor: 'pointer' }}
                       >
-                        <PastCounselingListItem
-                          session={session}
-                          isActive={isActive}
-                          showTitle={true} // 제목 표시 옵션 추가
-                        />
+                        <h3 className="font-semibold text-sm truncate text-slate-800 dark:text-slate-100">
+                          {session.counsTitle || '제목 없음'}
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {new Date(session.createdAt).toLocaleString('ko-KR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </Link>
+                      {/* 버튼 영역: 오른쪽 상단에 위치 */}
+                      <div className="absolute top-1/2 right-3 transform -translate-y-1/2 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {isLoadingReports ? (
+                          <Skeleton className="h-7 w-14 rounded-md" />
+                        ) : hasReport ? (
+                          // 레포트가 있으면 제목 수정 버튼 (삭제 버튼 위치)
+                          <Button
+                            variant="ghost"
+                            size="icon" // icon_sm 대신 icon 사용 (Shadcn 기본 아이콘 버튼 크기)
+                            onClick={(e) => handleOpenTitleEditModal(e, session)}
+                            title="상담 제목 수정"
+                            className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 p-1" // 패딩 조정으로 크기 미세조정
+                          >
+                            <Edit size={16} />
+                          </Button>
+                        ) : (
+                          // 레포트가 없으면 삭제 버튼
+                          <Button
+                            variant="ghost"
+                            size="icon" // icon_sm 대신 icon 사용
+                            onClick={(e) => handleDeleteSession(e, session.counsId)}
+                            title="상담 기록 삭제"
+                            className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-1" // 패딩 조정
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        )}
+                        {/* 원래 제목 수정 버튼이 별도로 있었다면, 그 위치는 여기서 고려하지 않음.
+                            요청은 "삭제 버튼이 없는 경우, 삭제 버튼 위치에 제목 수정 버튼" 이었음.
+                            만약 hasReport가 true일 때도 다른 위치에 제목 수정 버튼이 필요하다면 추가 구현 필요.
+                         */}
                       </div>
-                      {/* 수정 버튼 */}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-1/2 right-14 transform -translate-y-1/2 h-6 w-6 rounded-full opacity-70 hover:opacity-100 hover:bg-blue-100 hover:text-blue-600 z-10"
-                        onClick={(e) => handleOpenTitleEditModal(e, session)}
-                        title="상담 제목 수정하기"
-                      >
-                        <Edit size={16} />
-                      </Button>
-                      {/* 삭제 버튼 */}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-1/2 right-2 transform -translate-y-1/2 h-6 w-6 rounded-full opacity-70 hover:opacity-100 hover:bg-red-100 hover:text-red-600 z-10"
-                        onClick={(e) => handleDeleteSession(e, session.counsId)}
-                        title="상담 삭제하기"
-                      >
-                        <Trash2 size={16} />
-                      </Button>
                     </div>
                   );
                 })}
