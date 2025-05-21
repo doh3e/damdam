@@ -2,18 +2,33 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ReportCalendar } from '@/widgets/ReportCalendar/ReportCalendar';
-import { deleteReport, getReports, updateReportTitle } from '@/entities/report/model/api';
+import {
+  createPeriodicReport,
+  deletePeriodicReport,
+  deleteReport,
+  getPeriodicReportDetail,
+  getReports,
+  updatePeriodicReportTitle,
+  updateReportTitle,
+} from '@/entities/report/model/api';
 import { SessionReportList } from '@/widgets/ReportList/SessionReportList';
 import { PeriodReportList } from '@/widgets/ReportList/PeriodReportList';
 import { format } from 'date-fns';
-import type { SessionReport, PeriodReport } from '@/entities/report/model/types';
+import type { SessionReport, PeriodReport, PeriodReportDetail } from '@/entities/report/model/types';
 import Modal from '@/shared/ui/modal';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUndo } from '@fortawesome/free-solid-svg-icons';
 
 export default function ReportsPage() {
   const [category, setCategory] = useState<'상담별' | '기간별'>('상담별');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [keyword, setKeyword] = useState('');
   const [sortOrder, setSortOrder] = useState('최신순');
+
+  const [periodReports, setPeriodReports] = useState<PeriodReportDetail[]>([]);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const [editTarget, setEditTarget] = useState<{ id: number; title: string } | null>(null);
@@ -49,7 +64,12 @@ export default function ReportsPage() {
   const confirmDelete = async () => {
     if (deleteTargetId == null) return;
     try {
-      await deleteReport(deleteTargetId);
+      if (category === '상담별') {
+        await deleteReport(deleteTargetId);
+      } else {
+        await deletePeriodicReport(deleteTargetId);
+        setPeriodReports((prev) => prev.filter((r) => r.preportId !== deleteTargetId));
+      }
       queryClient.invalidateQueries({ queryKey: ['reports'] });
     } catch {
       alert('삭제 실패');
@@ -58,21 +78,65 @@ export default function ReportsPage() {
     }
   };
 
-  const handleEditClick = (reportId: number, currentTitle: string) => {
-    setEditTarget({ id: reportId, title: currentTitle });
-    setNewTitle(currentTitle);
-  };
-
   const confirmEdit = async () => {
     if (!editTarget || !newTitle.trim()) return;
     try {
-      await updateReportTitle(editTarget.id, newTitle.trim());
+      if (category === '상담별') {
+        await updateReportTitle(editTarget.id, newTitle.trim());
+      } else {
+        await updatePeriodicReportTitle(editTarget.id, newTitle.trim());
+        setPeriodReports((prev) =>
+          prev.map((r) => (r.preportId === editTarget.id ? { ...r, preportTitle: newTitle.trim() } : r))
+        );
+      }
       queryClient.invalidateQueries({ queryKey: ['reports'] });
     } catch {
       alert('수정 실패');
     } finally {
       setEditTarget(null);
     }
+  };
+
+  const handleEditClick = (reportId: number, currentTitle: string) => {
+    setEditTarget({ id: reportId, title: currentTitle });
+    setNewTitle(currentTitle);
+  };
+
+  const handleCreatePeriodReport = async () => {
+    if (!startDate || !endDate) {
+      alert('시작일과 종료일을 모두 선택하세요.');
+      return;
+    }
+
+    const formattedStart = format(startDate, 'yyyy-MM-dd');
+    const formattedEnd = format(endDate, 'yyyy-MM-dd');
+
+    console.log('보내는 바디:', { startDate: formattedStart, endDate: formattedEnd });
+
+    setIsCreating(true);
+    try {
+      const res = await createPeriodicReport({
+        startDate: formattedStart,
+        endDate: formattedEnd,
+      });
+
+      const detail = await getPeriodicReportDetail(res.preportId);
+      setPeriodReports((prev) => [detail, ...prev]);
+    } catch (error) {
+      console.error('레포트 생성 에러:', error);
+      alert('레포트 생성에 실패했습니다.');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handlePeriodEditClick = (reportId: number, currentTitle: string) => {
+    setEditTarget({ id: reportId, title: currentTitle });
+    setNewTitle(currentTitle);
+  };
+
+  const handlePeriodDeleteClick = (reportId: number) => {
+    setDeleteTargetId(reportId);
   };
 
   return (
@@ -125,22 +189,54 @@ export default function ReportsPage() {
       {category === '상담별' && (
         <>
           <span className="font-bold block mb-2">상담날짜 선택</span>
-          <ReportCalendar selectedDate={selectedDate ?? new Date()} onSelectDate={setSelectedDate} />
+          <ReportCalendar selectedDate={selectedDate ?? new Date()} onSelectDate={setSelectedDate} type="single" />
+          {selectedDate && (
+            <button
+              onClick={() => setSelectedDate(null)}
+              className="ml-2 text-sm text-orange-600 bg-orange-50 border border-orange-200 px-3 py-1 rounded-md shadow-sm hover:bg-orange-100 transition flex items-center gap-1 mb-3"
+            >
+              <FontAwesomeIcon icon={faUndo} />
+              전체 레포트 보기
+            </button>
+          )}
+        </>
+      )}
+      {category === '기간별' && (
+        <>
+          <span className="font-bold block mb-2">시작일과 종료일 선택</span>
+          <div className="flex gap-2 items-center mb-2 ">
+            <ReportCalendar selectedDate={startDate ?? new Date()} onSelectDate={setStartDate} type="range" />
+            <span className="text-lg font-extrabold text-orange-500 px-2">~</span>
+            <ReportCalendar selectedDate={endDate ?? new Date()} onSelectDate={setEndDate} type="range" />
+          </div>
+          <div className="flex justify-center mb-2">
+            <button
+              onClick={handleCreatePeriodReport}
+              disabled={isCreating}
+              className="mb-4 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50"
+            >
+              {isCreating ? '생성 중...' : '기간별 요약 레포트 생성'}
+            </button>
+          </div>
+          {/* 생성된 레포트 리스트 출력 */}
+          <PeriodReportList
+            reports={periodReports}
+            isLoading={false}
+            onUpdate={handlePeriodEditClick}
+            onDelete={handlePeriodDeleteClick}
+          />
         </>
       )}
 
       {/* 레포트 리스트 */}
-      {category === '상담별' ? (
+      {category === '상담별' && (
         <SessionReportList
           reports={sortedReports as SessionReport[]}
           isLoading={isLoading}
           onUpdate={handleEditClick}
           onDelete={handleDeleteClick}
         />
-      ) : (
-        <PeriodReportList reports={sortedReports as PeriodReport[]} isLoading={isLoading} />
       )}
-
       {/* 삭제 모달 */}
       {deleteTargetId !== null && (
         <Modal
