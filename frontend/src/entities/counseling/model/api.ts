@@ -31,7 +31,16 @@ export const fetchPastCounselingSessions = async (
   if (typeof params?.isClosed === 'boolean') queryParams.append('isClosed', params.isClosed.toString());
 
   const endpoint = `/counsels${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-  return apiClient.get<CounselingSession[]>(endpoint);
+  const sessions = await apiClient.get<CounselingSession[]>(endpoint);
+
+  // 각 세션에 대해 레포트 발행 여부 필드를 초기화합니다.
+  // 실제 값은 CounselingSessionCard.tsx 등에서 비동기적으로 확인 후 업데이트해야 합니다.
+  // 또는 백엔드에서 이 정보를 함께 내려주는 것이 가장 좋습니다.
+  return sessions.map((session) => ({
+    ...session,
+    hasSessionReport: false, // 임시 초기값
+    hasPeriodReport: false, // 임시 초기값
+  }));
 };
 
 export interface CounselingSessionWithMessages {
@@ -204,3 +213,77 @@ export const sendChatMessageToServer = async (
   >(endpoint, messageData);
 };
 */
+
+// --- Helper functions to check report existence (Ideally should be in report entity) ---
+
+/**
+ * @typedef {object} ReportListItem - 레포트 목록 아이템
+ * @property {number} [counsId] - (세션 레포트용) 관련 상담 ID
+ * @property {string} createdAt - 생성 일시
+ * @property {number} [sreportId] - (세션 레포트용) 세션 레포트 ID
+ * @property {string} [sreportTitle] - (세션 레포트용) 세션 레포트 제목
+ * @property {string} [startDate] - (기간별 레포트용) 시작일
+ * @property {string} [endDate] - (기간별 레포트용) 종료일
+ * @property {number} [preportId] - (기간별 레포트용) 기간별 레포트 ID
+ * @property {string} [preportTitle] - (기간별 레포트용) 기간별 레포트 제목
+ */
+type ReportListItem = {
+  counsId?: number;
+  createdAt: string;
+  sreportId?: number;
+  sreportTitle?: string;
+  startDate?: string;
+  endDate?: string;
+  preportId?: number;
+  preportTitle?: string;
+};
+
+/**
+ * 특정 상담 세션에 대한 세션 레포트가 존재하는지 확인합니다.
+ * GET /reports?category=session
+ * @param {number} counsId - 확인할 상담 세션의 ID
+ * @returns {Promise<boolean>} 세션 레포트 존재 여부
+ */
+export const checkSessionReportExists = async (counsId: number): Promise<boolean> => {
+  if (!counsId) return false;
+  try {
+    // API 응답 타입을 ReportListItem 배열로 지정합니다.
+    const response = await apiClient.get<ReportListItem[]>(`/reports?category=session`);
+    // 응답 데이터가 배열이고, 그 안에 counsId가 일치하는 항목이 있는지 확인합니다.
+    return Array.isArray(response) && response.some((report) => report.counsId === counsId);
+  } catch (error) {
+    console.error(`Error checking session report for counsId ${counsId}:`, error);
+    return false; // 에러 발생 시 false 반환
+  }
+};
+
+/**
+ * 특정 상담 세션과 관련된 기간별 레포트가 존재하는지 확인합니다.
+ * GET /reports?category=period
+ * 중요: 현재 API 명세로는 기간별 레포트와 특정 상담 세션을 직접 연결할 수 없습니다.
+ * 이 함수는 counsId를 사용하지 않으며, 실제 로직은 백엔드 API 변경 또는 추가 정보가 필요합니다.
+ * 여기서는 임시로 항상 false를 반환하도록 합니다.
+ * @param {number} counsId - 확인할 상담 세션의 ID (현재 사용되지 않음)
+ * @returns {Promise<boolean>} 기간별 레포트 존재 여부 (현재 항상 false)
+ */
+export const checkPeriodReportExistsForSession = async (counsId: number): Promise<boolean> => {
+  // counsId를 사용하지 않음을 명시 (ESLint 경고 방지)
+  console.warn(
+    'checkPeriodReportExistsForSession called with counsId ' +
+      counsId +
+      ', but current API cannot link period reports to specific sessions directly.'
+  );
+  try {
+    // 참고: 이 API 호출은 특정 세션과 직접 연결되지 않습니다.
+    // 실제로는 이 API 응답을 바탕으로 해당 counsId와 관련된 기간별 레포트가 있는지 판별하는 로직이 필요합니다.
+    // 예를 들어, 기간별 레포트가 특정 기간 내의 모든 상담을 포함한다면,
+    // 해당 counsId의 상담이 그 기간에 포함되는지 등을 확인해야 합니다.
+    // 현재는 API 명세만으로는 구현이 불가능하여 false를 반환합니다.
+    // const response = await apiClient.get<ReportListItem[]>(`/reports?category=period`);
+    // console.log('Period reports fetched (not linked to specific session):', response);
+    return false; // 임시로 항상 false 반환
+  } catch (error) {
+    console.error(`Error checking period report (not linked to counsId ${counsId}):`, error);
+    return false;
+  }
+};

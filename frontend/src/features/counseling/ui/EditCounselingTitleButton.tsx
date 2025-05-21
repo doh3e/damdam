@@ -44,7 +44,7 @@ const EditCounselingTitleButton = ({
         variant="ghost"
         size="icon"
         onClick={handleOpenDialog}
-        className={`text-foreground hover:bg-soft-ivory hover:text-primary ${className}`}
+        className={`text-muted-foreground hover:text-primary ${className || ''}`.trim()}
         aria-label="상담 제목 수정"
         title="상담 제목 수정"
       >
