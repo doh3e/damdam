@@ -24,6 +24,7 @@ export default function ReportsPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [keyword, setKeyword] = useState('');
   const [sortOrder, setSortOrder] = useState('최신순');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const [periodReports, setPeriodReports] = useState<PeriodReportDetail[]>([]);
   const [startDate, setStartDate] = useState<Date>(new Date());
@@ -112,8 +113,6 @@ export default function ReportsPage() {
     const formattedStart = format(startDate, 'yyyyMMdd');
     const formattedEnd = format(endDate, 'yyyyMMdd');
 
-    console.log('보내는 바디:', { startDate: formattedStart, endDate: formattedEnd });
-
     setIsCreating(true);
     try {
       const res = await createPeriodicReport({
@@ -123,6 +122,7 @@ export default function ReportsPage() {
 
       const detail = await getPeriodicReportDetail(res.preportId);
       setPeriodReports((prev) => [detail, ...prev]);
+      setShowSuccessModal(true);
     } catch (error) {
       console.error('레포트 생성 에러:', error);
       alert('레포트 생성에 실패했습니다.');
@@ -288,6 +288,13 @@ export default function ReportsPage() {
             </div>
           </div>
         </Modal>
+      )}
+      {showSuccessModal && (
+        <Modal
+          message="레포트 생성 완료"
+          submessage="기간별 요약 레포트가 성공적으로 생성되었습니다."
+          onClose={() => setShowSuccessModal(false)}
+        />
       )}
     </div>
   );
