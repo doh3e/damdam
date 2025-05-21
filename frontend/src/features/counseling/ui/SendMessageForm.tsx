@@ -62,7 +62,7 @@ const SendMessageForm = ({
     setIsCurrentMessageFromVoice,
   } = useSTTStore();
 
-  const { startRecording, stopRecording, requestMicrophonePermission } = useAudioRecording();
+  const { startRecording, stopRecording } = useAudioRecording();
   const sttMutation = useRequestSTTMutation();
   const uploadVoiceMutation = useUploadVoiceFileMutation();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -135,18 +135,14 @@ const SendMessageForm = ({
         handleClearVoiceInput();
       }
       setSttErrorMessageToStore(null);
-      const permissionGranted = await requestMicrophonePermission();
-      if (permissionGranted) {
-        startRecording();
-      }
-    } else if (recordingState === RecordingState.RECORDING) {
+      await startRecording();
+    } else if (recordingState === RecordingState.RECORDING || recordingState === RecordingState.PAUSED) {
       stopRecording();
     }
   }, [
     disabled,
     isWebSocketConnected,
     recordingState,
-    requestMicrophonePermission,
     startRecording,
     stopRecording,
     setSttErrorMessageToStore,

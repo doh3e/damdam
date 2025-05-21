@@ -139,11 +139,11 @@ const uploadVoiceFile = async (payload: UploadVoiceFilePayload): Promise<UploadV
     endpoint,
     formData,
     {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      // headers: { // FormData 사용 시 Content-Type 헤더는 Axios가 자동으로 설정하도록 제거합니다.
+      //   'Content-Type': 'multipart/form-data',
+      // },
       timeout: 30000,
-    } as import('axios').InternalAxiosRequestConfig // 타입 단언 추가
+    } as import('axios').InternalAxiosRequestConfig // 타입 단언은 유지하거나, 필요시 조정
   );
 };
 

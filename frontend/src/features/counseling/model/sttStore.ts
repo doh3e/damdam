@@ -10,6 +10,7 @@ import { create } from 'zustand';
  * - IDLE: 기본 상태, 녹음 준비 완료 또는 녹음하지 않음.
  * - REQUESTING_PERMISSION: 마이크 권한 요청 중.
  * - RECORDING: 현재 음성 녹음 중.
+ * - PAUSED: 녹음이 일시 중지됨.
  * - STOPPED: 녹음이 중지되었으나 아직 처리(STT 변환 등)가 시작되지 않음.
  * - PROCESSING_STT: 녹음된 오디오를 STT로 변환 중.
  * - ERROR: 녹음 또는 STT 처리 중 오류 발생.
@@ -18,6 +19,7 @@ export enum RecordingState {
   IDLE = 'IDLE',
   REQUESTING_PERMISSION = 'REQUESTING_PERMISSION',
   RECORDING = 'RECORDING',
+  PAUSED = 'PAUSED',
   STOPPED = 'STOPPED',
   PROCESSING_STT = 'PROCESSING_STT',
   ERROR = 'ERROR',
