@@ -1,12 +1,12 @@
 # 🔥 당신이 담담해지는 그 날까지, 담담(DAMDAM)과 함께 이야기해보세요! 🔥
 
 담담(DAMDAM)은 AI 심리상담 챗봇 서비스로, `AI 상담사와 채팅을 통해 상담`하고 내 상담을 분석하는
-`상담별, 기간별 레포트를 제공받을 수 있는` <span><img src="https://img.shields.io/badge/Spring Boot-6DB33F?style=flat-square&logo=springboot&logoColor=white"> <img src="https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=white"></span>
+`상담별, 기간별 레포트를 제공받을 수 있는` <span><img src="https://img.shields.io/badge/Spring Boot-6DB33F?style=flat-square&logo=springboot&logoColor=white"> <img src="https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=Next.js&logoColor=white"/></span>
 기반의 서비스입니다.
 
 <br>
 
-이 프로젝트는 2025년 1월부터 2월까지 진행된 `삼성 청년 소프트웨어 아카데미(Samsung Software Academy For Youth, SSAFY)` 12기 2학기 공통 프로젝트 산출물입니다.
+이 프로젝트는 2025년 4월 14일일부터 5월 22일까지 진행된 `삼성 청년 소프트웨어 아카데미(Samsung Software Academy For Youth, SSAFY)` 12기 2학기 자율율 프로젝트 산출물입니다.
 
 <br>
 
@@ -40,10 +40,11 @@
 
 <span>
 <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=Node.js&logoColor=white"/>
-<img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black">
-<img src="https://img.shields.io/badge/Tailwind CSS-06B6D4?style=for-the-badge&logo=Tailwind CSS&logoColor=white"/>
+<img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=Next.js&logoColor=white"/>
+<img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=TypeScript&logoColor=white">
 <img src="https://img.shields.io/badge/Axios-5a29e4?style=for-the-badge&logo=axios&logoColor=white"/>
 <img src="https://img.shields.io/badge/Zustand-544542?style=for-the-badge&logo=&logoColor=white"/>
+<img src="https://img.shields.io/badge/Tailwind CSS-06B6D4?style=for-the-badge&logo=Tailwind CSS&logoColor=white"/>
 </span>
 
 ### AI
@@ -51,12 +52,18 @@
 <span>
 <img src="https://img.shields.io/badge/Python 3.12.9-3776AB?style=for-the-badge&logo=python&logoColor=white">
 
+### BigData
+
+<img src="https://img.shields.io/badge/Apache Spark-3776AB?style=for-the-badge&logo=Apache Spark&logoColor=white">
+<img src="https://img.shields.io/badge/hadoop-3776AB?style=for-the-badge&logo=hadoop&logoColor=white">
+
 </span>
 
 ### Database
 
 <span>
-<img src="https://img.shields.io/badge/MariaDB-003545?style=for-the-badge&logo=mariadb&logoColor=white"/>
+<img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=PostgreSQL&logoColor=white"/>
+<img src="https://img.shields.io/badge/Redis-FF4438?style=for-the-badge&logo=Redis&logoColor=white"/>
 </span>
 
 ### Infra / DevOps
@@ -66,15 +73,15 @@
 <img src="https://img.shields.io/badge/Jenkins-d24939?style=for-the-badge&logo=jenkins&logoColor=white"/>
 <img src="https://img.shields.io/badge/NGINX-009639?style=for-the-badge&logo=NGINX&logoColor=white"/>
 <img src="https://img.shields.io/badge/EC2-ff9900?style=for-the-badge&logo=amazonEc2&logoColor=white"/>
+<img src="https://img.shields.io/badge/S3-569A31?style=for-the-badge&logo=amazons3&logoColor=white"/>
 </span>
 
-### Version Control & Tools
+### Version Control & Collabo Tools
 
 <span>
-<img src="https://img.shields.io/badge/IntelliJ IDEA-000000?style=for-the-badge&logo=intellijidea&logoColor=white"/>
-<img src="https://img.shields.io/badge/Visual Studio Code-0078d7?style=for-the-badge&logo=visualstudiocode&logoColor=white"/>
 <img src="https://img.shields.io/badge/Git-f05032?style=for-the-badge&logo=git&logoColor=white"/>
 <img src="https://img.shields.io/badge/GitLab-fc6d26?style=for-the-badge&logo=gitlab&logoColor=white"/>
+<img src="https://img.shields.io/badge/Swagger-f05032?style=for-the-badge&logo=Swagger&logoColor=white"/>
 <img src="https://img.shields.io/badge/Jira-0052cc?style=for-the-badge&logo=jira&logoColor=white"/>
 <img src="https://img.shields.io/badge/Figma-f24e1e?style=for-the-badge&logo=figma&logoColor=white"/>
 <img src="https://img.shields.io/badge/Notion-000000?style=for-the-badge&logo=notion&logoColor=white"/>
