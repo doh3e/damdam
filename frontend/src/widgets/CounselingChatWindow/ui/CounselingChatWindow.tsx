@@ -25,7 +25,7 @@ import ChatMessageList from '@/widgets/ChatMessageList/ui/ChatMessageList';
 import { Card, CardHeader, CardContent, CardFooter } from '@/shared/ui/card';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
-import { Terminal, AlertCircle, AlertTriangle, HelpCircle, LogOut } from 'lucide-react';
+import { Terminal, AlertCircle, AlertTriangle, HelpCircle, LogOut, Loader2 } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import BackButton from '@/shared/ui/BackButton';
 import SessionEndModal from '@/features/counseling/ui/SessionEndModal';
@@ -61,6 +61,9 @@ export function CounselingChatWindow() {
   const { token } = useAuthStore(); // Zustand 스토어에서 사용자 인증 토큰을 가져옵니다.
   const { resetSTTState } = useSTTStore(); // resetSTTState 액션 가져오기
 
+  /** @ref {HTMLDivElement | null} chatContainerRef - 채팅 메시지 목록을 포함하는 CardContent 요소에 대한 ref. 스크롤 제어에 사용됩니다. */
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
   // Zustand 스토어에서 상담 관련 상태 및 액션들을 가져옵니다.
   const {
     setCurrentSessionId, // 현재 활성화된 상담 세션 ID를 스토어에 설정하는 함수.
@@ -72,6 +75,7 @@ export function CounselingChatWindow() {
     isCurrentSessionClosed: storeIsCurrentSessionClosed, // 스토어에 저장된 현재 세션의 종료 상태.
     lastUserActivityTime, // 현재 세션에서 마지막 사용자 활동 시간 (타임스탬프).
     setLastUserActivityTime, // 마지막 사용자 활동 시간을 스토어에 설정하는 함수.
+    setIsAiTyping, // AI 타이핑 상태를 스토어에 설정하는 함수.
   } = useCounselingStore();
 
   /** @ref {NodeJS.Timeout | null} autoEndTimerRef - 자동 세션 종료를 위한 타이머 ID를 저장하는 ref. */
@@ -179,6 +183,24 @@ export function CounselingChatWindow() {
     }
   }, [storeIsCurrentSessionClosed, resetSTTState]);
 
+  /**
+   * @effect 메시지 목록 (`messages`) 또는 AI 타이핑 상태 (`isAiTyping`)가 변경될 때 채팅 스크롤을 맨 아래로 이동시킵니다.
+   *         이를 통해 사용자는 항상 최신 메시지 또는 로딩 인디케이터를 볼 수 있습니다.
+   */
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      // CardContent 내부의 실제 스크롤 가능한 요소(ChatMessageList의 내부 div일 수도 있음)를 찾아야 할 수 있습니다.
+      // 우선 CardContent 자체를 스크ROLL 해봅니다.
+      // ChatMessageList가 자체적으로 스크롤을 가지고 있다면, 해당 컴포넌트 내부에서 이 로직을 처리하거나
+      // ChatMessageList 컴포넌트에 ref를 전달하여 직접 스크롤 제어해야 할 수 있습니다.
+      // 여기서는 CardContent (id="chat-message-list-container")를 기준으로 합니다.
+      const scrollableContainer = chatContainerRef.current; // document.getElementById('chat-message-list-container');
+      if (scrollableContainer) {
+        scrollableContainer.scrollTop = scrollableContainer.scrollHeight;
+      }
+    }
+  }, [messages, isAiTyping]);
+
   // --- WebSocket Connection (useWebSocket Hook) ---
   /**
    * @hook useWebSocket
@@ -204,22 +226,29 @@ export function CounselingChatWindow() {
       if (storeIsCurrentSessionClosed === null || storeIsCurrentSessionClosed === false) {
         setLastUserActivityTime(Date.now());
       }
+      // AI 응답 수신 시 (성공 또는 messageOrder=20 에러 포함) isAiTyping을 false로 설정
+      // 이 로직은 useWebSocket 훅 내부의 onMessage 콜백에서 messageOrder를 확인 후 호출하는 것이 더 적절할 수 있으나,
+      // 우선 여기서 간단히 모든 메시지 수신 시 false로 설정합니다.
+      // 특정 에러(messageOrder=20)도 AI의 '응답'으로 간주하여 타이핑 상태를 해제합니다.
+      setIsAiTyping(false);
     },
   });
 
   /**
    * @function handleSendUserMessage
-   * @description `sendUserMessage`를 래핑하여 메시지 전송 시 `lastUserActivityTime`을 업데이트하는 함수.
+   * @description `sendUserMessage`를 래핑하여 메시지 전송 시 `lastUserActivityTime`을 업데이트하고, `isAiTyping` 상태를 true로 설정하는 함수.
    * @param {StompSendUserMessagePayload} payload - 전송할 메시지 데이터.
    */
   const handleSendUserMessage = useCallback(
     (payload: StompSendUserMessagePayload) => {
       if (sendUserMessage) {
+        // 사용자 메시지 전송 직전에 AI 타이핑 상태를 true로 설정합니다.
+        setIsAiTyping(true);
         sendUserMessage(payload);
         setLastUserActivityTime(Date.now()); // 사용자 메시지 전송 시 활동 시간 업데이트
       }
     },
-    [sendUserMessage, setLastUserActivityTime]
+    [sendUserMessage, setLastUserActivityTime, setIsAiTyping]
   );
 
   /**
@@ -616,18 +645,26 @@ export function CounselingChatWindow() {
         {/* CardContent: 채팅 메시지 목록. flex-grow로 남은 공간 모두 차지, 내부에서 스크롤 처리. 배경색 변경 */}
         {/* p-0으로 변경하고, ChatMessageList 내부에서 패딩 및 스크롤 처리 */}
         <CardContent
-          className="flex-grow bg-light-gray dark:bg-gray-900 p-0 overflow-hidden scrollbar-custom"
+          ref={chatContainerRef}
+          className="flex flex-col flex-grow bg-light-gray dark:bg-gray-900 p-0 overflow-hidden scrollbar-custom"
           id="chat-message-list-container"
         >
           {/* ChatMessageList 내부에서 h-full 및 overflow-y-auto 필요 */}
           <ChatMessageList messages={messages} />
+          {/* AI 답변 생성 중 로딩 인디케이터 */}
+          {isAiTyping && (
+            <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin text-tomato-red dark:text-pale-coral-pink" />
+              <span>담담이가 답변 중입니다. 잠시만 기다려주세요!</span>
+            </div>
+          )}
         </CardContent>
 
         {/* CardFooter: 메시지 입력 폼. 배경색을 CardHeader와 동일하게, 패딩 조정 */}
         <CardFooter className="p-3 border-t border-light-gray dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-800 z-10">
           <SendMessageForm
             currentCounsId={couns_id!}
-            disabled={isEffectivelyClosed || !isWebSocketConnected} // 세션 종료 또는 웹소켓 미연결 시 비활성화
+            disabled={isEffectivelyClosed || !isWebSocketConnected || isAiTyping} // 세션 종료 또는 웹소켓 미연결 또는 AI 답변 생성 중일 때 비활성화
             isWebSocketConnected={isWebSocketConnected} // isWebSocketConnected prop 전달 추가
             sendUserMessage={handleSendUserMessage} // 래핑된 메시지 전송 함수 전달
             onUserActivity={() => setLastUserActivityTime(Date.now())} // 사용자 입력 활동 시 시간 업데이트
