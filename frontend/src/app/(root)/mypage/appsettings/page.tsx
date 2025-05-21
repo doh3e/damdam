@@ -165,11 +165,18 @@ export default function AppSettingsPage() {
             <span className="font-semibold">담담이 프로필 이미지</span>
             <div className="relative w-24 h-24 rounded-full overflow-hidden border border-gray-300 my-2 group">
               <Image
-                src={preview || '/profile.png'}
+                src={
+                  preview
+                    ? preview.includes('damdam-counseling-bucket.s3')
+                      ? `${preview}?v=${Date.now()}`
+                      : preview
+                    : '/profile.png'
+                }
                 alt="담담이 프로필"
                 fill
                 className="object-cover cursor-pointer"
-                unoptimized // 외부 S3 이미지일 경우 필수
+                unoptimized
+                crossOrigin="anonymous"
                 onClick={() => document.getElementById('botImageInput')?.click()}
               />
 
