@@ -19,6 +19,7 @@ import { useRequestSTTMutation, useUploadVoiceFileMutation } from '@/features/co
  * @property {(payload: StompSendUserMessagePayload) => void} [sendUserMessage] - 웹소켓을 통해 메시지를 전송하는 함수.
  * @property {boolean} [isWebSocketConnected] - 웹소켓 연결 상태.
  * @property {() => void} [onUserActivity] - 사용자 활동(예: 입력) 시 호출될 콜백.
+ * @property {boolean} [isAiTyping] - AI가 현재 답변을 생성 중인지 여부.
  */
 interface SendMessageFormProps {
   currentCounsId: string | null;
@@ -27,6 +28,7 @@ interface SendMessageFormProps {
   sendUserMessage?: (payload: StompSendUserMessagePayload) => void;
   isWebSocketConnected?: boolean;
   onUserActivity?: () => void;
+  isAiTyping?: boolean;
 }
 
 /**
@@ -44,6 +46,7 @@ const SendMessageForm = ({
   sendUserMessage,
   isWebSocketConnected,
   onUserActivity,
+  isAiTyping,
 }: SendMessageFormProps): React.ReactElement => {
   const [newMessageInput, setNewMessageInput] = useState('');
   const messages = useCounselingStore((state) => state.messages);
@@ -67,6 +70,8 @@ const SendMessageForm = ({
   const uploadVoiceMutation = useUploadVoiceFileMutation();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const { setVoiceStateForMessage } = useCounselingStore.getState();
 
   // STT 결과가 변경되면 입력창에 반영
   useEffect(() => {
@@ -234,6 +239,12 @@ const SendMessageForm = ({
       sendUserMessage(payload);
       console.log('[SendMessageForm] Message sent via WebSocket:', payload);
 
+      if (payload.isVoice && currentCounsId) {
+        const messageKey = `${currentCounsId}-${payload.messageOrder}`;
+        useCounselingStore.getState().setVoiceStateForMessage(messageKey, true);
+        console.log(`[SendMessageForm] Voice message state saved to map. Key: ${messageKey}`);
+      }
+
       if (payload.isVoice && localAudioBlob && currentCounsId) {
         console.log(
           '[SendMessageForm] Uploading WAV audioBlob for messageOrder:',
@@ -283,6 +294,12 @@ const SendMessageForm = ({
     ]
   );
 
+  const placeholderText = isAiTyping
+    ? '담담이가 답변 중입니다. 잠시만 기다려주세요!'
+    : disabled
+      ? '상담이 종료되었습니다.'
+      : '메시지를 입력하세요...';
+
   return (
     <form onSubmit={handleSubmit} className="flex w-full items-end space-x-2">
       {/* 마이크 버튼 */}
@@ -291,7 +308,7 @@ const SendMessageForm = ({
         variant="ghost"
         size="icon"
         onClick={handleMicButtonClick}
-        disabled={disabled || !isWebSocketConnected || recordingState === RecordingState.PROCESSING_STT}
+        disabled={disabled || !isWebSocketConnected || recordingState === RecordingState.PROCESSING_STT || isAiTyping}
         className="flex-shrink-0 text-gray-500 hover:text-pale-coral-pink dark:text-gray-400 dark:hover:text-pale-coral-pink disabled:opacity-50"
         aria-label={recordingState === RecordingState.RECORDING ? '녹음 중지' : '음성으로 입력하기'}
       >
@@ -304,7 +321,7 @@ const SendMessageForm = ({
         )}
       </Button>
 
-      {/* 메시지 입력 Textarea */}
+      {/* 메시지 입력 Textarea 와 음성 입력 취소 버튼 컨테이너 */}
       <div className="flex-grow relative">
         {isCurrentMessageFromVoice && audioBlob && (
           <div className="absolute top-1/2 transform -translate-y-1/2 right-3 z-10">
@@ -331,26 +348,17 @@ const SendMessageForm = ({
               handleSubmit();
             }
           }}
-          placeholder={
-            disabled
-              ? '상담이 종료되었습니다.'
-              : !isWebSocketConnected
-                ? '연결 중...'
-                : recordingState === RecordingState.RECORDING
-                  ? '음성 녹음 중...'
-                  : recordingState === RecordingState.PROCESSING_STT
-                    ? '음성 처리 중...'
-                    : '메시지를 입력하세요...'
-          }
-          className="w-full resize-none overflow-y-hidden rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pale-coral-pink dark:focus:ring-pale-coral-pink/80 pr-10 min-h-[40px]" // pr-10은 전송 버튼 공간 확보 (필요시)
-          rows={1} // 초기에는 1줄로 시작
-          disabled={
-            disabled || recordingState === RecordingState.RECORDING || recordingState === RecordingState.PROCESSING_STT
-          }
+          placeholder={placeholderText}
+          disabled={disabled || isAiTyping}
+          rows={1}
+          className={`w-full resize-none overflow-y-hidden rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pale-coral-pink dark:focus:ring-pale-coral-pink/80 min-h-[40px] placeholder-gray-400 dark:placeholder-gray-500 ${
+            disabled || isAiTyping ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : ''
+          } pr-10`}
+          aria-label="메시지 입력창"
         />
       </div>
 
-      {/* 전송 버튼 */}
+      {/* 전송 버튼 - Textarea와 같은 레벨의 형제 요소로 바깥에 위치 */}
       <Button
         type="submit"
         variant="default"
@@ -359,9 +367,10 @@ const SendMessageForm = ({
           disabled ||
           !newMessageInput.trim() ||
           !isWebSocketConnected ||
-          recordingState === RecordingState.PROCESSING_STT
+          recordingState === RecordingState.PROCESSING_STT ||
+          isAiTyping
         }
-        className="flex-shrink-0 bg-pale-coral-pink hover:bg-pale-coral-pink/90 text-white dark:bg-tomato-red dark:hover:bg-tomato-red/90 dark:text-white disabled:opacity-50 rounded-full" // 동그란 버튼으로 변경
+        className="flex-shrink-0 bg-pale-coral-pink hover:bg-pale-coral-pink/90 text-white dark:bg-tomato-red dark:hover:bg-tomato-red/90 dark:text-white disabled:opacity-50 rounded-full"
         aria-label="메시지 전송"
       >
         <SendHorizonal className="h-5 w-5" />

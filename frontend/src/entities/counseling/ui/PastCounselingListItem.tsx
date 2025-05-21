@@ -60,7 +60,7 @@ const PastCounselingListItem: React.FC<PastCounselingListItemProps> = ({
         )}
         {/* 세션 종료 상태 표시 */}
         {session.isClosed ? (
-          <p className="text-xs text-muted-foreground truncate">종료된 상담입니다.</p>
+          <p className="text-xs text-tomato-red truncate">종료된 상담입니다.</p>
         ) : (
           <p className="text-xs text-green-600 dark:text-green-500 truncate">진행 중인 상담입니다.</p>
         )}
