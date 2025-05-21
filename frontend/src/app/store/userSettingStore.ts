@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface SettingsState {
   nickname: string;
@@ -16,22 +17,43 @@ interface SettingsState {
   setBotCustom: (value: string) => void;
   setBotImageUrl: (value: string) => void;
   setBotImageFile: (file: File | null) => void;
+
+  reset: () => void;
 }
 
-export const useSettingsStore = create<SettingsState>((set) => ({
-  nickname: '',
-  email: '',
-  isDarkmode: false,
-  isAlarm: true,
-  botCustom: 'friendly',
-  botImageUrl: '/damdami.png',
-  botImageFile: null,
+export const useSettingsStore = create<SettingsState>()(
+  persist(
+    (set) => ({
+      nickname: '',
+      email: '',
+      isDarkmode: false,
+      isAlarm: true,
+      botCustom: 'friendly',
+      botImageUrl: '/damdami.png',
+      botImageFile: null,
 
-  setNickname: (value) => set({ nickname: value }),
-  setEmail: (value) => set({ email: value }),
-  setIsDarkmode: (value) => set({ isDarkmode: value }),
-  setIsAlarm: (value) => set({ isAlarm: value }),
-  setBotCustom: (value) => set({ botCustom: value }),
-  setBotImageUrl: (value) => set({ botImageUrl: value }),
-  setBotImageFile: (file) => set({ botImageFile: file }),
-}));
+      setNickname: (value) => set({ nickname: value }),
+      setEmail: (value) => set({ email: value }),
+      setIsDarkmode: (value) => set({ isDarkmode: value }),
+      setIsAlarm: (value) => set({ isAlarm: value }),
+      setBotCustom: (value) => set({ botCustom: value }),
+      setBotImageUrl: (value) => set({ botImageUrl: value }),
+      setBotImageFile: (file) => set({ botImageFile: file }),
+
+      reset: () =>
+        set({
+          nickname: '',
+          email: '',
+          isDarkmode: false,
+          isAlarm: true,
+          botCustom: 'friendly',
+          botImageUrl: '/damdami.png',
+          botImageFile: null,
+        }),
+    }),
+    {
+      name: 'app-settings', // localStorage에 저장될 키
+      partialize: (state) => Object.fromEntries(Object.entries(state).filter(([key]) => key !== 'botImageFile')),
+    }
+  )
+);

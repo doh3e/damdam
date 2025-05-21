@@ -18,6 +18,7 @@ import {
   faGear,
   faRightFromBracket,
 } from '@fortawesome/free-solid-svg-icons';
+import { useSettingsStore } from '@/app/store/userSettingStore';
 
 export default function MyPage() {
   const router = useRouter();
@@ -29,8 +30,10 @@ export default function MyPage() {
   const handleLogout = () => {
     useAuthStore.getState().clearToken();
     resetProfile();
+    useSettingsStore.getState().reset();
     localStorage.removeItem('user-profile-store');
     localStorage.removeItem('profile-image-preview');
+    localStorage.removeItem('app-settings');
     router.replace('/login');
   };
 
