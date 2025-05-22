@@ -33,7 +33,13 @@
 <img src="https://img.shields.io/badge/Spring Data JPA-6DB33F?style=for-the-badge&logo=&logoColor=white">
 <img src="https://img.shields.io/badge/QueryDSL-4287f5?style=for-the-badge&logo=&logoColor=white">
 <img src="https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens">
+</span>
 
+### Database
+
+<span>
+<img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=PostgreSQL&logoColor=white"/>
+<img src="https://img.shields.io/badge/Redis-FF4438?style=for-the-badge&logo=Redis&logoColor=white"/>
 </span>
 
 ### Client
@@ -45,25 +51,22 @@
 <img src="https://img.shields.io/badge/Axios-5a29e4?style=for-the-badge&logo=axios&logoColor=white"/>
 <img src="https://img.shields.io/badge/Zustand-544542?style=for-the-badge&logo=&logoColor=white"/>
 <img src="https://img.shields.io/badge/Tailwind CSS-06B6D4?style=for-the-badge&logo=Tailwind CSS&logoColor=white"/>
+<img src="https://img.shields.io/badge/React Tanstack Query-FF4154?style=for-the-badge&logo=React Query&logoColor=white"/>
 </span>
 
 ### AI
 
 <span>
 <img src="https://img.shields.io/badge/Python 3.12.9-3776AB?style=for-the-badge&logo=python&logoColor=white">
+<img src="https://img.shields.io/badge/huggingface-FFD21E?style=for-the-badge&logo=huggingface&logoColor=white">
+<img src="https://img.shields.io/badge/ollama-000000?style=for-the-badge&logo=ollama&logoColor=white">
+</span>
 
 ### BigData
 
-<img src="https://img.shields.io/badge/Apache Spark-3776AB?style=for-the-badge&logo=Apache Spark&logoColor=white">
-<img src="https://img.shields.io/badge/hadoop-3776AB?style=for-the-badge&logo=hadoop&logoColor=white">
-
-</span>
-
-### Database
-
 <span>
-<img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=PostgreSQL&logoColor=white"/>
-<img src="https://img.shields.io/badge/Redis-FF4438?style=for-the-badge&logo=Redis&logoColor=white"/>
+<img src="https://img.shields.io/badge/Apache Spark-E25A1C?style=for-the-badge&logo=Apache Spark&logoColor=white">
+<img src="https://img.shields.io/badge/Apache Hadoop-66CCFF?style=for-the-badge&logo=Apache Hadoop&logoColor=white">
 </span>
 
 ### Infra / DevOps
@@ -81,7 +84,7 @@
 <span>
 <img src="https://img.shields.io/badge/Git-f05032?style=for-the-badge&logo=git&logoColor=white"/>
 <img src="https://img.shields.io/badge/GitLab-fc6d26?style=for-the-badge&logo=gitlab&logoColor=white"/>
-<img src="https://img.shields.io/badge/Swagger-f05032?style=for-the-badge&logo=Swagger&logoColor=white"/>
+<img src="https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=Swagger&logoColor=white"/>
 <img src="https://img.shields.io/badge/Jira-0052cc?style=for-the-badge&logo=jira&logoColor=white"/>
 <img src="https://img.shields.io/badge/Figma-f24e1e?style=for-the-badge&logo=figma&logoColor=white"/>
 <img src="https://img.shields.io/badge/Notion-000000?style=for-the-badge&logo=notion&logoColor=white"/>
@@ -161,16 +164,37 @@
 
 `서준호`
 
-**본인이 한 일**
+ **FSD 아키텍처 설계 및 도입**
 
-    1. 요약1
-    2. 요약2
+    - 유지보수 및 확장성 향상을 위해 Feature-Sliced Design 아키텍처 적용.
+    - `app` (전역 설정/상태), `processes` (복합 시나리오), `widgets` (UI 블록), `features` (기능 단위),
+        `entities` (도메인 객체), `shared` (공용 모듈) 레이어로 구성하여 관심사 분리 및 모듈화 극대화.
 
-**본인이 한 일**
+**Next.js App Router 기반 기본 레이아웃 구현**
 
-    1. 요약1
-    2. 요약2
+    - `app/layout.tsx`를 통한 전역 레이아웃 및 페이지별(`counseling/layout.tsx` 등) 특화 레이아웃 구축.
+    - `widgets/Header`, `widgets/BottomNavigation` 등 공통 위젯을 활용하여 일관된 사용자 경험 제공.
 
+**AI 상담 기능 (실시간 채팅)**
+
+    - `@stomp/stompjs`, `sockjs-client` 기반 웹소켓 통신 (`shared/hooks/useWebSocket.ts`)으로 LLM 서버와 실시간 메시징 구현.
+    - 채팅 UI (`widgets/CounselingChatWindow`, `widgets/ChatMessageList`), 메시지 입력/표시 (`features/counseling/ui/SendMessageForm`,
+        `entities/counseling/ui/ChatBubble`) 기능 개발.
+    - 상담 세션 관리 (시작, 종료, 보고서 생성 버튼 등) 기능 통합.
+
+**음성-텍스트 변환 (STT) 기능**
+
+    - `react-media-recorder` 활용 음성 녹음 기능 (`features/counseling/hooks/useAudioRecording.ts`) 구현.
+    - OpenAI Whisper API 연동:
+        - 음성 파일: 클라이언트 녹음 → Next.js Route Handler (`app/api/stt/route.ts`) → Whisper API (STT 변환)
+            → 텍스트 결과 클라이언트 반환.
+        - STT 변환 텍스트: 웹소켓 통해 LLM 서버로 전송.
+
+**전역 상태 및 서버 데이터 관리**
+
+    - **클라이언트 상태**: `Zustand` 활용 (UI 상태, 인증 토큰, 상담/STT 관련 상태 등 - `app/store/`, `features/**/model/*Store.ts`).
+    - **서버 데이터**: `Tanstack Query` 활용 (API 연동, 데이터 캐싱, 동기화, 로딩/에러 처리 - `entities/**/model/api.ts` 및
+        `queries.ts`/`mutations.ts`).
   </div>
 
 <br>
@@ -249,28 +273,41 @@
 
 `이현준`
 
-**로그인 페이지**
+**랜딩 페이지(홈 화면) 구현**
 
-    1. 프론트 소셜 로그인 화면 UI 구현 (네이버/카카오/구글)
-    2. 로그인 후 사용자 정보 저장 및 상태 관리
+    - 서비스 첫인상을 위한 매력적인 홈 화면(`app/page.tsx`) 개발.
+    - Next.js App Router, Shadcn/ui, Tailwind CSS 활용하여 반응형 UI/UX 제공.
 
-**사전설문 페이지**
+**회원 인증 (소셜 로그인 연동)**
 
-    1. 우울(PHQ-9), 불안(GAD-7), 스트레스(PSS) 지수 선택형 설문 UI 제작
-    2. 공신력 있는 테스트지에 따른 문항 점수 계산 및 백엔드 API 연동 
+    - Google, Naver, Kakao 소셜 로그인(`features/auth/SocialLoginButtons/`, `app/(root)/callback/page.tsx`) 기능 구현.
+    - 최초 로그인 시 추가 정보 입력 및 사전 설문 연동 프로세스(`processes/auth/`) 구축.
+    - JWT 토큰 기반 인증 상태 관리 (`app/store/authStore.ts`).
 
-**레포트 페이지**
+**사전 설문 기능 개발**
 
-    1. 상담별/기간별 리포트 리스트 및 필터 기능 구현
-    2. 감정 리포트 상세 페이지 UI 개발 (요약/분석/그래프 시각화 포함)
-    3. EmotionCircle(감정 위치), EmotionLineChart(감정 추이) 컴포넌트 구현
+    - 단계별 설문 페이지(`app/(root)/signup/survey/[step]/page.tsx`) 및 답변 처리 로직 구현.
+    - 설문 결과(`app/store/surveyStore.ts`에서 관리) 서버 전송 기능 개발 (`features/user-survey/SubmitSurveyForm/`).
 
-**마이페이지**
+**나의 상담 (세션별/기간별 레포트 및 시각화)**
 
-    1. 사용자 프로필 조회/수정 UI 구현 및 서버 연동
-    2. 프로필 이미지 업로드 및 미리보기 처리 (FormData)
-    3. 사용자 설정(Zustand 관리: 성별, 연령, MBTI 등)과 챗봇 커스터마이징 반영
-    4. 챗봇 캐릭터 이미지 및 말투 스타일 선택 기능
+    - 상담 레포트 조회 페이지(`app/(root)/reports/`, `app/(root)/reports/[reportId]/`,
+        `app/(root)/reports/periodic/[preportId]/`) 개발.
+    - 백엔드 LLM 요약/감정분석 데이터 기반 레포트 내용 구성 (`entities/report/model/api.ts`).
+    - 데이터 시각화: `Chart.js`/`Recharts` 활용 감정 그래프(`entities/report/ui/EmotionLineChart.tsx`),
+        `react-day-picker` 캘린더(`widgets/ReportCalendar/`) 연동.
+
+**마이페이지 기능 구현**
+
+    - 사용자 프로필(정보 조회/수정 - `app/(root)/mypage/page.tsx`, `features/user-profile/UserProfileForm/`),
+        앱/AI 설정(`app/(root)/mypage/appsettings/page.tsx`) 기능 개발.
+    - 관련 API 연동 및 클라이언트 상태 관리(`entities/user/model/api.ts`, `app/store/userProfileStore.ts`, `userSettingStore.ts`).
+
+**전역 상태 및 서버 데이터 관리**
+
+    - **클라이언트 상태**: `Zustand` 활용 (UI 상태, 인증 토큰, 상담/STT 관련 상태 등 - `app/store/`, `features/**/model/*Store.ts`).
+    - **서버 데이터**: `Tanstack Query` 활용 (API 연동, 데이터 캐싱, 동기화, 로딩/에러 처리 - `entities/**/model/api.ts` 및
+        `queries.ts`/`mutations.ts`).
 
 </div>
 
