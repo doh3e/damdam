@@ -185,7 +185,7 @@ class SenseVoiceSmall(nn.Module):
 ```
 혹은 간편하게 본 프로젝트 레포지토리 클론
 ```bash
-git clone https://github.com/your-github/SenseVoice.git
+git clone https://github.com/bobobo7git/SenseVoice.git
 ```
 \*개인 레포지토리이므로 지워질 수 있습니다.
 
