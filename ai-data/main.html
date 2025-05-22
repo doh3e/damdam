@@ -12,7 +12,7 @@
       width: 100%;
       height: 100px;
     }
-    #response, #summary {
+    #response, #summary, #period-summary {
       white-space: pre-wrap;
       background: #f2f2f2;
       padding: 1rem;
@@ -23,8 +23,8 @@
 </head>
 <body>
   <h2>💬 심리상담 챗봇 테스트</h2>
-  <label for="user_id">User ID:</label>
-  <input id="user_id" type="text" value="test_user" />
+  <label for="nickname">닉네임:</label>
+  <input id="nickname" type="text" value="보형" />
 
   <h3>대화하기</h3>
   <textarea id="message" placeholder="상담자님의 이야기를 입력해보세요..."></textarea>
@@ -35,34 +35,123 @@
   <button onclick="getSummary()">요약 요청</button>
   <div id="summary"></div>
 
+  <h3>🕒 기간별 리포트 생성 (3회 상담 기록 기반)</h3>
+  <button onclick="getPeriodReport()">기간별 요약 요청</button>
+  <div id="period-summary"></div>
+
   <script>
-    const API_URL = "http://3.39.21.2:8001"; // EC2 퍼블릭 IP로 교체 // 필요 시 EC2 퍼블릭 IP로 변경
+    const API_URL = "https://k12s202.p.ssafy.io/ai-data"; // 실제 서버 주소로 변경 필요
+
+    const localUserContext = {
+      botCustom: "상냥한",
+      gender: "FEMALE",
+      age: "THIRTIES",
+      career: "백엔드 개발자",
+      mbti: "INFJ",
+      depression: 10,
+      anxiety: 7,
+      stress: 12,
+      isSuicidal: false,
+      stressReason: "프로젝트 마감"
+    };
+
+    const localEmotion = {
+      happiness: 20,
+      sadness: 50,
+      angry: 5,
+      neutral: 20,
+      other: 5
+    };
+
+    const dialogs = [
+      // 🟣 1회차
+      "상담자: 아무것도 하고 싶지 않아요. 요즘 그냥 누워만 있고 싶어요.",
+      "AI: 에너지가 많이 떨어진 상태 같아요. 어떤 때 가장 무기력하게 느껴지셨을까요?",
+      "상담자: 그냥 아침에 눈뜨는 것도 괴로워요.",
+      "AI: 그만큼 힘든 시간이 계속되고 있었던 것 같아요. 요즘 가장 힘들다고 느끼는 순간은 언제인가요?",
+
+      // 🔵 2회차
+      "상담자: 어제는 오랜만에 밖에 나갔어요.",
+      "AI: 잘하셨어요. 외출이 쉽지 않았을 텐데 용기 내주셔서 감사해요.",
+      "상담자: 아직도 힘들긴 한데, 계속 이렇게 있어선 안 되겠다는 생각이 들었어요.",
+      "AI: 그렇게 느끼신 건 중요한 변화의 시작이에요. 스스로를 돌보려는 마음이 느껴져요.",
+
+      // 🟢 3회차
+      "상담자: 요즘은 예전만큼 힘들진 않아요.",
+      "AI: 그렇게 말씀해주셔서 기뻐요. 스스로를 어떻게 돌보며 지내셨나요?",
+      "상담자: 산책을 자주 하고, 예전보다 잠도 잘 자요.",
+      "AI: 소소한 일상들이 회복의 기반이 되는 것 같아요. 정말 잘하고 계세요."
+    ];
 
     async function sendMessage() {
       const message = document.getElementById("message").value;
-      const user_id = document.getElementById("user_id").value;
+      const nickname = document.getElementById("nickname").value;
+
+      const payload = {
+        nickname,
+        message,
+        isVoice: false,
+        userContext: localUserContext,
+        emotion: localEmotion
+      };
+
       const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, user_id })
+        body: JSON.stringify(payload)
       });
+
       const data = await res.json();
-      document.getElementById("response").innerText = "AI 응답: " + data.ai_response;
+      document.getElementById("response").innerText = "🧠 AI 응답: " + data.ai_response;
     }
 
     async function getSummary() {
-      const user_id = document.getElementById("user_id").value;
+      const nickname = document.getElementById("nickname").value;
       const res = await fetch(`${API_URL}/summary`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id })
+        body: JSON.stringify({ nickname })
       });
       const data = await res.json();
-      document.getElementById("summary").innerText =
-        `📋 감정 요약:\n${data.summary}\n\n📊 감정 점수:\n` + JSON.stringify(data.scores, null, 2);
-      if (data.valence) document.getElementById("summary").innerText += `\n🧭 Valence: ${data.valence}, Arousal: ${data.arousal}`;
+      const result = 
+        `📋 상담 요약:\n${data.summary}\n\n` +
+        `🔍 감정 분석:\n${data.analyze}\n\n` +
+        `🧭 Russell 감정 좌표:\nValence: ${data.valence}, Arousal: ${data.arousal}`;
+      document.getElementById("summary").innerText = result;
     }
+
+async function getPeriodReport() {
+  const nickname = document.getElementById("nickname").value;
+
+  try {
+    const reportResponse = await fetch(`${API_URL}/period-report`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nickname, dialogs })
+    });
+
+    const reportData = await reportResponse.json();
+
+    if (reportData.error) {
+      document.getElementById("period-summary").innerText =
+        "⚠️ 리포트 생성 중 오류가 발생했습니다.\n\n" + reportData.raw_response;
+      return;
+    }
+
+    const result =
+      `📋 <b>상담 요약</b>\n${reportData.summary}\n\n` +
+      `👏 <b>AI의 긍정적 피드백</b>\n${reportData.compliment}\n\n` +
+      `😟 <b>상담자가 표현한 심리적 어려움</b>\n${reportData.worry}\n\n` +
+      `💡 <b>AI의 상담적 개입</b>\n${reportData.advice}`;
+
+    document.getElementById("period-summary").innerHTML = result.replace(/\n/g, "<br>");
+  } catch (error) {
+    document.getElementById("period-summary").innerText =
+      "❌ 리포트를 가져오는 중 오류가 발생했습니다.\n" + error;
+  }
+}
+
+
   </script>
 </body>
 </html>
-
