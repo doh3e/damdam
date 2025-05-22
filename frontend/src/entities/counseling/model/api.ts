@@ -75,7 +75,7 @@ export const fetchCounselingSessionDetails = async (
     sessionData.messageList = [];
   }
 
-  console.log('fetchCounselingSessionDetails API responseData (processed):', sessionData);
+  // console.log('fetchCounselingSessionDetails API responseData (processed):', sessionData);
   return sessionData;
 };
 
@@ -186,13 +186,13 @@ export const createReportAndEndSession = async (counsId: string): Promise<{ srep
     throw new Error('레포트 생성 및 세션 종료를 위한 상담 ID가 제공되지 않았습니다.');
   }
   const endpoint = `/counsels/${counsId}/reports`;
-  console.log(`API 요청: POST ${endpoint}`);
+  // console.log(`API 요청: POST ${endpoint}`);
   // apiClient.post<TRequest, TResponse>(url, data)
   // TRequest (요청 본문 타입)는 undefined, TResponse (응답 본문 타입)는 { sreportId: number }
   // data (요청 본문 값)는 undefined
   // apiClient.post는 응답 인터셉터에 의해 Promise<TResponse> (즉, Promise<{ sreportId: number }>)를 반환합니다.
   const responseData = await apiClient.post<undefined, { sreportId: number }>(endpoint, undefined);
-  console.log('createReportAndEndSession API responseData:', responseData);
+  // console.log('createReportAndEndSession API responseData:', responseData);
   return responseData;
 };
 

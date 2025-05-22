@@ -40,7 +40,7 @@ const CreateReportButton = ({
     isSuccess,
   } = useCreateSessionReport({
     onSuccess: (response) => {
-      console.log(`세션 ${counsId}의 레포트가 성공적으로 생성되었습니다. 레포트 ID: ${response.report_id}`);
+      // console.log(`세션 ${counsId}의 레포트가 성공적으로 생성되었습니다. 레포트 ID: ${response.report_id}`);
       onSuccess?.(response.report_id);
       // TODO: 여기에 toast 메시지 또는 다른 알림 추가
     },
