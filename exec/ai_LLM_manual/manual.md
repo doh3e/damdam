@@ -120,6 +120,15 @@ sudo systemctl enable ollama
 sudo systemctl start ollama
 ```
 
+### RAG
+
+챗봇이 답변을 생성하기 전에 참고할 문서입니다.
+약 14,000건의 상담 QA 데이터 셋 형태로 이루어져 있습니다.
+아래 두 파일이 같은 로컬 경로에 존재해야 합니다.
+
+- qa_chunks.json : 문서 텍스트 데이터입니다.
+- qa_index_bge_m3.faiss : 벡터 검색용 인덱스입니다.
+
 ### Fast API
 모델 서빙을 위한 api 서버입니다.
 
