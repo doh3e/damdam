@@ -7,13 +7,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
 // 임시 로그 추가
-console.log(
-  '[STT_ROUTE_TS] Loading OpenAI API Key from env:',
-  process.env.OPENAI_API_KEY ? 'Key Found (length: ' + process.env.OPENAI_API_KEY.length + ')' : 'Key NOT Found!'
-);
-if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.length < 10) {
-  console.warn('[STT_ROUTE_TS] OpenAI API Key seems too short:', process.env.OPENAI_API_KEY);
-}
+// console.log(
+//   '[STT_ROUTE_TS] Loading OpenAI API Key from env:',
+//   process.env.OPENAI_API_KEY ? 'Key Found (length: ' + process.env.OPENAI_API_KEY.length + ')' : 'Key NOT Found!'
+// );
+// if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.length < 10) {
+//   console.warn('[STT_ROUTE_TS] OpenAI API Key seems too short:', process.env.OPENAI_API_KEY);
+// }
 
 // OpenAI API 클라이언트 초기화
 const openai = new OpenAI({
@@ -44,13 +44,13 @@ type STTSuccessResponse = {
  * @returns {Promise<NextResponse<STTSuccessResponse | STTErrorResponse>>}
  */
 export async function POST(request: NextRequest): Promise<NextResponse<STTSuccessResponse | STTErrorResponse>> {
-  console.log('[STT_ROUTE_TS_POST] Received request');
+  // console.log('[STT_ROUTE_TS_POST] Received request');
   try {
-    console.log('[STT_ROUTE_TS_POST] Attempting to get formData');
+    // console.log('[STT_ROUTE_TS_POST] Attempting to get formData');
     const formData = await request.formData();
-    console.log('[STT_ROUTE_TS_POST] formData received');
+    // console.log('[STT_ROUTE_TS_POST] formData received');
     const audioFile = formData.get('audioFile');
-    console.log('[STT_ROUTE_TS_POST] audioFile retrieved:', audioFile ? 'File found' : 'File NOT found');
+    // console.log('[STT_ROUTE_TS_POST] audioFile retrieved:', audioFile ? 'File found' : 'File NOT found');
 
     if (!audioFile || !(audioFile instanceof File)) {
       console.error('[STT_ROUTE_TS_POST] Audio file validation failed');
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<STTSucces
 
     // Whisper API 호출 시 File 객체를 직접 전달
     // OpenAI SDK v4+는 File 객체를 지원합니다.
-    console.log('[STT_ROUTE_TS_POST] Attempting OpenAI API call');
+    // console.log('[STT_ROUTE_TS_POST] Attempting OpenAI API call');
     const transcription = await openai.audio.transcriptions.create({
       file: audioFile, // File 객체 직접 전달
       model: 'whisper-1',
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<STTSucces
       response_format: 'json',
     });
 
-    console.log('Whisper API transcription result received.');
+    // console.log('Whisper API transcription result received.');
     return NextResponse.json({ text: transcription.text }, { status: 200 });
   } catch (error: any) {
     console.error('[STT_ROUTE_TS_POST] Error caught in STT API Route:', error);

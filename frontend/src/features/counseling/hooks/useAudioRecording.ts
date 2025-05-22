@@ -47,7 +47,7 @@ export const useAudioRecording = (): UseAudioRecordingReturn => {
 
   const handleStop = useCallback(
     (blobUrl: string, blob: Blob) => {
-      console.log('녹음 중지됨, Blob URL:', blobUrl, 'Blob:', blob);
+      // console.log('녹음 중지됨, Blob URL:', blobUrl, 'Blob:', blob);
       setInternalMediaBlobUrl(blobUrl);
       setInternalAudioBlob(blob);
       setAudioBlob(blob); // STT 스토어에도 Blob 저장
@@ -86,7 +86,7 @@ export const useAudioRecording = (): UseAudioRecordingReturn => {
     if (RMRMediaBlobUrl && status === 'stopped' && !internalMediaBlobUrl) {
       // onStop이 먼저 호출되어 internalMediaBlobUrl이 설정되므로, 이 조건은 잘 발생하지 않음.
       // 만약 onStop을 안쓰고 순수하게 mediaBlobUrl 상태 변화로만 제어한다면 필요.
-      console.log('RMRMediaBlobUrl 변경 감지 (stopped 상태):', RMRMediaBlobUrl);
+      // console.log('RMRMediaBlobUrl 변경 감지 (stopped 상태):', RMRMediaBlobUrl);
       // setInternalMediaBlobUrl(RMRMediaBlobUrl); // onStop에서 처리
       // Blob 객체를 생성하는 로직이 필요할 수 있으나, onStop에서 blob을 직접 받음
     }
@@ -130,7 +130,7 @@ export const useAudioRecording = (): UseAudioRecordingReturn => {
 
   const handleStartRecording = useCallback(async () => {
     try {
-      console.log('녹음 시작 요청');
+      // console.log('녹음 시작 요청');
       setSttErrorMessage(null); // 이전 에러 메시지 초기화
       setInternalAudioBlob(null); // 이전 Blob 초기화
       // setInternalMediaBlobUrl(null); // RMRClearBlobUrl이 이 역할을 할 수 있음
@@ -142,7 +142,7 @@ export const useAudioRecording = (): UseAudioRecordingReturn => {
       // 필요하다면 navigator.mediaDevices.getUserMedia를 먼저 호출하여 권한 확보 후 RMRStartRecording 호출.
       // 하지만 useReactMediaRecorder가 이를 내부적으로 처리해줄 것으로 기대.
       await RMRStartRecording(); // promise를 반환하지 않을 수 있음, 라이브러리 확인 필요
-      console.log('RMRStartRecording 호출 후, 현재 상태:', status); // 상태 변화는 비동기적일 수 있음
+      // console.log('RMRStartRecording 호출 후, 현재 상태:', status); // 상태 변화는 비동기적일 수 있음
       setRecordingState(RecordingState.RECORDING);
       startTimer();
     } catch (err) {
@@ -162,7 +162,7 @@ export const useAudioRecording = (): UseAudioRecordingReturn => {
   }, [setSttErrorMessage, RMRClearBlobUrl, RMRStartRecording, setRecordingState, startTimer, status, setSttResultText]);
 
   const handleStopRecording = useCallback(async () => {
-    console.log('녹음 중지 요청');
+    // console.log('녹음 중지 요청');
     // RMRStopRecording은 onStop 콜백을 트리거함.
     // onStop 콜백 내에서 상태 변경 및 타이머 정리가 이루어짐.
     await RMRStopRecording(); // promise를 반환하지 않을 수 있음
@@ -178,7 +178,7 @@ export const useAudioRecording = (): UseAudioRecordingReturn => {
         clearInterval(timerRef.current);
       }
       setRecordingState(RecordingState.PAUSED);
-      console.log('녹음 일시 중지됨');
+      // console.log('녹음 일시 중지됨');
     }
   }, [RMRPauseRecording, status, setRecordingState]);
 
@@ -187,7 +187,7 @@ export const useAudioRecording = (): UseAudioRecordingReturn => {
       await RMRResumeRecording();
       startTimer(); // 정지되었던 타이머 다시 시작
       setRecordingState(RecordingState.RECORDING);
-      console.log('녹음 재개됨');
+      // console.log('녹음 재개됨');
     }
   }, [RMRResumeRecording, status, startTimer, setRecordingState]);
 
