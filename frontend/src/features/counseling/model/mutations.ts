@@ -72,7 +72,7 @@ export const useRequestSTTMutation = () => {
     mutationFn: requestSTT, // 실제 API 호출을 수행하는 함수
     onSuccess: (data, variables, context) => {
       // STT 성공 시 수행할 작업 (예: 특정 쿼리 무효화, 상태 업데이트 등)
-      console.log('STT API Success:', data);
+      // console.log('STT API Success:', data);
       // 기존 로직: 스토어 업데이트 등은 SendMessageForm.tsx의 .then() 블록에서 처리될 수 있음
       // 또는 여기서 직접 스토어 액션을 호출할 수도 있습니다.
     },
@@ -157,7 +157,7 @@ export const useUploadVoiceFileMutation = () => {
   return useMutation<UploadVoiceFileResponse, Error, UploadVoiceFilePayload, unknown>({
     mutationFn: uploadVoiceFile,
     onSuccess: (data, variables) => {
-      console.log('음성 파일 업로드 성공:', data);
+      // console.log('음성 파일 업로드 성공:', data);
       // 성공 시 특정 쿼리 무효화 또는 다른 액션 수행 가능
       // if (variables.counsId) {
       //   queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(variables.counsId) });

@@ -54,7 +54,6 @@ export default function SurveyStepPage() {
       await axiosInstance.post('/users/survey', result);
       setModalMessage('설문에 답해주셔서 감사해요!');
       setModalSubMessage('이제 담담이는 회원님에 대해 더 잘 이해했어요!');
-      console.log(result);
       reset();
     } catch (err) {
       setModalMessage('제출에 실패했습니다!');

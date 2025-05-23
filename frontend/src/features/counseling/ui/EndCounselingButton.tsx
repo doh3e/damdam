@@ -55,7 +55,7 @@ const EndCounselingButton = ({
 
     closeSession(currentCounsId, {
       onSuccess: async () => {
-        console.log(`Counseling session ${currentCounsId} has been successfully closed.`);
+        // console.log(`Counseling session ${currentCounsId} has been successfully closed.`);
 
         // 1. Zustand 스토어 상태 업데이트: 현재 세션 종료됨으로 표시
         setIsCurrentSessionClosed(true);
@@ -64,7 +64,7 @@ const EndCounselingButton = ({
         if (disconnectWebSocket) {
           try {
             await disconnectWebSocket();
-            console.log(`WebSocket disconnected for session ${currentCounsId}.`);
+            // console.log(`WebSocket disconnected for session ${currentCounsId}.`);
           } catch (error) {
             console.error('Error disconnecting WebSocket:', error);
           }
