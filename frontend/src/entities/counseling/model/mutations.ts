@@ -141,7 +141,7 @@ export const useCreateSessionReport = (
       // 레포트 생성 성공 시, 관련 쿼리 무효화 (예: 레포트 목록, 해당 상담 세션 정보 등)
       // queryClient.invalidateQueries({ queryKey: ['reports', 'list'] }); // 레포트 목록이 있다면
       // queryClient.invalidateQueries({ queryKey: counselingQueryKeys.detail(counsId) }); // 세션 정보에 레포트 관련 내용이 있다면
-      console.log('세션 리포트 생성 성공:', response, 'for session:', counsId);
+      // console.log('세션 리포트 생성 성공:', response, 'for session:', counsId);
       options?.onSuccess?.(response, counsId, context);
     },
     ...options,
@@ -175,7 +175,7 @@ export const useCreateReportAndEndSession = () => {
     mutationFn: (counsId: string) => createReportAndEndSession(counsId),
     onSuccess: (data, counsId) => {
       // data는 이제 { sreportId: number } 타입입니다.
-      console.log('레포트 생성 및 세션 종료 성공:', data, '생성된 레포트 ID:', data.sreportId);
+      // console.log('레포트 생성 및 세션 종료 성공:', data, '생성된 레포트 ID:', data.sreportId);
       // 현재 스토어의 세션 ID와 뮤테이션 대상 ID가 같으면 스토어 상태도 업데이트
       if (counsId === currentCounsIdFromStore) {
         setIsCurrentSessionClosed(true);

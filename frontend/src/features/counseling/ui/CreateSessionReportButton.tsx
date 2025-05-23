@@ -54,7 +54,7 @@ const CreateSessionReportButton = ({
 
     createReportAndEnd(counsId, {
       onSuccess: async (data) => {
-        console.log('CreateSessionReportButton: 레포트 생성 및 세션 종료 API 호출 성공', data);
+        // console.log('CreateSessionReportButton: 레포트 생성 및 세션 종료 API 호출 성공', data);
         // 뮤테이션 훅의 onSuccess에서 Zustand 상태 업데이트 및 쿼리 무효화가 이미 처리됨.
         // 여기서는 추가적인 UI 피드백 또는 disconnectWebSocket 호출만 처리.
         if (disconnectWebSocket) {
