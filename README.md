@@ -4,19 +4,7 @@
 
 <br>
 
-이 프로젝트는 2025년 4월 14일부터 5월 22일까지 진행된 `삼성 청년 소프트웨어 아카데미(Samsung Software Academy For Youth, SSAFY)` 12기 2학기 자율 프로젝트 산출물입니다.
-
-<br>
-
-## 🎬 발표 자료
-
-<div style="align: center;">
-
-<img src="/uploads/d2ff4de1635835a1d60a9a90b5bdf53f/s202.png">
-
-[피그마 슬라이드](https://www.figma.com/slides/OAwulHiv3cSQV4JsVcbt9M/S202-%EC%B5%9C%EC%A2%85%EB%B0%9C%ED%91%9C?node-id=2014-826&t=MB1DvVXGvTBqHrp0-1)
-
-</div>
+이 프로젝트는 2025년 4월 14일부터 5월 22일까지 진행된 6인(백엔드 1인, 프론트엔드 2인, AI 2인, Infra/Bigdata 1인) 프로젝트 산출물입니다.
 
 <br>
 
