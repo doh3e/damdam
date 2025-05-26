@@ -26,20 +26,20 @@
 ### Database
 
 <span>
-<img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=PostgreSQL&logoColor=white"/>
-<img src="https://img.shields.io/badge/Redis-FF4438?style=for-the-badge&logo=Redis&logoColor=white"/>
+<img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=PostgreSQL&logoColor=white">
+<img src="https://img.shields.io/badge/Redis-FF4438?style=for-the-badge&logo=Redis&logoColor=white">
 </span>
 
 ### Client
 
 <span>
-<img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=Node.js&logoColor=white"/>
-<img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=Next.js&logoColor=white"/>
+<img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=Node.js&logoColor=white">
+<img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=Next.js&logoColor=white">
 <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=TypeScript&logoColor=white">
-<img src="https://img.shields.io/badge/Axios-5a29e4?style=for-the-badge&logo=axios&logoColor=white"/>
-<img src="https://img.shields.io/badge/Zustand-544542?style=for-the-badge&logo=&logoColor=white"/>
-<img src="https://img.shields.io/badge/Tailwind CSS-06B6D4?style=for-the-badge&logo=Tailwind CSS&logoColor=white"/>
-<img src="https://img.shields.io/badge/React Tanstack Query-FF4154?style=for-the-badge&logo=React Query&logoColor=white"/>
+<img src="https://img.shields.io/badge/Axios-5a29e4?style=for-the-badge&logo=axios&logoColor=white">
+<img src="https://img.shields.io/badge/Zustand-544542?style=for-the-badge&logo=&logoColor=white">
+<img src="https://img.shields.io/badge/Tailwind CSS-06B6D4?style=for-the-badge&logo=Tailwind CSS&logoColor=white">
+<img src="https://img.shields.io/badge/React Tanstack Query-FF4154?style=for-the-badge&logo=React Query&logoColor=white">
 </span>
 
 ### AI
@@ -49,7 +49,7 @@
 <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white">
 <img src="https://img.shields.io/badge/huggingface-FFD21E?style=for-the-badge&logo=huggingface&logoColor=white">
 <img src="https://img.shields.io/badge/ollama-000000?style=for-the-badge&logo=ollama&logoColor=white">
-<img src="https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi"/>
+<img src="https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi">
 
 </span>
 
@@ -63,23 +63,23 @@
 ### Infra / DevOps
 
 <span>
-<img src="https://img.shields.io/badge/Docker-2496ed?style=for-the-badge&logo=docker&logoColor=white"/>
-<img src="https://img.shields.io/badge/Jenkins-d24939?style=for-the-badge&logo=jenkins&logoColor=white"/>
-<img src="https://img.shields.io/badge/NGINX-009639?style=for-the-badge&logo=NGINX&logoColor=white"/>
-<img src="https://img.shields.io/badge/EC2-ff9900?style=for-the-badge&logo=amazonEc2&logoColor=white"/>
-<img src="https://img.shields.io/badge/S3-569A31?style=for-the-badge&logo=amazons3&logoColor=white"/>
+<img src="https://img.shields.io/badge/Docker-2496ed?style=for-the-badge&logo=docker&logoColor=white">
+<img src="https://img.shields.io/badge/Jenkins-d24939?style=for-the-badge&logo=jenkins&logoColor=white">
+<img src="https://img.shields.io/badge/NGINX-009639?style=for-the-badge&logo=NGINX&logoColor=white">
+<img src="https://img.shields.io/badge/EC2-ff9900?style=for-the-badge&logo=amazonEc2&logoColor=white">
+<img src="https://img.shields.io/badge/S3-569A31?style=for-the-badge&logo=amazons3&logoColor=white">
 </span>
 
 ### Version Control & Collabo Tools
 
 <span>
-<img src="https://img.shields.io/badge/Git-f05032?style=for-the-badge&logo=git&logoColor=white"/>
-<img src="https://img.shields.io/badge/GitLab-fc6d26?style=for-the-badge&logo=gitlab&logoColor=white"/>
-<img src="https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=Swagger&logoColor=white"/>
-<img src="https://img.shields.io/badge/Jira-0052cc?style=for-the-badge&logo=jira&logoColor=white"/>
-<img src="https://img.shields.io/badge/Figma-f24e1e?style=for-the-badge&logo=figma&logoColor=white"/>
-<img src="https://img.shields.io/badge/Notion-000000?style=for-the-badge&logo=notion&logoColor=white"/>
-<img src="https://img.shields.io/badge/Discord-5865f2?style=for-the-badge&logo=discord&logoColor=white"/>
+<img src="https://img.shields.io/badge/Git-f05032?style=for-the-badge&logo=git&logoColor=white">
+<img src="https://img.shields.io/badge/GitLab-fc6d26?style=for-the-badge&logo=gitlab&logoColor=white">
+<img src="https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=Swagger&logoColor=white">
+<img src="https://img.shields.io/badge/Jira-0052cc?style=for-the-badge&logo=jira&logoColor=white">
+<img src="https://img.shields.io/badge/Figma-f24e1e?style=for-the-badge&logo=figma&logoColor=white">
+<img src="https://img.shields.io/badge/Notion-000000?style=for-the-badge&logo=notion&logoColor=white">
+<img src="https://img.shields.io/badge/Discord-5865f2?style=for-the-badge&logo=discord&logoColor=white">
 </span>
 
 </div>
@@ -90,7 +90,7 @@
 
 |   Name   | 박성재 👑팀장/AI(LLM)                                                                                          | 정지은 🎖️BE리더                                                                                                                                  | 서준호 🎖️FE리더                                                                                                                                 |
 |:--------:|-----------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
-| Profile  | <p align="center"><img src="/uploads/22c9a1ff95f53996c442f8ffa78b1392/sungjae.jpg" style="width:180px; height:220px; object-fit:cover;"></p> | <p align="center"><img src="/uploads/2ded025a131132c35d3bb7cf22b3eb4d/jieun.jpg" style="width:180px; height:220px; object-fit:cover;"></p> | <p align="center"><img src="/uploads/e958bb9e6a1e2c953f46a36c4f0b28c4/joonho.jpg" style="width:180px; height:220px; object-fit:cover;"></p> |
+| Profile  | <p align="center"><img src="https://github.com/user-attachments/assets/dbe18f38-8c11-4eef-b647-284471db0f79" style="width:180px; height:220px; object-fit:cover;"></p> | <p align="center"><img src="https://github.com/user-attachments/assets/cfb192b6-bfbd-4e49-ad49-cc3b88106d56" style="width:180px; height:220px; object-fit:cover;"></p> | <p align="center"><img src="https://github.com/user-attachments/assets/7fbc1c37-ba64-412f-9bb2-275a2d060e23" style="width:180px; height:220px; object-fit:cover;"></p> |
 | Position | AI Engineer / PM                                                                                          | Back-end Developer / PL                                                                                                                      | Front-end Developer / PL                                                                                                                    |
 |   Git    | [@psj9709](https://github.com/psj9709)                                                                | [@doh3e](https://github.com/doh3e)                                                                                                           | [@Junho-Seo](https://github.com/Junho-Seo)                                                                                                  |
 |  E-mail  | psj970907@naver.com                                                                                 | wldms3333@gmail.com                                                                                                                          | sjh2395@gmail.com                                                                                                                           |
@@ -234,7 +234,7 @@
 
 |   Name   | 김천우 Infra/Bigdata                                                                                                                           | 유보형 AI(감정분석)                                                                                               | 이현준 FE                                                                                                                                       |
 |:--------:|---------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| Profile  | <p align="center"><img src="/uploads/05ba40afb11efafb68435a16a7a17d3b/cheonwoo.jpg" style="width:180px; height:220px; object-fit:cover;"></p> | <p align="center"><img src="/uploads/2f8761aab9ff388c77fe5bb1a0d7996d/bohyung.jpg" style="width:180px; height:220px; object-fit:cover;"></p> | <p align="center"><img src="/uploads/04d2c0c7c8dd68b45f15cb468c2a49b8/hyunjun.jpg" style="width:180px; height:220px; object-fit:cover;"></p> |
+| Profile  | <p align="center"><img src="https://github.com/user-attachments/assets/1bbf6c99-4a9e-42da-9567-f5fddb8b0404" style="width:180px; height:220px; object-fit:cover;"></p> | <p align="center"><img src="https://github.com/user-attachments/assets/57701395-434c-4d0b-9942-999a15bfb53a" style="width:180px; height:220px; object-fit:cover;"></p> | <p align="center"><img src="https://github.com/user-attachments/assets/8e7185c1-a794-4a5b-a8c4-0e651e41aa5a" style="width:180px; height:220px; object-fit:cover;"></p> |
 | Position | Infra / DevOps / BigData                                                                                                                    | AI Engineer                                                                                                | Front-end Develop                                                                                                                            |
 |   Git    | [@kcheonu](https://github.com/kcheonu)                                                                                                   | [@bobobo7git](https://github.com/bobobo7git)                                                               | [@Jun-Data](https://github.com/bobobo7git)                                                                                                      |
 |  E-mail  | kcheonu@gmail.com                                                                                                                           | dbqhgud@sogang.ac.kr                                                                                       | jun9048@naver.com                                                                                                                         |
@@ -364,7 +364,7 @@
 
 <div style="align: center;">
 
-<img src="/uploads/b599ab6328c3d40b2a390f0cecdff067/담담__S202_팀_사셈블___1_.png" width="100%">
+<img src="https://github.com/user-attachments/assets/e7e8e298-17d0-4f88-9b8c-49450bbd4480" width="100%">
 
 </div>
 
@@ -374,7 +374,7 @@
 
 <div style="align: center;">
 
-<img src="/uploads/e49aa7443403e5c19913b302b904848b/s202arch.png" width="100%">
+<img src="https://github.com/user-attachments/assets/8c682577-5341-41d1-874a-b260bf65cc5b" width="100%">
 
 </div>
 
@@ -384,13 +384,20 @@
 
 ### 회원관리
 
-<img src="/uploads/17c8fbcc871b88424cf75ccfc33ac52a/gif-login-survey.mp4" width="40%">
-
-- 로그인 및 사전설문
-
-<img src="/uploads/bbfb9aaa21feb7b5d633634c3f74326b/gif-mypage.mp4" width="40%">
-
-- 마이페이지
+<table>
+  <tr>
+    <th width="40%">로그인 및 사전설문</th>
+    <th width="40%">마이페이지</th>
+  </tr>
+  <tr>
+    <td>
+      <video width="100%" autoplay loop muted src="https://github.com/user-attachments/assets/f4b54126-560b-405b-aa8e-b3969d164c8f"></video>
+    </td>
+    <td>
+      <video width="100%" autoplay loop muted src="https://github.com/user-attachments/assets/13fd6c15-d9db-490c-8495-58868d5ceee3"></video>
+    </td>
+  </tr>
+</table>
 
 <br>
 
@@ -400,9 +407,17 @@
 
 ### 상담하기
 
-<img src="/uploads/474f7f10842caeb4a2856f79644d7055/gif-counsel.mp4" width="40%">
+<table>
+  <tr>
+    <th width="40%">상담 채팅 & 상담 수정 및 삭제</th>
+  </tr>
+  <tr>
+    <td>
+      <video width="100%" autoplay loop src="https://github.com/user-attachments/assets/150b3adc-d079-4073-bd05-13d27dba5d7d"></video>
+    </td>
+  </tr>
+</table>
 
-- 채팅입력 및 AI답변 반환 & 상담 수정삭제
 
 <br>
 
@@ -412,13 +427,20 @@
 
 ### 나의 레포트
 
-<img src="/uploads/a1e0f1207864e81a9318f2718ecd63c1/gif-session-report.mp4" width="40%">
-
-- 세션별 레포트 (1회 상담에 대한 레포트)
-
-<img src="/uploads/629ef77ede817a42d4b999b192055e37/gif-period-report.mp4" width="40%">
-
-- 기간별 레포트 (기간별 조회에 따른 분석 레포트)
+<table>
+  <tr>
+    <th width="40%">세션별 레포트 (1회 상담에 대한 분석)</th>
+    <th width="40%">기간별 레포트 (기간 전체 요약 분석)</th>
+  </tr>
+  <tr>
+    <td>
+      <video width="100%" autoplay loop muted src="https://github.com/user-attachments/assets/3b3d5675-aeeb-4d96-90c2-4f409b03a33f"></video>
+    </td>
+    <td>
+      <video width="100%" autoplay loop muted src="https://github.com/user-attachments/assets/12e4be78-e508-4331-9596-07914c3ca99b"></video>
+    </td>
+  </tr>
+</table>
 
 <br>
 
