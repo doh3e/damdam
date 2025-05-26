@@ -13,13 +13,15 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum S3ExceptionCode implements ExceptionCode {
 
-	IMAGE_TRNAS_BAD_REQUEST(BAD_REQUEST, "S3-S-001", "이미지를 변환할 수 없습니다."),
+	IMAGE_TRANS_BAD_REQUEST(BAD_REQUEST, "S3-S-001", "이미지를 변환할 수 없습니다."),
 	IMAGE_UPLOAD_BAD_REQUEST(BAD_REQUEST, "S3-S-002", "이미지를 업로드할 수 없습니다."),
 	IS_NOT_IMAGE(BAD_REQUEST, "S3-S-003", "이미지 형식이 아닙니다."),
 	IS_NOT_AUDIO(BAD_REQUEST, "S3-S-004", "오디오 형식이 아닙니다."),
 	JSON_SERIALIZATION_FAIL(BAD_REQUEST, "S3-S-005", "JSON 직렬화에 실패했습니다."),
 	FILE_DOWNLOAD_FAIL(BAD_REQUEST, "S3-S-006", "파일 다운로드에 실패했습니다."),
-	FILE_DELETE_FAIL(BAD_REQUEST, "S3-S-007", "파일 삭제에 실패했습니다.");
+	FILE_DELETE_FAIL(BAD_REQUEST, "S3-S-007", "파일 삭제에 실패했습니다."),
+	CANT_ENCRYPT_DOCS(BAD_REQUEST, "S3-S-008", "JSON파일을 암호화할 수 없습니다."),
+	CANT_DECRYPT_DOCS(BAD_REQUEST, "S3-S-008", "JSON파일을 복호화할 수 없습니다.");
 
 	private final HttpStatus httpStatus;
 	private final String code;

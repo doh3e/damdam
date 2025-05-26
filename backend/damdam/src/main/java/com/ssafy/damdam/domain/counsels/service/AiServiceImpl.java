@@ -76,7 +76,10 @@ public class AiServiceImpl implements AiService {
 	@Override
 	@Transactional
 	public EmotionDto analyzeAudio(Long roomId, Long userId, int messageOrder, String audioUrl) {
-		return analyzeAudioClient.analyzeAudio(audioUrl);
+
+		EmotionDto dto = analyzeAudioClient.analyzeAudio(audioUrl);
+		s3FileUploadService.deleteAudioFile(audioUrl);
+		return dto;
 	}
 
 	@Override
