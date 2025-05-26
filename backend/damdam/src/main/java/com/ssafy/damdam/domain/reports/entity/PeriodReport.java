@@ -7,18 +7,10 @@ import java.util.List;
 import com.ssafy.damdam.domain.reports.dto.LlmPeriodReportResponse;
 import com.ssafy.damdam.domain.users.entity.Users;
 import com.ssafy.damdam.global.audit.BaseTimeEntity;
+import com.ssafy.damdam.global.converter.AESConverter;
 import com.ssafy.damdam.global.converter.CounselListConverter;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -33,7 +25,7 @@ public class PeriodReport extends BaseTimeEntity {
 	@Column(name = "p_report_id")
 	private Long pReportId;
 
-	@OneToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id", nullable = false)
 	private Users users;
 
@@ -53,15 +45,19 @@ public class PeriodReport extends BaseTimeEntity {
 	@Column(name = "counsel_list", length = 300, nullable = false)
 	private List<Long> counselList;
 
+	@Convert(converter = AESConverter.class)
 	@Column(name = "summary", columnDefinition = "TEXT")
 	private String summary;
 
+	@Convert(converter = AESConverter.class)
 	@Column(name = "compliment", columnDefinition = "TEXT")
 	private String compliment;
 
+	@Convert(converter = AESConverter.class)
 	@Column(name = "worry", columnDefinition = "TEXT")
 	private String worry;
 
+	@Convert(converter = AESConverter.class)
 	@Column(name = "advice", columnDefinition = "TEXT")
 	private String advice;
 
