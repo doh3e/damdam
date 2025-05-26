@@ -38,8 +38,8 @@
 <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=TypeScript&logoColor=white">
 <img src="https://img.shields.io/badge/Axios-5a29e4?style=for-the-badge&logo=axios&logoColor=white">
 <img src="https://img.shields.io/badge/Zustand-544542?style=for-the-badge&logo=&logoColor=white">
-<img src="https://img.shields.io/badge/Tailwind CSS-06B6D4?style=for-the-badge&logo=Tailwind CSS&logoColor=white">
-<img src="https://img.shields.io/badge/React Tanstack Query-FF4154?style=for-the-badge&logo=React Query&logoColor=white">
+<img src="https://img.shields.io/badge/Tailwind%20CSS-0F172A?style=for-the-badge&logo=tailwindcss">
+<img src="https://img.shields.io/badge/React%20Tanstack%20Query-FF4154?style=for-the-badge&logo=react%20query&logoColor=white">
 </span>
 
 ### AI
@@ -56,8 +56,8 @@
 ### BigData
 
 <span>
-<img src="https://img.shields.io/badge/Apache Spark-E25A1C?style=for-the-badge&logo=Apache Spark&logoColor=white">
-<img src="https://img.shields.io/badge/Apache Hadoop-66CCFF?style=for-the-badge&logo=Apache Hadoop&logoColor=white">
+<img src="https://img.shields.io/badge/Apache%20Spark-FDEE21?style=for-the-badge&logo=apachespark&logoColor=black">
+<img src="https://img.shields.io/badge/Apache%20Hadoop-66CCFF?style=for-the-badge&logo=apachehadoop&logoColor=black">
 </span>
 
 ### Infra / DevOps
