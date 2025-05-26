@@ -166,35 +166,35 @@
 
  **FSD 아키텍처 설계 및 도입**
 
-    - 유지보수 및 확장성 향상을 위해 Feature-Sliced Design 아키텍처 적용.
-    - `app` (전역 설정/상태), `processes` (복합 시나리오), `widgets` (UI 블록), `features` (기능 단위),
-        `entities` (도메인 객체), `shared` (공용 모듈) 레이어로 구성하여 관심사 분리 및 모듈화 극대화.
+    1. 유지보수 및 확장성 향상을 위해 Feature-Sliced Design 아키텍처 적용.
+    2. `app` (전역 설정/상태), `processes` (복합 시나리오), `widgets` (UI 블록),
+        `features` (기능 단위), `entities` (도메인 객체), `shared` (공용 모듈)
+        레이어로 구성하여 관심사 분리 및 모듈화 극대화.
 
 **Next.js App Router 기반 기본 레이아웃 구현**
 
-    - `app/layout.tsx`를 통한 전역 레이아웃 및 페이지별(`counseling/layout.tsx` 등) 특화 레이아웃 구축.
-    - `widgets/Header`, `widgets/BottomNavigation` 등 공통 위젯을 활용하여 일관된 사용자 경험 제공.
+    1. 전역 레이아웃 및 페이지별 특화 레이아웃 구축
+    2. 공통 위젯을 활용하여 일관된 사용자 경험 제공
 
 **AI 상담 기능 (실시간 채팅)**
 
-    - `@stomp/stompjs`, `sockjs-client` 기반 웹소켓 통신 (`shared/hooks/useWebSocket.ts`)으로 LLM 서버와 실시간 메시징 구현.
-    - 채팅 UI (`widgets/CounselingChatWindow`, `widgets/ChatMessageList`), 메시지 입력/표시 (`features/counseling/ui/SendMessageForm`,
-        `entities/counseling/ui/ChatBubble`) 기능 개발.
-    - 상담 세션 관리 (시작, 종료, 보고서 생성 버튼 등) 기능 통합.
+    1. `@stomp/stompjs`, `sockjs-client` 기반 웹소켓 통신으로 LLM 서버와 실시간 메시징 구현
+    2. 채팅 UI, 메시지 입력/표시 기능 개발
+    3. 상담 세션 관리 (시작, 종료, 보고서 생성 버튼 등) 기능 통합
 
 **음성-텍스트 변환 (STT) 기능**
 
-    - `react-media-recorder` 활용 음성 녹음 기능 (`features/counseling/hooks/useAudioRecording.ts`) 구현.
-    - OpenAI Whisper API 연동:
-        - 음성 파일: 클라이언트 녹음 → Next.js Route Handler (`app/api/stt/route.ts`) → Whisper API (STT 변환)
-            → 텍스트 결과 클라이언트 반환.
-        - STT 변환 텍스트: 웹소켓 통해 LLM 서버로 전송.
+    1. `react-media-recorder` 활용 음성 녹음 기능 구현
+    2. OpenAI Whisper API 연동:
+        - 음성 파일: 클라이언트 녹음 → Next.js Route Handler → Whisper API (STT 변환)
+            → 텍스트 결과 클라이언트 반환
+        - STT 변환 텍스트: 웹소켓 통해 LLM 서버로 전송
 
 **전역 상태 및 서버 데이터 관리**
 
-    - **클라이언트 상태**: `Zustand` 활용 (UI 상태, 인증 토큰, 상담/STT 관련 상태 등 - `app/store/`, `features/**/model/*Store.ts`).
-    - **서버 데이터**: `Tanstack Query` 활용 (API 연동, 데이터 캐싱, 동기화, 로딩/에러 처리 - `entities/**/model/api.ts` 및
-        `queries.ts`/`mutations.ts`).
+    1. **클라이언트 상태**: `Zustand` 활용 (UI 상태, 인증 토큰, 상담/STT 관련 상태 등)
+    2. **서버 데이터**: `Tanstack Query` 활용 (API 연동, 데이터 캐싱, 동기화, 로딩/에러 처리)
+
   </div>
 
 <br>
@@ -219,9 +219,9 @@
     1. AWS EC2 총 6대를 활용해 서비스 인프라 구성
     (기본제공 EC2 + t3.xlarge, g4dn.2xlarge, r5.large 등 고성능 서버)
     2. 각 서버에 역할 분산:
-    - 기본 EC2: Spring Boot 백엔드, PostgreSQL, Next.js 프론트엔드, Redis
-    - t3.xlarge: FastAPI 기반 AI Audio 서비스
-    - g4dn.2xlarge: 감정 분석 및 상담을 위한 음성/텍스트 기반 AI 추론 서버
+        - 기본 EC2: Spring Boot 백엔드, PostgreSQL, Next.js 프론트엔드, Redis
+        - t3.xlarge: FastAPI 기반 AI Audio 서비스
+        - g4dn.2xlarge: 감정 분석 및 상담을 위한 음성/텍스트 기반 AI 추론 서버
 
 **Jenkins + Docker 기반 CI/CD 파이프라인 구성**
 
@@ -275,39 +275,35 @@
 
 **랜딩 페이지(홈 화면) 구현**
 
-    - 서비스 첫인상을 위한 매력적인 홈 화면(`app/page.tsx`) 개발.
-    - Next.js App Router, Shadcn/ui, Tailwind CSS 활용하여 반응형 UI/UX 제공.
+    1. 서비스 첫인상을 위한 매력적인 홈 화면 개발
+    2. Next.js App Router, Shadcn/ui, Tailwind CSS 활용하여 반응형 UI/UX 제공
 
 **회원 인증 (소셜 로그인 연동)**
 
-    - Google, Naver, Kakao 소셜 로그인(`features/auth/SocialLoginButtons/`, `app/(root)/callback/page.tsx`) 기능 구현.
-    - 최초 로그인 시 추가 정보 입력 및 사전 설문 연동 프로세스(`processes/auth/`) 구축.
-    - JWT 토큰 기반 인증 상태 관리 (`app/store/authStore.ts`).
+    1. Google, Naver, Kakao 소셜 로그인 기능 연동 구현
+    2. 최초 로그인 시 추가 정보 입력 및 사전 설문 연동 프로세스 구축
+    3. JWT 토큰 기반 인증 상태 관리
 
 **사전 설문 기능 개발**
 
-    - 단계별 설문 페이지(`app/(root)/signup/survey/[step]/page.tsx`) 및 답변 처리 로직 구현.
-    - 설문 결과(`app/store/surveyStore.ts`에서 관리) 서버 전송 기능 개발 (`features/user-survey/SubmitSurveyForm/`).
+    1. 단계별 설문 페이지 및 답변 처리 로직 구현
+    2. 설문 결과 서버 전송 기능 개발
 
 **나의 상담 (세션별/기간별 레포트 및 시각화)**
 
-    - 상담 레포트 조회 페이지(`app/(root)/reports/`, `app/(root)/reports/[reportId]/`,
-        `app/(root)/reports/periodic/[preportId]/`) 개발.
-    - 백엔드 LLM 요약/감정분석 데이터 기반 레포트 내용 구성 (`entities/report/model/api.ts`).
-    - 데이터 시각화: `Chart.js`/`Recharts` 활용 감정 그래프(`entities/report/ui/EmotionLineChart.tsx`),
-        `react-day-picker` 캘린더(`widgets/ReportCalendar/`) 연동.
+    1. 상담 레포트 조회 페이지 개발.
+    2. 백엔드 LLM 요약/감정분석 데이터 기반 레포트 내용 구성
+    3. 데이터 시각화: `Chart.js`/`Recharts` 활용 감정 그래프 연동
 
 **마이페이지 기능 구현**
 
-    - 사용자 프로필(정보 조회/수정 - `app/(root)/mypage/page.tsx`, `features/user-profile/UserProfileForm/`),
-        앱/AI 설정(`app/(root)/mypage/appsettings/page.tsx`) 기능 개발.
-    - 관련 API 연동 및 클라이언트 상태 관리(`entities/user/model/api.ts`, `app/store/userProfileStore.ts`, `userSettingStore.ts`).
+    1. 사용자 프로필(정보 조회/수정 ,앱/AI 설정) 기능 개발
+    2. 관련 API 연동 및 클라이언트 상태 관리
 
 **전역 상태 및 서버 데이터 관리**
 
-    - **클라이언트 상태**: `Zustand` 활용 (UI 상태, 인증 토큰, 상담/STT 관련 상태 등 - `app/store/`, `features/**/model/*Store.ts`).
-    - **서버 데이터**: `Tanstack Query` 활용 (API 연동, 데이터 캐싱, 동기화, 로딩/에러 처리 - `entities/**/model/api.ts` 및
-        `queries.ts`/`mutations.ts`).
+    1. **클라이언트 상태**: `Zustand` 활용 (UI 상태, 인증 토큰, 상담/STT 관련 상태 등)
+    2. **서버 데이터**: `Tanstack Query` 활용 (API 연동, 데이터 캐싱, 동기화, 로딩/에러 처리)
 
 </div>
 
