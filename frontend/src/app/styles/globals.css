@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* === 커스텀 컬러 팔레트 직접 정의 (HEX) === */
+    --color-soft-ivory: #fae9de;
+    --color-light-gray: #f8f8f8;
+    --color-pale-coral-pink: #f5b6af;
+    --color-tomato-red: #dc5f53;
+    --color-calm-blue: #7ca8d8;
+    --color-charcoal-black: #222222;
+
+    /* === shadcn/ui 및 프로젝트 의미론적 색상 정의 === */
+    --color-background: #fae9de; /* 기본 배경 */
+    --color-foreground: #222222; /* 기본 텍스트 */
+    --color-muted: #f8f8f8; /* 음소거 배경 */
+    --color-muted-foreground: rgba(34, 34, 34, 0.6); /* 음소거 텍스트 */
+    --color-primary: #f5b6af; /* 주요 액센트 (버튼 등에 사용) */
+    --color-primary-foreground: #222222; /* 주요 색상 위 텍스트 */
+    --color-secondary: #f8f8f8; /* 보조 요소 */
+    --color-secondary-foreground: #222222;
+    --color-accent: #f8f8f8; /* 강조 요소 */
+    --color-accent-foreground: #222222;
+    --color-destructive: #dc5f53; /* 파괴적 액션 */
+    --color-destructive-foreground: #f8f8f8; /* 파괴적 액션 위 텍스트 */
+    --color-border: rgba(34, 34, 34, 0.1); /* 테두리 */
+    --color-input: rgba(34, 34, 34, 0.15); /* 입력 필드 테두리 */
+    --color-ring: #f5b6af; /* 포커스 링 */
+
+    --color-card: #f8f8f8;
+    --color-card-foreground: rgba(34, 34, 34, 0.6);
+    --color-popover: #f8f8f8;
+    --color-popover-foreground: rgba(34, 34, 34, 0.6);
+
+    /* === 기타 테마 설정 === */
+    --radius: 0.5rem;
+    --radius-sm: 0.25rem;
+    --radius-md: 0.375rem;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.75rem;
+  }
+
+  .dark {
+    --color-background: #222222;
+    --color-foreground: #fae9de;
+    --color-muted: #333333;
+    --color-muted-foreground: rgba(250, 233, 222, 0.6);
+    --color-primary: #f5b6af;
+    --color-primary-foreground: #222222;
+    --color-secondary: #333333;
+    --color-secondary-foreground: #fae9de;
+    --color-accent: #333333;
+    --color-accent-foreground: #fae9de;
+    --color-destructive: #dc5f53;
+    --color-destructive-foreground: #f8f8f8;
+    --color-border: rgba(250, 233, 222, 0.1);
+    --color-input: rgba(250, 233, 222, 0.15);
+    --color-ring: #f5b6af;
+
+    --color-card: #333333;
+    --color-card-foreground: rgba(250, 233, 222, 0.6);
+    --color-popover: #333333;
+    --color-popover-foreground: rgba(250, 233, 222, 0.6);
+  }
+
+  body {
+    @apply bg-light-gray text-foreground;
+  }
+}
+
+/* 필요한 경우 추가 컴포넌트 및 유틸리티 레이어를 정의합니다 */
+@layer components {
+  /* 각종 컴포넌트 스타일 */
+}
+
+@layer utilities {
+  /* 각종 유틸리티 스타일 */
+
+  /* 
+   * 스크롤 바 스타일 커스터마이징
+   * color_palete.md 색상 값 활용:
+   * - 섬브(thumb): 페일 코랄 핑크(#F5B6AF) 75% 투명도
+   * - 트랙(track): 라이트 그레이(#F8F8F8) 또는 투명
+   */
+
+  /* Webkit 기반 브라우저 (Chrome, Safari, Edge 등) */
+  .scrollbar-custom::-webkit-scrollbar {
+    width: 8px; /* 스크롤 바 너비 */
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-track {
+    background: transparent; /* 트랙 배경 투명 */
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-thumb {
+    background-color: rgba(245, 182, 175, 0.75); /* 페일 코랄 핑크 75% 투명도 */
+    border-radius: 20px; /* 둥근 모서리 */
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(245, 182, 175, 0.9); /* 호버 시 더 진한 색상 */
+  }
+
+  /* Firefox */
+  .scrollbar-custom {
+    scrollbar-width: thin; /* 얇은 스크롤 바 */
+    scrollbar-color: rgba(245, 182, 175, 0.75) transparent; /* 섬브 색상과 트랙 색상 */
+  }
+
+  /* 스크롤 바 숨김 (필요 시 사용) */
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE/Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+}
+
+.rdp-root {
+  --rdp-accent-color: #ff9134;
+  --rdp-accent-background-color: #fff7ed;
+  --rdp-day-width: 40px;
+  --rdp-day-height: 40px;
+  --rdp-day_button-width: 40px;
+  --rdp-day_button-height: 40px;
+  --rdp-day_button-border-radius: 100%;
+  font-family: 'Pretendard', 'sans-serif';
+  background: #fff;
+  border: 2px solid #fae9de; /* 연한 베이지 테두리 */
+  border-radius: 16px;
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.04);
+  padding: 0.5rem 0.5rem !important;
+}
+
+.calendar-small.rdp-root {
+  --rdp-day-width: 35px;
+  --rdp-day-height: 35px;
+  --rdp-day_button-width: 28px;
+  --rdp-day_button-height: 28px;
+  --rdp-day_button-border-radius: 100%;
+  --rdp-caption-font-size: 1rem;
+  --rdp-cell-size: 28px;
+  font-size: 0.93rem; /* 폰트도 함께 축소 */
+  padding: 0.5rem 0.5rem !important;
+  /* 가장자리 테두리 추가 */
+  border: 2px solid #ffe2c3; /* 연한 주황색, color_palete.md 참고 */
+  border-radius: 20px;
+}
+.calendar-small .rdp-caption_label {
+  font-size: 1rem;
+}
+.calendar-small .rdp-head_cell {
+  font-size: 0.95rem;
+  padding-bottom: 0.25rem;
+}
+.calendar-small .rdp-day {
+  font-size: 0.95rem;
+}
