@@ -10,7 +10,9 @@
 
 ## 🎬 발표 자료
 
-<div>
+<div style="align: center;">
+
+<img src="/uploads/d2ff4de1635835a1d60a9a90b5bdf53f/s202.png">
 
 [피그마 슬라이드](https://www.figma.com/slides/OAwulHiv3cSQV4JsVcbt9M/S202-%EC%B5%9C%EC%A2%85%EB%B0%9C%ED%91%9C?node-id=2014-826&t=MB1DvVXGvTBqHrp0-1)
 
@@ -374,31 +376,31 @@
 
 <div style="align: center;">
 
-ERD 다이어그램 사진
+<img src="/uploads/b599ab6328c3d40b2a390f0cecdff067/담담__S202_팀_사셈블___1_.png" width="100%">
+
 </div>
 
 <br>
 
 ## 📜 프로젝트 구조
 
-<div>
+<div style="align: center;">
 
-아키텍처
+<img src="/uploads/e49aa7443403e5c19913b302b904848b/s202arch.png" width="100%">
 
 </div>
 
 <br>
 
-## 🪛 기술적 설명
-
-### 메인화면
-
-- 메인화면
+## 🪛 화면 구성
 
 ### 회원관리
 
-- 로그인
+<img src="/uploads/17c8fbcc871b88424cf75ccfc33ac52a/gif-login-survey.mp4" width="40%">
 
+- 로그인 및 사전설문
+
+<img src="/uploads/bbfb9aaa21feb7b5d633634c3f74326b/gif-mypage.mp4" width="40%">
 
 - 마이페이지
 
@@ -410,10 +412,9 @@ ERD 다이어그램 사진
 
 ### 상담하기
 
-- 채팅입력 및 음성채팅 입력
+<img src="/uploads/474f7f10842caeb4a2856f79644d7055/gif-counsel.mp4" width="40%">
 
-
-- AI 답변 반환
+- 채팅입력 및 AI답변 반환 & 상담 수정삭제
 
 <br>
 
@@ -423,20 +424,13 @@ ERD 다이어그램 사진
 
 ### 나의 레포트
 
-- 세션별 레포트 (1회상담에 대한 레포트)
+<img src="/uploads/a1e0f1207864e81a9318f2718ecd63c1/gif-session-report.mp4" width="40%">
+
+- 세션별 레포트 (1회 상담에 대한 레포트)
+
+<img src="/uploads/629ef77ede817a42d4b999b192055e37/gif-period-report.mp4" width="40%">
+
 - 기간별 레포트 (기간별 조회에 따른 분석 레포트)
-
-<br>
-
----
-
-<br>
-
-### 기타
-
-- 사전 설문
-
-- 문의하기
 
 <br>
 
