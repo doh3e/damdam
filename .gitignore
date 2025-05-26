@@ -369,6 +369,8 @@ sketch
 
 # Cursor specific
 /.cursor/
+.cursorindexingignore
+.cursorignore
 
 # SpecStory files
 /.specstory/
