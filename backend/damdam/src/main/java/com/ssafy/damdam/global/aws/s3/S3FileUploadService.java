@@ -9,6 +9,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.ssafy.damdam.global.util.secret.AESUtil;
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -51,8 +52,10 @@ public class S3FileUploadService {
 	private final S3TransferManager transferManager;
 	private final S3AsyncClient s3AsyncClient;
 	private final Tika tika;
+	private final AESUtil aesUtil;
 	private final ExecutorService virtualThreadExecutor;
 	private final ObjectMapper objectMapper;
+
 
 	/**
 	 * 이미지 파일을 S3에 업로드하고, 이전 파일이 있으면 삭제 후 새 URL을 반환합니다.
@@ -112,7 +115,7 @@ public class S3FileUploadService {
 			String mime = tika.detect(file.getInputStream());
 			return mime.startsWith("image/");
 		} catch (IOException e) {
-			throw new S3Exception(IMAGE_TRNAS_BAD_REQUEST);
+			throw new S3Exception(IMAGE_TRANS_BAD_REQUEST);
 		}
 	}
 
@@ -167,7 +170,8 @@ public class S3FileUploadService {
 	public String uploadFullText(LlmSummaryRequest llmSummaryRequest) throws JsonProcessingException {
 		try {
 			String json = objectMapper.writeValueAsString(llmSummaryRequest);
-			byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+			String encryptedJson = aesUtil.encrypt(json);
+			byte[] bytes = encryptedJson.getBytes(StandardCharsets.UTF_8);
 
 			String fileName = UUID.randomUUID() + ".json";
 			String s3Key = "origin_texts" + "/" + fileName;
@@ -191,13 +195,14 @@ public class S3FileUploadService {
 		} catch (JsonProcessingException e) {
 			log.error("[S3] JSON 직렬화 실패", e);
 			throw new S3Exception(JSON_SERIALIZATION_FAIL);
-		}
-	}
+		} catch (Exception e) {
+            throw new S3Exception(CANT_ENCRYPT_DOCS);
+        }
+    }
 
 	public TranscriptDto downloadTranscript(String s3Link) {
 		String key = s3Link.replace(defaultUrl, "");
 		try {
-			// 2) S3에서 bytes 단위로 가져오기 (동기 블록)
 			ResponseBytes<GetObjectResponse> resp = s3AsyncClient.getObject(
 				GetObjectRequest.builder()
 					.bucket(bucket)
@@ -206,8 +211,9 @@ public class S3FileUploadService {
 				AsyncResponseTransformer.toBytes()
 			).join();
 
-			String json = new String(resp.asByteArray(), StandardCharsets.UTF_8);
-			return objectMapper.readValue(json, TranscriptDto.class);
+			String encryptedJson = new String(resp.asByteArray(), StandardCharsets.UTF_8);
+			String decryptedJson = aesUtil.decrypt(encryptedJson);
+			return objectMapper.readValue(decryptedJson, TranscriptDto.class);
 
 		} catch (Exception e) {
 			log.error("[S3] 다운로드 실패: key={}", key, e);
@@ -257,6 +263,16 @@ public class S3FileUploadService {
 			s3AsyncClient.deleteObject(b -> b.bucket(bucket).key(key)).join();
 		} catch (Exception e) {
 			log.error("[S3] 삭제 실패: key={}", key, e);
+			throw new S3Exception(FILE_DELETE_FAIL);
+		}
+	}
+
+	public void deleteAudioFile(String audioUrl) {
+		String key = audioUrl.replace(defaultUrl, "");
+		try {
+			s3AsyncClient.deleteObject(b -> b.bucket(bucket).key(key)).join();
+		} catch (Exception e) {
+			log.error("[S3] 오디오 파일 삭제 실패: key={}", key, e);
 			throw new S3Exception(FILE_DELETE_FAIL);
 		}
 	}

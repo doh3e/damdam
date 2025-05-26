@@ -5,16 +5,8 @@ import java.time.format.DateTimeFormatter;
 import com.ssafy.damdam.domain.counsels.entity.Counseling;
 import com.ssafy.damdam.global.audit.BaseTimeEntity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
+import com.ssafy.damdam.global.converter.AESConverter;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -36,9 +28,11 @@ public class SessionReport extends BaseTimeEntity {
 	@Column(name = "s_report_title", length = 30, nullable = false)
 	private String sReportTitle;
 
+	@Convert(converter = AESConverter.class)
 	@Column(name = "summary", columnDefinition = "TEXT")
 	private String summary;
 
+	@Convert(converter = AESConverter.class)
 	@Column(name = "analyze", columnDefinition = "TEXT")
 	private String analyze;
 
